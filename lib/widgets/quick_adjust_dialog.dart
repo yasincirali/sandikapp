@@ -946,6 +946,11 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             satisFiyati: _gecmisFiyat ?? asset.currentPrice,
             ortalamaMaliyet: asset.purchasePrice,
           );
+    final tumunuSatiyor = !_isAdd &&
+        qty > 0 &&
+        (_tutarla
+            ? (qty - _bakiye).abs() < 0.01
+            : (qty - asset.quantity).abs() < 0.0001);
     final anaparam =
         karOnizleme == null ? null : _anaparamAdedi;
     final anaparamKilitli = anaparam != null && _anaparamKilitli;
@@ -1152,47 +1157,28 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               ),
             ),
             if (_tutarKipinde) _tutardanAdetSatiri(context),
-            const SizedBox(height: SandikSpace.sm),
-            _quickChips(),
-
-            // Remove modunda tüm miktarı çıkarırken kısa bilgi: bu bir
-            // "satış" kaydı; delete değil. Kullanıcı "sattım = sil" diye
-            // düşünmesin diye net bir metinle ayrımı vurguluyoruz.
-            if (!_isAdd &&
-                qty > 0 &&
-                (_tutarla
-                    ? (qty - _bakiye).abs() < 0.01
-                    : (qty - asset.quantity).abs() < 0.0001))
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: context.c.amberFill.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(SandikRadius.md),
-                    border: Border.all(
-                        color: context.c.amberFill.withValues(alpha: 0.30)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info_outline_rounded,
-                          size: 16, color: context.c.amberText),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          context.l10n.sellAllWarning,
-                          style: context.t.bodySmall?.copyWith(
-                            color: context.c.text58,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
+            // Tümünü satarken alanın altında tek satır nötr ipucu: bu bir
+            // "satış" kaydı, silme değil — kullanıcı "sattım = sil" diye
+            // düşünmesin. Eskiden amber zemin + çerçeve + ikonlu kutuydu
+            // (Ar-Ge 12 Kas #6): amber yalnız birincil eyleme ait (Varlık
+            // Ekle 02:03 kararı, boş fiyat kutusu → tek satır ile aynı) ve
+            // kutu bilgiyi "bir şey mi yanlış" uyarısı gibi okutuyordu.
+            // Yükseklikle açılır (SandikAcilir; hareketi azalt'ta anlık).
+            if (!_isAdd)
+              SandikAcilir(
+                acik: tumunuSatiyor,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: SandikSpace.xs2),
+                  child: Text(
+                    context.l10n.sellAllWarning,
+                    key: const ValueKey('tumunu_sat_ipucu'),
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58),
                   ),
                 ),
               ),
+            const SizedBox(height: SandikSpace.sm),
+            _quickChips(),
 
             // ── Fiyat (sadece ekleme için) ────────────────────────────
             if (_isAdd && !_tutarla) ...[

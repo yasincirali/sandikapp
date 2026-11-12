@@ -234,4 +234,45 @@ void main() {
       expect(find.byKey(const ValueKey('anaparam_aciklama')), findsOneWidget);
     });
   });
+
+  // Ar-Ge 12 Kas #6: "Hepsi"de amber kutu → alanın altında tek satır ipucu.
+  group('Tümünü sat ipucu', () {
+    const ipucu = ValueKey('tumunu_sat_ipucu');
+
+    testWidgets('yalnız tamamı seçiliyken; nötr tek satır, ikon/kutu yok',
+        (tester) async {
+      await _ac(tester, _varlik(), gorunur: false);
+      expect(find.byKey(ipucu), findsNothing);
+      await tester.tap(find.text(tr.quickAllChip('100')));
+      await tester.pumpAndSettle();
+      final t = tester.widget<Text>(find.byKey(ipucu));
+      expect(t.data, tr.sellAllWarning);
+      final ctx = tester.element(find.byKey(ipucu));
+      expect(t.style?.color, ctx.c.text58);
+      expect(find.byIcon(Icons.info_outline_rounded), findsNothing);
+      // Miktar alanının hemen altında (çiplerin üstünde).
+      expect(tester.getTopLeft(find.byKey(ipucu)).dy,
+          lessThan(tester.getTopLeft(find.text(tr.quickAllChip('100'))).dy));
+
+      await tester.enterText(find.byType(TextField).first, '10');
+      await tester.pumpAndSettle();
+      expect(find.byKey(ipucu), findsNothing);
+    });
+
+    testWidgets('alışta yok', (tester) async {
+      await _ac(tester, _varlik(), mod: QuickAdjustMode.add);
+      await tester.enterText(find.byType(TextField).first, '100');
+      await tester.pumpAndSettle();
+      expect(find.byKey(ipucu), findsNothing);
+    });
+
+    testWidgets('2× yazıda taşma yok', (tester) async {
+      await _ac(tester, _varlik(), gorunur: false, yazi: 2);
+      await tester.ensureVisible(find.text(tr.quickAllChip('100')));
+      await tester.tap(find.text(tr.quickAllChip('100')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(ipucu), findsOneWidget);
+    });
+  });
 }
