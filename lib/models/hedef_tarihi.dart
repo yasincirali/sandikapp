@@ -5,7 +5,8 @@ import '../utils/tr_format.dart';
 //
 // Hesap bilerek düz bölmedir: kalan ÷ kalan ay. Getiri varsayımı yok —
 // varsayılan bir yüzde, piyasanın vermediği bir sayıyı vaat eder
-// ("uydurma sayı yasak"). Ekran bunu "getiri hariç" notuyla söyler.
+// ("uydurma sayı yasak"). Ekran bunu cümlenin içinde "(getiri hariç)" diye
+// söyler.
 
 /// "Ne zamana kadar?" seçenekleri. [ozel] = takvimden seçilen gün.
 enum HedefTarihSecenegi { yok, birYil, yilSonu, ozel }
@@ -63,6 +64,20 @@ int? hedefAylikTutar({
   if (gun.isBefore(bugunGun)) return null;
   return (kalan / hedefeKalanAy(gun, bugunGun)).ceil();
 }
+
+/// Kayıtlı gün geçti mi (bugünden önce)? Bugün = geçmedi: "bu ay" demek,
+/// aylık tutar hâlâ söylenir ([hedefeKalanAy] en az 1).
+///
+/// Neden ayrı durum (2026-11-12 hata): gün geçince kart ve sayfa tarihi
+/// sessizce düşürüyordu; kullanıcı hedefinin gününün geçtiğini hiçbir yerde
+/// görmüyordu. Hedefe ulaşılmadıysa ekran bunu ilerlemeyle birlikte söyler
+/// ve yeni gün seçtirir; ulaşıldıysa "ulaştın" kazanır.
+bool hedefGunuGecti(DateTime tarih, DateTime bugun) =>
+    dayKey(tarih).isBefore(dayKey(bugun));
+
+/// Tam sayının Türkçe yönelme eki ("%82'ye", "%50'ye", "%100'e").
+/// [yilYonelmeEki] ile aynı kural: son okunan kelime belirler.
+String sayiYonelmeEki(int sayi) => yilYonelmeEki(sayi.abs());
 
 /// Türkçe yönelme eki, yılın okunuşuna göre ("2027'ye", "2026'ya",
 /// "2030'a", "2028'e"). Sayının son okunan kelimesi belirler: birler,

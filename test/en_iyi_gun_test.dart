@@ -190,12 +190,82 @@ void main() {
     });
   });
 
+  group('oGundenBeriPct — en zor günden bugüne (saf)', () {
+    double? beri(Map<int, double> seri, DateTime gun,
+            {List<Asset> lotlar = const []}) =>
+        PeriodSummaryService.oGundenBeriPct(seri,
+            lotlar: lotlar, gun: gun, fromMs: _from, toMs: _to);
+
+    // 2 Kas taban, 3 −%4 (en zor), sonra 4..10 her gün çarpan.
+    Map<int, double> seri(double sonra,
+        {Map<DateTime, double> alim = const {}}) {
+      final g = _haftaIci(DateTime(2026, 11, 2), DateTime(2026, 11, 10));
+      return _seri([
+        for (var i = 0; i < g.length; i++)
+          (g[i], i == 0 ? 1.0 : (i == 1 ? 0.96 : sonra)),
+      ], alim: alim);
+    }
+
+    final zorGun = DateTime(2026, 11, 3);
+
+    test('toparlanmış: o günün kapanışından son noktaya, artı', () {
+      // 3 Kas'tan sonra 5 iş günü ×1,02.
+      final r = beri(seri(1.02), zorGun)!;
+      expect(r, closeTo((1.02 * 1.02 * 1.02 * 1.02 * 1.02 - 1) * 100, 1e-6));
+      expect(r, greaterThan(0));
+    });
+
+    test('toparlanmamış: eksi kalır (işaret korunur)', () {
+      final r = beri(seri(0.998), zorGun)!;
+      expect(
+          r, closeTo((0.998 * 0.998 * 0.998 * 0.998 * 0.998 - 1) * 100, 1e-6));
+      expect(r, lessThan(0));
+    });
+
+    test('sonradan yapılan alım toparlanma sanılmaz (akış arındırılır)', () {
+      final alimGunu = DateTime(2026, 11, 6);
+      final s = seri(1.004, alim: {alimGunu: 500});
+      // Akışsız: ₺500'lük zıplama ~+%50 "toparlanma" olurdu.
+      expect(beri(s, zorGun)!, greaterThan(40));
+      final r = beri(s, zorGun, lotlar: [_alim(DateTime(2026, 11, 6, 10))])!;
+      expect(r, closeTo(2, 0.5));
+    });
+
+    test('o gün serinin son günü → null', () {
+      expect(beri(seri(1.01), DateTime(2026, 11, 10)), isNull);
+    });
+
+    test('seri yok ya da o günde ölçüm yok → null', () {
+      expect(beri(const {}, zorGun), isNull);
+      expect(beri(seri(1.01), DateTime(2026, 11, 7)), isNull); // Cumartesi
+    });
+
+    test('enIyiEnZorGun yalnız en zor güne yazar', () {
+      final g = _haftaIci(DateTime(2026, 11, 2), DateTime(2026, 11, 10));
+      const carpan = [1.0, 1.01, 1.005, 1.02, 0.99, 1.03, 0.98];
+      final s = _seri([for (var i = 0; i < g.length; i++) (g[i], carpan[i])]);
+      final r = _hesap(s)!;
+      expect(r.enIyi.oGundenBeriPct, isNull);
+      // En zor gün 10 Kas = serinin son günü: sonrası yok.
+      expect(r.enZor!.gun, DateTime(2026, 11, 10));
+      expect(r.enZor!.oGundenBeriPct, isNull);
+
+      // En zor gün ortada: 6 Kas (−%1), sonra ×1,03 ve ×1,002.
+      const carpan2 = [1.0, 1.01, 1.005, 1.02, 0.97, 1.03, 1.002];
+      final s2 = _seri([for (var i = 0; i < g.length; i++) (g[i], carpan2[i])]);
+      final r2 = _hesap(s2)!;
+      expect(r2.enZor!.gun, DateTime(2026, 11, 6));
+      expect(r2.enZor!.oGundenBeriPct, closeTo((1.03 * 1.002 - 1) * 100, 1e-6));
+    });
+  });
+
   group('PeriodSummaryView — en iyi / en zor gün kartı', () {
-    final gunler = (
+    final varsayilan = (
       enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2),
       enZor: DonemGunu(DateTime(2026, 10, 23), -2.1),
     );
-    PeriodSummary ozet() => PeriodSummary(
+    PeriodSummary ozet(({DonemGunu enIyi, DonemGunu? enZor}) g) =>
+        PeriodSummary(
           period: SummaryPeriod.birAy,
           start: DateTime(2026, 10, 11),
           end: _bugun,
@@ -204,14 +274,15 @@ void main() {
           katkiTRY: 0,
           piyasaTRY: 3000,
           getiriPct: 3,
-          enIyiEnZorGun: gunler,
+          enIyiEnZorGun: g,
         );
 
     Future<void> kur(WidgetTester tester,
         {required bool gorunur,
         bool kilitli = false,
         double olcek = 1,
-        double genislik = 390}) async {
+        double genislik = 390,
+        ({DonemGunu enIyi, DonemGunu? enZor})? gunler}) async {
       tester.view.physicalSize = Size(genislik, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -225,7 +296,7 @@ void main() {
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: PeriodSummaryView(
-                summary: ozet(),
+                summary: ozet(gunler ?? varsayilan),
                 simdi: _bugun,
                 // Tek akış (Performans'ın bugünkü düzeni): ana rakam kartı
                 // grafiğin kartında. Ana rakam kartının kendi 3.1× davranışı
@@ -253,13 +324,79 @@ void main() {
       expect(find.byType(KilitSatiri), findsNothing);
     });
 
-    testWidgets('ücretsiz: kilit satırı, gün ve yüzde sızmaz', (tester) async {
+    testWidgets('ücretsiz: yalnız en iyi günün tarihi açık, yüzde sızmaz',
+        (tester) async {
       await kur(tester, gorunur: true, kilitli: true);
       expect(find.byType(KilitSatiri), findsOneWidget);
-      expect(find.text("Dönemin en iyi ve en zor gününü Premium'la gör"),
+      expect(find.text("En iyi günün 4 Kasım · ne kadar olduğu Premium'da"),
           findsOneWidget);
-      expect(find.textContaining('4 Kasım'), findsNothing);
-      expect(find.text('+%3,2'), findsNothing);
+      // En zor gün ve hiçbir yüzde açılmaz.
+      expect(find.textContaining('23 Ekim'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
+      final kilit = tester.widget<KilitSatiri>(find.byType(KilitSatiri));
+      expect(kilit.kaynak, 'en_iyi_gun');
+    });
+
+    testWidgets('ücretsiz, hiç artı gün yok: "en az düşen gün" (kutlama yok)',
+        (tester) async {
+      await kur(tester, gorunur: true, kilitli: true, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), -0.3),
+        enZor: DonemGunu(DateTime(2026, 10, 23), -2.1),
+      ));
+      expect(
+          find.text("En az düşen günün 4 Kasım · ne kadar olduğu Premium'da"),
+          findsOneWidget);
+      expect(find.textContaining('En iyi'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
+    });
+
+    testWidgets('en zor gün altında renksiz "O günden beri" satırı, tek cümle',
+        (tester) async {
+      final semantik = tester.ensureSemantics();
+      await kur(tester, gorunur: true, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2),
+        enZor: DonemGunu(DateTime(2026, 10, 23), -4.2, oGundenBeriPct: 6.1),
+      ));
+      final alt = find.text('O günden beri +%6,1');
+      expect(alt, findsOneWidget);
+      expect(tester.widget<Text>(alt).style?.color, SandikPalette.light.text58);
+      expect(
+          find.bySemanticsLabel(
+              'En zor gün · 23 Ekim, −%4,2. O günden beri değişim +%6,1.'),
+          findsOneWidget);
+      semantik.dispose();
+    });
+
+    testWidgets('toparlanmadıysa nötr eksi, yine ikincil renk', (tester) async {
+      await kur(tester, gorunur: true, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2),
+        enZor: DonemGunu(DateTime(2026, 10, 23), -4.2, oGundenBeriPct: -1),
+      ));
+      final alt = find.text('O günden beri −%1,0');
+      expect(alt, findsOneWidget);
+      expect(tester.widget<Text>(alt).style?.color, SandikPalette.light.text58);
+    });
+
+    testWidgets('ölçülemediyse (null) satır yok; kilitliyken de yok',
+        (tester) async {
+      await kur(tester, gorunur: true);
+      expect(find.textContaining('O günden beri'), findsNothing);
+      await kur(tester, gorunur: true, kilitli: true, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2),
+        enZor: DonemGunu(DateTime(2026, 10, 23), -4.2, oGundenBeriPct: 6.1),
+      ));
+      expect(find.textContaining('O günden beri'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
+    });
+
+    testWidgets('3.1× ve 320 pt: "O günden beri" satırıyla taşma yok',
+        (tester) async {
+      await kur(tester, gorunur: true, olcek: 3.1, genislik: 320, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2),
+        enZor: DonemGunu(DateTime(2026, 10, 23), -4.2, oGundenBeriPct: 6.1),
+      ));
+      expect(tester.takeException(), isNull);
+      expect(find.text('O günden beri +%6,1'), findsOneWidget);
     });
 
     testWidgets('görünür değilse (paywall kapalı) kart hiç yok',

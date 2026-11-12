@@ -1175,6 +1175,13 @@ class _VarlikSatiri extends StatelessWidget {
 /// yükselen gün" yazar; kayıptaki günü "en iyi" diye kutlamak ekranın ton
 /// kuralına aykırı (`RETENTION_STRATEJISI.md` §8).
 ///
+/// Kilitliyken kart yarı açıktır (2026-11-12): en iyi günün TARİHİ aynı
+/// hesaptan ([PeriodSummaryService.enIyiEnZorGun], Premium'un okuduğu
+/// alan) ücretsiz yazılır, yüzde ve en zor gün kilitli kalır. Etiket
+/// açık hâldeki dürüstlük kuralıyla aynı: en iyi gün de ekside ise "en az
+/// düşen gün". Kart ancak hesap varken kurulur; tarihsiz eski cümleye
+/// düşülecek bir yol yok.
+///
 /// Grafikte o güne gitme bağlanmadı: grafiğin artı imleci yalnız dokunuşla
 /// kurulan iç durum (`ZoomableChart._crosshairX`), dışarıdan seçim API'si
 /// yok.
@@ -1189,21 +1196,23 @@ class _EnIyiGunKarti extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final dil = context.tarihDili;
+    final bugun = simdi ?? DateTime.now();
+    String tarih(DonemGunu g) => fmtGunAy(g.gun, dil: dil, bugun: bugun);
+    final enIyi = gunler.enIyi;
     if (kilitli) {
       return _BaglamKarti(
         baslik: l.bestToughestDayTitle,
         child: KilitSatiri(
-          metin: l.bestDayLocked,
+          metin: enIyi.pct < 0
+              ? l.leastDownDayLocked(tarih(enIyi))
+              : l.bestDayLocked(tarih(enIyi)),
           kaynak: 'en_iyi_gun',
           ozellik: 'en_iyi_gun',
           kilitEtiketi: l.goalDateLockedLabel,
         ),
       );
     }
-    final dil = context.tarihDili;
-    final bugun = simdi ?? DateTime.now();
-    String tarih(DonemGunu g) => fmtGunAy(g.gun, dil: dil, bugun: bugun);
-    final enIyi = gunler.enIyi;
     final enZor = gunler.enZor;
     return _BaglamKarti(
       baslik: l.bestToughestDayTitle,
@@ -1236,6 +1245,15 @@ class _EnIyiGunKarti extends StatelessWidget {
   }
 }
 
+/// Gün satırı. [DonemGunu.oGundenBeriPct] doluysa (yalnız en zor gün)
+/// etiketin altına tek gri satır: "O günden beri +%6,1" (sakinlik,
+/// 2026-11-12) — çıplak "−%4,2" o günün sonrasını da söylesin.
+///
+/// Alt satır bilerek RENKSİZ (ikincil metin rengi, kazanç/kayıp tonu yok):
+/// toparlanma kutlanmaz, toparlanmama da kırmızıyla vurgulanmaz; yön
+/// işaretle (+/−) okunur. Hesap serviste ([PeriodSummaryService
+/// .oGundenBeriPct]); burası yalnız biçimler. Ekran okuyucu satırı alt
+/// satırla birlikte tek cümle okur.
 class _GunSatiri extends StatelessWidget {
   const _GunSatiri({required this.gun, required this.metin});
 
@@ -1248,6 +1266,28 @@ class _GunSatiri extends StatelessWidget {
     // kırmızı aşağı ok + "−" — üç işaret aynı şeyi söyler.
     final yukari = gun.pct >= 0;
     final renk = yukari ? context.c.gain : context.c.loss;
+    final pct = fmtPctIsaretli(gun.pct, digits: 1);
+    final beri = gun.oGundenBeriPct;
+    if (beri == null) return _satir(context, renk, yukari, pct, null);
+    // |x| < 0,05 "+%0,0" değil düz "%0,0" (elde tutma satırının kuralı).
+    final degisim = beri.abs() < 0.05
+        ? fmtPct(0, digits: 1)
+        : fmtPctIsaretli(beri, digits: 1);
+    final l = context.l10n;
+    return Semantics(
+      container: true,
+      label: l.toughestDaySinceA11y(metin, pct, degisim),
+      excludeSemantics: true,
+      child: _satir(context, renk, yukari, pct, l.toughestDaySince(degisim)),
+    );
+  }
+
+  Widget _satir(
+      BuildContext context, Color renk, bool yukari, String pct, String? alt) {
+    final etiket = Text(
+      metin,
+      style: context.t.bodyMedium?.copyWith(color: context.c.text90),
+    );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1258,14 +1298,24 @@ class _GunSatiri extends StatelessWidget {
         ),
         const SizedBox(width: SandikSpace.sm),
         Expanded(
-          child: Text(
-            metin,
-            style: context.t.bodyMedium?.copyWith(color: context.c.text90),
-          ),
+          child: alt == null
+              ? etiket
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    etiket,
+                    const SizedBox(height: SandikSpace.xs),
+                    Text(
+                      alt,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                  ],
+                ),
         ),
         const SizedBox(width: SandikSpace.sm),
         Text(
-          fmtPctIsaretli(gun.pct, digits: 1),
+          pct,
           style: context.t.numSmall.copyWith(color: renk),
         ),
       ],

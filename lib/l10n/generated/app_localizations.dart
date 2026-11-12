@@ -1886,11 +1886,11 @@ abstract class AppLocalizations {
   /// **'Son 30 günde günde ortalama yaklaşık {tutar}.'**
   String gunlukGetiriA11y(String tutar);
 
-  /// No description provided for @eldeTutmaKilitli.
+  /// Ücretsiz kullanıcıda elde tutma satırı: süre kullanıcının kendi defterinden açık, yıllık oran kilitli.
   ///
   /// In tr, this message translates to:
-  /// **'Yıllık ortalama getirin Premium\'da'**
-  String get eldeTutmaKilitli;
+  /// **'{sure}dır tutuyorsun · yıllık ortalaman Premium\'da'**
+  String eldeTutmaKilitli(String sure);
 
   /// No description provided for @fxSplitPrice.
   ///
@@ -2015,7 +2015,7 @@ abstract class AppLocalizations {
   /// No description provided for @basaBasKilitli.
   ///
   /// In tr, this message translates to:
-  /// **'Başa baş için gereken yükseliş Premium\'da'**
+  /// **'Bu pozisyonun başa baş için gereken yükselişi Premium\'da'**
   String get basaBasKilitli;
 
   /// No description provided for @kopyalaKod.
@@ -17163,20 +17163,80 @@ abstract class AppLocalizations {
   /// No description provided for @goalDateMonthly.
   ///
   /// In tr, this message translates to:
-  /// **'Ayda yaklaşık {tutar} eklersen yetişirsin'**
+  /// **'Ayda yaklaşık {tutar} eklersen yetişirsin (getiri hariç)'**
   String goalDateMonthly(String tutar);
-
-  /// No description provided for @goalDateNoReturn.
-  ///
-  /// In tr, this message translates to:
-  /// **'Getiri hariç'**
-  String get goalDateNoReturn;
 
   /// No description provided for @goalDateBy.
   ///
   /// In tr, this message translates to:
   /// **'{tarih}\'{ek} kadar'**
   String goalDateBy(String tarih, String ek);
+
+  /// No description provided for @goalDatePassed.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} geçti · {pct}\'{ek} ulaştın · yeni gün seç'**
+  String goalDatePassed(String tarih, String pct, String ek);
+
+  /// No description provided for @goalDatePassedShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tarih} geçti · yeni gün seç'**
+  String goalDatePassedShort(String tarih);
+
+  /// No description provided for @goalPaceOnTrack.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 3 ayda ayda {tutar} ekledin · plandasın'**
+  String goalPaceOnTrack(String tutar);
+
+  /// No description provided for @goalPaceBehind.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 3 ayda ayda {tutar} ekledin · ayda {eksik} daha gerek'**
+  String goalPaceBehind(String tutar, String eksik);
+
+  /// No description provided for @goalPaceNone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 3 ayda net ekleme olmadı · ayda {eksik} gerek'**
+  String goalPaceNone(String eksik);
+
+  /// No description provided for @goalPaceOnTrackShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'plandasın'**
+  String get goalPaceOnTrackShort;
+
+  /// No description provided for @goalPaceBehindShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'ayda {eksik} daha gerek'**
+  String goalPaceBehindShort(String eksik);
+
+  /// No description provided for @goalPaceNoneShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'ayda {eksik} gerek'**
+  String goalPaceNoneShort(String eksik);
+
+  /// No description provided for @goalPaceOnTrackAlone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Plandasın'**
+  String get goalPaceOnTrackAlone;
+
+  /// No description provided for @goalPaceBehindAlone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayda {eksik} daha gerek'**
+  String goalPaceBehindAlone(String eksik);
+
+  /// No description provided for @goalPaceNoneAlone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayda {eksik} gerek'**
+  String goalPaceNoneAlone(String eksik);
 
   /// No description provided for @kiyasPaylasTooltip.
   ///
@@ -17701,11 +17761,29 @@ abstract class AppLocalizations {
   /// **'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.'**
   String get bestDayFootnote;
 
-  /// No description provided for @bestDayLocked.
+  /// En zor gün satırının altındaki gri satır: o günün kapanışından bugüne değişim (eklenen/çekilen para hariç).
   ///
   /// In tr, this message translates to:
-  /// **'Dönemin en iyi ve en zor gününü Premium\'la gör'**
-  String get bestDayLocked;
+  /// **'O günden beri {pct}'**
+  String toughestDaySince(String pct);
+
+  /// No description provided for @toughestDaySinceA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{satir}, {pct}. O günden beri değişim {degisim}.'**
+  String toughestDaySinceA11y(String satir, String pct, String degisim);
+
+  /// Ücretsiz kullanıcıda en iyi gün kartı: yalnız tarih açık, yüzde kilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi günün {tarih} · ne kadar olduğu Premium\'da'**
+  String bestDayLocked(String tarih);
+
+  /// bestDayLocked'un dönemde hiç artı gün yokken söylenişi (kayıp gün 'en iyi' diye kutlanmaz).
+  ///
+  /// In tr, this message translates to:
+  /// **'En az düşen günün {tarih} · ne kadar olduğu Premium\'da'**
+  String leastDownDayLocked(String tarih);
 
   /// No description provided for @tarihCipiBugun.
   ///

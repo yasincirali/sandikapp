@@ -1066,7 +1066,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get eldeTutmaKilitli => 'Yıllık ortalama getirin Premium\'da';
+  String eldeTutmaKilitli(String sure) {
+    return '${sure}dır tutuyorsun · yıllık ortalaman Premium\'da';
+  }
 
   @override
   String get fxSplitPrice => 'Fiyattan';
@@ -1145,7 +1147,8 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get basaBasKilitli => 'Başa baş için gereken yükseliş Premium\'da';
+  String get basaBasKilitli =>
+      'Bu pozisyonun başa baş için gereken yükselişi Premium\'da';
 
   @override
   String get kopyalaKod => 'Kodu kopyala';
@@ -10476,15 +10479,63 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String goalDateMonthly(String tutar) {
-    return 'Ayda yaklaşık $tutar eklersen yetişirsin';
+    return 'Ayda yaklaşık $tutar eklersen yetişirsin (getiri hariç)';
   }
-
-  @override
-  String get goalDateNoReturn => 'Getiri hariç';
 
   @override
   String goalDateBy(String tarih, String ek) {
     return '$tarih\'$ek kadar';
+  }
+
+  @override
+  String goalDatePassed(String tarih, String pct, String ek) {
+    return '$tarih geçti · $pct\'$ek ulaştın · yeni gün seç';
+  }
+
+  @override
+  String goalDatePassedShort(String tarih) {
+    return '$tarih geçti · yeni gün seç';
+  }
+
+  @override
+  String goalPaceOnTrack(String tutar) {
+    return 'Son 3 ayda ayda $tutar ekledin · plandasın';
+  }
+
+  @override
+  String goalPaceBehind(String tutar, String eksik) {
+    return 'Son 3 ayda ayda $tutar ekledin · ayda $eksik daha gerek';
+  }
+
+  @override
+  String goalPaceNone(String eksik) {
+    return 'Son 3 ayda net ekleme olmadı · ayda $eksik gerek';
+  }
+
+  @override
+  String get goalPaceOnTrackShort => 'plandasın';
+
+  @override
+  String goalPaceBehindShort(String eksik) {
+    return 'ayda $eksik daha gerek';
+  }
+
+  @override
+  String goalPaceNoneShort(String eksik) {
+    return 'ayda $eksik gerek';
+  }
+
+  @override
+  String get goalPaceOnTrackAlone => 'Plandasın';
+
+  @override
+  String goalPaceBehindAlone(String eksik) {
+    return 'Ayda $eksik daha gerek';
+  }
+
+  @override
+  String goalPaceNoneAlone(String eksik) {
+    return 'Ayda $eksik gerek';
   }
 
   @override
@@ -10841,7 +10892,24 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yalnız piyasa hareketi; eklediğin ve çektiğin para hariç.';
 
   @override
-  String get bestDayLocked => 'Dönemin en iyi ve en zor gününü Premium\'la gör';
+  String toughestDaySince(String pct) {
+    return 'O günden beri $pct';
+  }
+
+  @override
+  String toughestDaySinceA11y(String satir, String pct, String degisim) {
+    return '$satir, $pct. O günden beri değişim $degisim.';
+  }
+
+  @override
+  String bestDayLocked(String tarih) {
+    return 'En iyi günün $tarih · ne kadar olduğu Premium\'da';
+  }
+
+  @override
+  String leastDownDayLocked(String tarih) {
+    return 'En az düşen günün $tarih · ne kadar olduğu Premium\'da';
+  }
 
   @override
   String get tarihCipiBugun => 'Bugün';

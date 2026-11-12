@@ -29,7 +29,10 @@ bool basaBasSatiriCizilir(WidgetRef ref, double? oran) =>
 ///   panel satırın yokluğunda yerleşimi değiştirir (temettü sola kayar,
 ///   satır aralığı da gider); boş bir `Expanded` 12 pt'lik delik bırakırdı.
 /// - `premiumKilitliProvider` → [KilitSatiri] (kaynak `basa_bas` → paywall
-///   X-Ray kartı: aynı "param gerçekte ne durumda" sorusu).
+///   X-Ray kartı: aynı "param gerçekte ne durumda" sorusu). Metin kişisel:
+///   "Bu pozisyonun ... Premium'da" (2026-11-12) — satır zaten yalnız
+///   zarardaki pozisyonda kurulduğu için genel bir özellik adı değil, bu
+///   pozisyon için hesaplanmış bir sayı kilitli. Oran sızmaz.
 /// - Açıksa panelin öteki satırları gibi etiket + değer.
 ///
 /// ## Anlam renkte değil cümlede (HIG renk körlüğü)

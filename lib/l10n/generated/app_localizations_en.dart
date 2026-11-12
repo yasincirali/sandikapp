@@ -1082,7 +1082,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eldeTutmaKilitli => 'Your average annual return is in Premium';
+  String eldeTutmaKilitli(String sure) {
+    return 'Held for $sure · your yearly average is in Premium';
+  }
 
   @override
   String get fxSplitPrice => 'From price';
@@ -1161,7 +1163,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get basaBasKilitli => 'Rise needed to break even is in Premium';
+  String get basaBasKilitli =>
+      'The rise this position needs to break even is in Premium';
 
   @override
   String get kopyalaKod => 'Copy code';
@@ -10634,15 +10637,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String goalDateMonthly(String tutar) {
-    return 'Add about $tutar a month to make it';
+    return 'Add about $tutar a month to make it (excluding returns)';
   }
-
-  @override
-  String get goalDateNoReturn => 'Excludes returns';
 
   @override
   String goalDateBy(String tarih, String ek) {
     return 'By $tarih';
+  }
+
+  @override
+  String goalDatePassed(String tarih, String pct, String ek) {
+    return '$tarih has passed · you reached $pct · pick a new date';
+  }
+
+  @override
+  String goalDatePassedShort(String tarih) {
+    return '$tarih has passed · pick a new date';
+  }
+
+  @override
+  String goalPaceOnTrack(String tutar) {
+    return 'You added $tutar a month over the last 3 months · on track';
+  }
+
+  @override
+  String goalPaceBehind(String tutar, String eksik) {
+    return 'You added $tutar a month over the last 3 months · $eksik more a month needed';
+  }
+
+  @override
+  String goalPaceNone(String eksik) {
+    return 'No net additions in the last 3 months · $eksik a month needed';
+  }
+
+  @override
+  String get goalPaceOnTrackShort => 'on track';
+
+  @override
+  String goalPaceBehindShort(String eksik) {
+    return '$eksik more a month needed';
+  }
+
+  @override
+  String goalPaceNoneShort(String eksik) {
+    return '$eksik a month needed';
+  }
+
+  @override
+  String get goalPaceOnTrackAlone => 'On track';
+
+  @override
+  String goalPaceBehindAlone(String eksik) {
+    return '$eksik more a month needed';
+  }
+
+  @override
+  String goalPaceNoneAlone(String eksik) {
+    return '$eksik a month needed';
   }
 
   @override
@@ -11015,8 +11066,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Market moves only; money you added or withdrew is excluded.';
 
   @override
-  String get bestDayLocked =>
-      'See the period\'s best and toughest day with Premium';
+  String toughestDaySince(String pct) {
+    return 'Since that day $pct';
+  }
+
+  @override
+  String toughestDaySinceA11y(String satir, String pct, String degisim) {
+    return '$satir, $pct. Change since that day $degisim.';
+  }
+
+  @override
+  String bestDayLocked(String tarih) {
+    return 'Your best day was $tarih · how much is in Premium';
+  }
+
+  @override
+  String leastDownDayLocked(String tarih) {
+    return 'Your smallest drop was $tarih · how much is in Premium';
+  }
 
   @override
   String get tarihCipiBugun => 'Today';
