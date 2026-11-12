@@ -13733,6 +13733,24 @@ abstract class AppLocalizations {
   /// **'Brüt; stopaj oranı bilinmediği için net hesaplanmadı.'**
   String get ttBrutNot;
 
+  /// No description provided for @ttAyEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}, tahmini'**
+  String ttAyEtiket(String ay);
+
+  /// No description provided for @ttAyNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Brüt; bu ayda ödemesi beklenen varlıklar aşağıda. Tümü için çubuğa yeniden dokun.'**
+  String get ttAyNot;
+
+  /// No description provided for @ttAySemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}, {tutar}'**
+  String ttAySemantik(String ay, String tutar);
+
   /// No description provided for @ttNetNot.
   ///
   /// In tr, this message translates to:

@@ -8295,6 +8295,20 @@ class AppLocalizationsTr extends AppLocalizations {
       'Brüt; stopaj oranı bilinmediği için net hesaplanmadı.';
 
   @override
+  String ttAyEtiket(String ay) {
+    return '$ay, tahmini';
+  }
+
+  @override
+  String get ttAyNot =>
+      'Brüt; bu ayda ödemesi beklenen varlıklar aşağıda. Tümü için çubuğa yeniden dokun.';
+
+  @override
+  String ttAySemantik(String ay, String tutar) {
+    return '$ay, $tutar';
+  }
+
+  @override
   String ttNetNot(String brut) {
     return 'Stopaj sonrası net · brüt $brut';
   }

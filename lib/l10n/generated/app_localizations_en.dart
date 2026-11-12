@@ -8383,6 +8383,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Gross; net not calculated because the withholding rate is unknown.';
 
   @override
+  String ttAyEtiket(String ay) {
+    return '$ay, estimated';
+  }
+
+  @override
+  String get ttAyNot =>
+      'Gross; assets expected to pay this month are listed below. Tap the bar again to see all.';
+
+  @override
+  String ttAySemantik(String ay, String tutar) {
+    return '$ay, $tutar';
+  }
+
+  @override
   String ttNetNot(String brut) {
     return 'Net after withholding · gross $brut';
   }
