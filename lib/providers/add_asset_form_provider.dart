@@ -318,6 +318,24 @@ double? tutardanAdet({required double? tutar, required double? birimFiyat}) {
   return tutar / birimFiyat;
 }
 
+/// Varlık Ekle alt çubuğundaki toplam: adet × birim fiyat + komisyon
+/// (Ar-Ge 2026-11-12 #2). Eskiden form ortasındaki kart yalnız adet ×
+/// fiyattı; kayıtta maliyete giren komisyon (`Position.totalCost`) orada
+/// görünmüyordu, "kaça mal oldu"nun cevabı eksikti. Komisyon boş, geçersiz
+/// ya da eksi ise 0 sayılır (alanın kendi doğrulayıcısı uyarır). Adet ya da
+/// fiyat bilinmiyorsa `null`: satır çizilmez, uydurma tutar yok.
+double? formToplamMaliyeti({
+  required double? adet,
+  required double? birimFiyat,
+  double? komisyon,
+}) {
+  if (adet == null || birimFiyat == null) return null;
+  if (!adet.isFinite || !birimFiyat.isFinite) return null;
+  if (adet <= 0 || birimFiyat <= 0) return null;
+  final k = komisyon != null && komisyon.isFinite && komisyon > 0 ? komisyon : 0.0;
+  return adet * birimFiyat + k;
+}
+
 bool _ayniGun(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 

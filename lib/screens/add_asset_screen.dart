@@ -781,11 +781,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       const SizedBox(height: 10),
                       _metinle(_quantity, (_) => _quantityPresetsRow(cs)),
                     ],
+                    // Toplam maliyet 2026-11-12'de alt çubuğa indi
+                    // (`_toplamSatiri`, kaydet düğmesinin üstünde).
                     const SizedBox(height: 20),
-
-                    // ── Toplam maliyet hero card ─────────────────────────
-                    _metinle(_metinler, (_) => _totalHero(cs)),
-                    const SizedBox(height: 10),
 
                     // ── Tahmini birim fiyat preview ──────────────────────
                     _metinle(Listenable.merge([_price, _quantity, _tutar]),
@@ -844,7 +842,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               // gösteremeyen bir kaydet düğmesi kafa karıştırırdı.
               if ((!_type.sozlesmeli || _sozlesmeFormuAcik) &&
                   !_s.turIzgarasiAcik)
-                _stickyBottomBar(saveLabel),
+                _stickyBottomBar(saveLabel, tlKuru: _tlKuru()),
             ],
           ),
         ),
@@ -1117,7 +1115,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   // ── Sticky bottom CTA ──────────────────────────────────────────────────────
-  Widget _stickyBottomBar(String saveLabel) {
+  Widget _stickyBottomBar(String saveLabel, {double? tlKuru}) {
     return SafeArea(
       top: false,
       child: Container(
@@ -1132,7 +1130,19 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         // SandikAsyncButton'da. `saving` bayrağı KALIR — formu salt okunur
         // tutar; `mesgul:` ile başarıda ekran kapanırken ve hızlı giriş
         // partisi sürerken de aynı gösterge döner (bkz. `_save` F14 notu).
-        child: SandikAsyncButton(
+        //
+        // Toplam düğmenin üstünde (Ar-Ge 2026-11-12 #2, `_toplamSatiri`):
+        // yalnız o satır metin alanlarını dinler; düğme her tuşta kurulmaz.
+        // Çubuk `SafeArea` içinde; iOS sayı klavyesi çubuğu
+        // (`SayiKlavyesiKatmani`) içeriğin `viewInsets`'ini kendi boyu kadar
+        // büyüttüğü için Scaffold bu uzamış çubuğu klavye çubuğunun ÜSTÜNE
+        // taşır, çakışmaz.
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _metinle(_metinler, (_) => _Beliren(child: _toplamSatiri(tlKuru))),
+            SandikAsyncButton(
           height: 54,
           onPressed: _sozlesmeFormuAcik ? _sozlesmeKaydet : _save,
           mesgul: _saving,
@@ -1157,6 +1167,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 letterSpacing: 0.2,
                 color: context.c.onAmber),
           ),
+        ),
+          ],
         ),
       ),
     );
