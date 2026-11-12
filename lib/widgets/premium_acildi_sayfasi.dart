@@ -1,5 +1,3 @@
-import 'dart:async' show unawaited;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -18,6 +16,7 @@ import '../services/aylik_getiri_tablosu.dart'
     show aylikGetiriAralikAySayisi, aylikGetiriAsgariAy;
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../services/crash_reporter.dart';
 import 'sattiklarin.dart' show showSattiklarinListesi;
 
 /// Satın alma sonrası sayfa (Ar-Ge 12 Kas 17:04 #4, "değdi" anı).
@@ -136,8 +135,10 @@ Future<void> premiumAcildiAkisi(BuildContext paywallBaglami,
   // Beklenmez: hedef ekran açık kaldıkça paywall'ın satın alma akışı
   // (ve `_busy`) asılı kalmasın.
   if (secim != null) {
-    unawaited(premiumAcildiHedefiniAc(gezgin, secim,
-        tutarGizli: () => kapsayici.read(balanceHiddenProvider)));
+    CrashReporter.arkaPlan(
+        premiumAcildiHedefiniAc(gezgin, secim,
+            tutarGizli: () => kapsayici.read(balanceHiddenProvider)),
+        reason: 'premium_acildi_hedef');
   }
 }
 

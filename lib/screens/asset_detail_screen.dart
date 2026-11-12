@@ -1,4 +1,3 @@
-import 'dart:async' show unawaited;
 import 'dart:math' as math;
 import '../widgets/sandik_yenile.dart';
 import 'package:flutter/foundation.dart'
@@ -631,7 +630,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     if (bekle) await tur;
     if (!mounted) return const {};
     var turBitti = bekle;
-    if (!bekle) unawaited(tur.then<void>((_) => turBitti = true));
+    if (!bekle) {
+      CrashReporter.arkaPlan(tur.then<void>((_) => turBitti = true),
+          reason: 'varlik_seri_tur_paralel');
+    }
     Future<({PortfolioHistoryBreakdown sonuc, DateTime? bayatZaman,
             bool bosBilesen})> cek() =>
         HistoryService.tazelikle(() =>

@@ -1,5 +1,3 @@
-import 'dart:async' show unawaited;
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import '../widgets/sandik_yenile.dart';
@@ -65,6 +63,7 @@ import 'add_watchlist_screen.dart';
 import 'price_alerts_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
+import '../services/crash_reporter.dart';
 
 /// Takip listesinin GÖVDESİ — dönem seçici · grafik · liste · dipnot.
 ///
@@ -1412,8 +1411,10 @@ class _TakipCikisiState extends State<_TakipCikisi>
     if (!mounted || c == null || ton == null || _cikiyor) return;
     final duyuru = widget.duyuru;
     if (duyuru != null) {
-      unawaited(SemanticsService.sendAnnouncement(
-          View.of(context), duyuru, Directionality.of(context)));
+      CrashReporter.arkaPlan(
+          SemanticsService.sendAnnouncement(
+              View.of(context), duyuru, Directionality.of(context)),
+          reason: 'takip_giris_duyurusu');
     }
     final azalt = SandikMotion.of(context, SandikMotion.state) == Duration.zero;
     await _gor();

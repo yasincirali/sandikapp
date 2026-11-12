@@ -348,7 +348,8 @@ extension _DetayOzet on _AssetDetailScreenState {
       reason: 'AssetDetail.digerDonemler',
     );
     var turBitti = false;
-    unawaited(tur.then<void>((_) => turBitti = true));
+    CrashReporter.arkaPlan(tur.then<void>((_) => turBitti = true),
+        reason: 'varlik_seri_tur_paralel');
     await _donemleriYukle(
         gunIci: false, gunlukler: true, turBittiMi: () => turBitti, tur: tur);
   }
