@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/asset.dart' show DefterImzasi;
 import '../models/position.dart';
 import '../services/fiyat_kaynagi.dart';
 import '../services/remote_config_service.dart';
@@ -19,8 +20,17 @@ import 'portfolio_provider.dart';
 final temettuTahminiProvider =
     FutureProvider.autoDispose<TemettuTahmini>((ref) async {
   final uid = ref.watch(authProvider).valueOrNull?.id;
-  final lotlar = ref.watch(portfolioProvider
-      .select((s) => s.valueOrNull?.assets ?? const []));
+  // Fiyat turu `assets`'ı her seferinde yeni liste yazar; liste kimliğini
+  // izlemek tahmini her turda yeniden koşturup ekranı iskelete düşürüyordu
+  // (Ar-Ge 12 Kas #6, ölçüldü: `temettu_tazeleme_iskelet_test`). Tahmin
+  // fiyattan bağımsız: yalnız defter içeriği değişince yeniden hesaplanır.
+  // Aylık raporun `sahip|satır sayısı` seçicisi miktar düzenlemesini
+  // kaçırırdı; `DefterImzasi` kaçırmaz.
+  ref.watch(portfolioProvider.select((s) => switch (s.valueOrNull) {
+        final d? => DefterImzasi(d.assets),
+        null => null,
+      }));
+  final lotlar = ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
   if (uid == null) {
     return TemettuTahmini(satirlar: const [], aylik: List.filled(12, 0));
   }

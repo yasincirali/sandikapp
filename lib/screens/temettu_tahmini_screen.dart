@@ -55,7 +55,10 @@ class TemettuTahminiScreen extends ConsumerWidget {
         // Yükleme → içerik çapraz solar (2026-10-14).
         tamEkran: true,
         anahtar: SandikIcerikGecisi.hal([tahmin]),
+        // Defter değişince tahmin yeniden hesaplanırken eski içerik kalır;
+        // iskelet yalnız ilk yüklemede (Ar-Ge 12 Kas #6).
         child: tahmin.when(
+        skipLoadingOnReload: true,
         loading: () => const SandikSkeletonList(rows: 4),
         error: (e, _) => SandikErrorView(
             error: e, onRetry: () => ref.invalidate(temettuTahminiProvider)),
