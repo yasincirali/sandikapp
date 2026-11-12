@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart'
-    show kDebugMode, debugPrint, listEquals;
+    show kDebugMode, debugPrint, listEquals, visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset.dart';
@@ -585,7 +585,22 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
   /// İyimser güncelleme YAPILMAZ: eklenen satırın `id`'si sunucuda üretiliyor
   /// ve fiyatı henüz bilinmiyor. Sunucu yanıtından sonra listeyi tazelemek
   /// hem daha basit hem de yanlış veri göstermiyor.
-  Future<void> add(WatchlistItem item) async {
+  /// Eklemeleri sıraya dizen zincir. Bkz. [add].
+  Future<void> _ekleSirasi = Future.value();
+
+  Future<void> add(WatchlistItem item) {
+    // Eklemeler SIRAYLA yürür (2026-11-12, yasin: "6. eklenmeye
+    // çalıştığında takip sayfası uyarıyor ama aramadan ve detaydan
+    // ekleyebiliyorum"). Arama ekranında satırların "+"sına art arda
+    // dokununca her çağrı aynı eski listeyi görüyordu: sunucu yanıtı ve
+    // yeniden yükleme bitmeden ikinci çağrı da "4 kayıt" sayıp sınırı
+    // geçiyordu. Sıra, her eklemenin bir öncekinin sonucunu görmesini sağlar.
+    final sonuc = _ekleSirasi.then((_) => _ekle(item));
+    _ekleSirasi = sonuc.then<void>((_) {}, onError: (_) {});
+    return sonuc;
+  }
+
+  Future<void> _ekle(WatchlistItem item) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
 
@@ -594,7 +609,16 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
     // Kural tek yerde durursa baypas edilemez — `portfolio_provider`'daki
     // varlık limiti de aynı gerekçeyle notifier içinde.
     final limit = ref.read(watchlistLimitProvider);
-    final mevcut = state.valueOrNull ?? const [];
+    // `state.valueOrNull` yerine yüklenmiş liste: takip sekmesi hiç
+    // açılmadan aramadan/varlık sayfasından eklenince liste henüz yüklenmemiş
+    // olabilir; boş liste sayılırsa sınır sessizce aşılır. Yükleme hata
+    // verirse son bilinen listeye düşülür (ekleme yine sunucuda denenir).
+    List<WatchlistItem> mevcut;
+    try {
+      mevcut = await future;
+    } catch (_) {
+      mevcut = state.valueOrNull ?? const [];
+    }
     if (watchlistLimitiAsiliyorMu(
       mevcutSayi: mevcut.length,
       zatenTakipte: mevcut.any((w) => w.key == item.key),
@@ -603,10 +627,16 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
       throw WatchlistLimitException(limit);
     }
 
-    await SupabaseService.instance.addToWatchlist(item);
+    await sunucuyaEkle(item);
     ref.invalidateSelf();
     await future;
   }
+
+  /// Sunucuya tek satır yazar. Testte sıra/sınır davranışını gerçek
+  /// Supabase olmadan sınamak için ezilir.
+  @visibleForTesting
+  Future<void> sunucuyaEkle(WatchlistItem item) =>
+      SupabaseService.instance.addToWatchlist(item);
 
   /// Takipten çıkarır — iyimser güncelleme + başarısızlıkta geri alma.
   ///
