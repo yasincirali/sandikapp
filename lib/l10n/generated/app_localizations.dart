@@ -17845,6 +17845,12 @@ abstract class AppLocalizations {
   /// **'Hangi ay kazandığını, hangi ay kaybettiğini Premium\'la gör'**
   String get aylikGetiriKilitli;
 
+  /// Aylık getiri kilit satırı, kullanıcının defterindeki ay sayısıyla (seri çekilmez)
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay, plural, =1{1 aylık geçmişin var. Hangi ayları artıda kapattığını Premium\'la gör.} other{{ay} aylık geçmişin var. Hangi ayları artıda kapattığını Premium\'la gör.}}'**
+  String aylikGetiriKilitliKisisel(int ay);
+
   /// Aylık getiri tablosu: yıl toplamı sütunu
   ///
   /// In tr, this message translates to:
@@ -17860,13 +17866,13 @@ abstract class AppLocalizations {
   /// Ekran okuyucu: pozitif aylık getiri
   ///
   /// In tr, this message translates to:
-  /// **'{deger} kazanç'**
+  /// **'yüzde {deger} kazanç'**
   String aylikGetiriKazanc(String deger);
 
   /// Ekran okuyucu: negatif aylık getiri
   ///
   /// In tr, this message translates to:
-  /// **'{deger} kayıp'**
+  /// **'yüzde {deger} kayıp'**
   String aylikGetiriKayip(String deger);
 
   /// Ekran okuyucu: ölçülemeyen ay (ekranda —)
@@ -17886,6 +17892,98 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Her ay, Özet\'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.'**
   String get aylikGetiriDipnot;
+
+  /// Aylık getiri kartı, Premium kullanıcıda 6 aydan kısa geçmiş. hazir: ayın bulunma hâli (Şubat'ta / Şubat 2027'de)
+  ///
+  /// In tr, this message translates to:
+  /// **'Tablo {asgari} ay dolunca burada açılır. Şu an {olculen} ay ölçüldü, {hazir} hazır.'**
+  String aylikGetiriIlerleme(int asgari, int olculen, String hazir);
+
+  /// Ekran okuyucu: 6 bölmeli ilerleme göstergesi. olculenEkli: sayı ve iyelik eki (3'ü)
+  ///
+  /// In tr, this message translates to:
+  /// **'{asgari} aydan {olculenEkli} ölçüldü'**
+  String aylikGetiriIlerlemeOkunan(int asgari, String olculenEkli);
+
+  /// Aylık getiri kartı: seri hatası (ham hata gösterilmez)
+  ///
+  /// In tr, this message translates to:
+  /// **'Tablo hesaplanamadı, yenileyince tekrar denenir.'**
+  String get aylikGetiriHata;
+
+  /// Ekran okuyucu: sıfıra yuvarlanan aylık getiri (yönsüz)
+  ///
+  /// In tr, this message translates to:
+  /// **'yüzde {deger}'**
+  String aylikGetiriYuzde(String deger);
+
+  /// Ekran okuyucu: çerçeveli en iyi ay hücresi
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}: {deger}, tablonun en iyi ayı'**
+  String aylikGetiriHucreEnIyi(String ay, String deger);
+
+  /// Ekran okuyucu: çerçeveli en zor ay hücresi
+  ///
+  /// In tr, this message translates to:
+  /// **'{ay}: {deger}, tablonun en zor ayı'**
+  String aylikGetiriHucreEnZor(String ay, String deger);
+
+  /// Aylık getiri kartı alt cümlesi. artiEkli: sayı + iyelik/belirtme eki (14'ünü)
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} ayın {artiEkli} artıda kapattın.'**
+  String aylikGetiriOzetArti(int n, String artiEkli);
+
+  /// Aylık getiri kartı alt cümlesi: hiç artı ay yok
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} ayda artıda kapanan ay olmadı.'**
+  String aylikGetiriOzetArtiYok(int n);
+
+  /// Aylık getiri kartı: en iyi ve en zor ay
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi ay {iyiAy} {iyiDeger}, en zor {zorAy} {zorDeger}.'**
+  String aylikGetiriOzetUclar(
+      String iyiAy, String iyiDeger, String zorAy, String zorDeger);
+
+  /// Aylık getiri kartı: yalnız en iyi ay (aylar eşit)
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi ay {iyiAy} {iyiDeger}.'**
+  String aylikGetiriOzetEnIyi(String iyiAy, String iyiDeger);
+
+  /// Aylık getiri dipnotu, tek satır; dokununca ayrıntı açılır
+  ///
+  /// In tr, this message translates to:
+  /// **'Para ekleyip çekmen yüzdeyi değiştirmez.'**
+  String get aylikGetiriDipnotKisa;
+
+  /// Aylık getiri yıl satırı: TÜFE etiketi (ardından o yılın aynı aylarının TÜFE yüzdesi)
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜFE'**
+  String get aylikGetiriTufe;
+
+  /// Aylık getiri yıl satırı: reel getiri etiketi (ardından ok + yüzde)
+  ///
+  /// In tr, this message translates to:
+  /// **'reel'**
+  String get aylikGetiriReel;
+
+  /// Ekran okuyucu: yıl satırı TÜFE ve reel getiriyle
+  ///
+  /// In tr, this message translates to:
+  /// **'{yil}: {getiri}. TÜFE yüzde {tufe}, reel getiri {reel}.'**
+  String aylikGetiriYilReelOkunan(
+      String yil, String getiri, String tufe, String reel);
+
+  /// Aylık getiri dipnot ayrıntısı: enflasyon kaynağı
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyon: TÜİK TÜFE. Yılın TÜFE\'si tablodaki aynı aylardan zincirlenir; aylardan birinin TÜFE\'si açıklanmadıysa reel yazılmaz.'**
+  String get aylikGetiriKaynak;
 
   /// Profil satırı başlığı
   ///

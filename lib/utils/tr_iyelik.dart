@@ -108,3 +108,24 @@ String trSayiAyrilmaEki(int n) {
   final unluyleBitiyor = unluler.contains(soz[soz.length - 1]);
   return '${unluyleBitiyor ? 's' : ''}$iyelik${kalin ? 'ndan' : 'nden'}';
 }
+
+/// Sayının iyelik eki, kesmesiz: 3 → "ü" ("6 aydan 3'ü"), 20 → "si",
+/// 30 → "u", 6 → "sı".
+///
+/// Neden (aylık getiri ilerlemesi, 2026-11-12): "6 aydan {n}'i" sabit eki
+/// 3'te "3'i" yazardı. Kural [trSayiAyrilmaEki]'yle aynı okunuştan çıkar:
+/// iyelik + ayrılma her zaman "iyelik + n + dan/den" olduğu için iyelik,
+/// o ekin son dört harfi atılınca kalan parçadır — ikinci bir ünlü
+/// uyumu tablosu yazılmaz.
+String trSayiIyelikEki(int n) {
+  final e = trSayiAyrilmaEki(n);
+  return e.substring(0, e.length - 4);
+}
+
+/// Sayının iyelik + belirtme eki, kesmesiz: 14 → "ünü" ("20 ayın
+/// 14'ünü"), 20 → "sini", 6 → "sını", 9 → "unu". Belirtme, iyelikten
+/// sonra kaynaştırma "n" + iyeliğin ünlüsüdür ([trSayiIyelikEki]).
+String trSayiIyelikBelirtmeEki(int n) {
+  final iyelik = trSayiIyelikEki(n);
+  return '${iyelik}n${iyelik[iyelik.length - 1]}';
+}

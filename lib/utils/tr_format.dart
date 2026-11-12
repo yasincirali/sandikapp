@@ -508,6 +508,24 @@ String tarihtenBeriParcasi(DateTime t,
   return "${y.day} $ay'${_ayAyrilmaEki[y.month - 1]}";
 }
 
+/// "Ne zaman" parçası, takvim dilinde: Türkçe bulunma ekiyle "Şubat'ta",
+/// yıl [bugun]ün yılından farklıysa "Şubat 2027'de"; İngilizce "February"
+/// / "February 2027" (cümle "in {…}" der).
+///
+/// Neden (aylık getiri ilerlemesi, 2026-11-12): "Şubat'ta hazır" cümlesi
+/// ayın okunuşuna göre ek alır ("Nisan'da", "Eylül'de"); .arb'a
+/// "{ay}'ta" yazmak Nisan'da "Nisan'ta" üretirdi. Bulunma eki ayrılma
+/// ekinin son "n"si atılmış hâlidir ("tan" → "ta"), ayrı tablo yok.
+String ayBulunmaParcasi(DateTime t,
+    {String dil = 'tr_TR', DateTime? bugun}) {
+  final yilli = t.year != (bugun ?? DateTime.now()).year;
+  final ay = _ayAdi(t.month, dil, false);
+  if (dil.startsWith('en')) return yilli ? '$ay ${t.year}' : ay;
+  String bulunma(String ayrilma) => ayrilma.substring(0, ayrilma.length - 1);
+  if (yilli) return "$ay ${t.year}'${bulunma(_sayiAyrilmaEki(t.year))}";
+  return "$ay'${bulunma(_ayAyrilmaEki[t.month - 1])}";
+}
+
 /// Tam ay adının ayrılma eki (Ocak'tan, Nisan'dan, Eylül'den…).
 const _ayAyrilmaEki = [
   'tan', 'tan', 'tan', 'dan', 'tan', 'dan', //

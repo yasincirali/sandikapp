@@ -963,5 +963,8 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       _ozetBellek.temizle();
     });
     _zoomController?.reload();
+    // Aylık getiri tablosu hatayı taşır (provider notu); yenileme onu da
+    // yeniden dener. Önceki tablo varken yükleme sırasında o görünür kalır.
+    ref.invalidate(aylikGetiriProvider);
   }
 }

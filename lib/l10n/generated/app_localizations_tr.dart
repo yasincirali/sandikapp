@@ -10947,6 +10947,19 @@ class AppLocalizationsTr extends AppLocalizations {
       'Hangi ay kazandığını, hangi ay kaybettiğini Premium\'la gör';
 
   @override
+  String aylikGetiriKilitliKisisel(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other:
+          '$ay aylık geçmişin var. Hangi ayları artıda kapattığını Premium\'la gör.',
+      one:
+          '1 aylık geçmişin var. Hangi ayları artıda kapattığını Premium\'la gör.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get aylikGetiriYil => 'Yıl';
 
   @override
@@ -10954,12 +10967,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String aylikGetiriKazanc(String deger) {
-    return '$deger kazanç';
+    return 'yüzde $deger kazanç';
   }
 
   @override
   String aylikGetiriKayip(String deger) {
-    return '$deger kayıp';
+    return 'yüzde $deger kayıp';
   }
 
   @override
@@ -10973,6 +10986,76 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get aylikGetiriDipnot =>
       'Her ay, Özet\'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.';
+
+  @override
+  String aylikGetiriIlerleme(int asgari, int olculen, String hazir) {
+    return 'Tablo $asgari ay dolunca burada açılır. Şu an $olculen ay ölçüldü, $hazir hazır.';
+  }
+
+  @override
+  String aylikGetiriIlerlemeOkunan(int asgari, String olculenEkli) {
+    return '$asgari aydan $olculenEkli ölçüldü';
+  }
+
+  @override
+  String get aylikGetiriHata =>
+      'Tablo hesaplanamadı, yenileyince tekrar denenir.';
+
+  @override
+  String aylikGetiriYuzde(String deger) {
+    return 'yüzde $deger';
+  }
+
+  @override
+  String aylikGetiriHucreEnIyi(String ay, String deger) {
+    return '$ay: $deger, tablonun en iyi ayı';
+  }
+
+  @override
+  String aylikGetiriHucreEnZor(String ay, String deger) {
+    return '$ay: $deger, tablonun en zor ayı';
+  }
+
+  @override
+  String aylikGetiriOzetArti(int n, String artiEkli) {
+    return '$n ayın $artiEkli artıda kapattın.';
+  }
+
+  @override
+  String aylikGetiriOzetArtiYok(int n) {
+    return '$n ayda artıda kapanan ay olmadı.';
+  }
+
+  @override
+  String aylikGetiriOzetUclar(
+      String iyiAy, String iyiDeger, String zorAy, String zorDeger) {
+    return 'En iyi ay $iyiAy $iyiDeger, en zor $zorAy $zorDeger.';
+  }
+
+  @override
+  String aylikGetiriOzetEnIyi(String iyiAy, String iyiDeger) {
+    return 'En iyi ay $iyiAy $iyiDeger.';
+  }
+
+  @override
+  String get aylikGetiriDipnotKisa =>
+      'Para ekleyip çekmen yüzdeyi değiştirmez.';
+
+  @override
+  String get aylikGetiriTufe => 'TÜFE';
+
+  @override
+  String get aylikGetiriReel => 'reel';
+
+  @override
+  String aylikGetiriYilReelOkunan(
+      String yil, String getiri, String tufe, String reel) {
+    return '$yil: $getiri. TÜFE yüzde $tufe, reel getiri $reel.';
+  }
+
+  @override
+  String get aylikGetiriKaynak =>
+      'Enflasyon: TÜİK TÜFE. Yılın TÜFE\'si tablodaki aynı aylardan zincirlenir; aylardan birinin TÜFE\'si açıklanmadıysa reel yazılmaz.';
 
   @override
   String get zkSatirBaslik => 'Zekât hesabı';

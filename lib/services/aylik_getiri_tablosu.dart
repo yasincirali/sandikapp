@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show compute, immutable, kIsWeb;
 
 import '../models/asset.dart';
+import 'inflation_service.dart';
 import 'period_summary_service.dart';
 
 /// Aylık getiri tablosu (yıl × ay) — Performans'ın "hangi ay kazandım,
@@ -58,13 +59,33 @@ class AylikGetiriTablosu {
   /// Getirisi ölçülen ay sayısı — kart en az 6 ayda görünür.
   final int olculenAySayisi;
 
-  const AylikGetiriTablosu({
+  /// Yıl → aynı ayların TÜFE'si ve reel getiri ([aylikGetiriYilReelleri]).
+  /// Yalnız TÜFE'si eksiksiz bilinen yıllar; boşsa yıl satırı yalnız
+  /// getiriyi yazar.
+  final Map<int, AylikGetiriYilReeli> yilReeli;
+
+  // `const` değil: [ozet] tembel ve bir kez hesaplanır (aşağıda).
+  AylikGetiriTablosu({
     required this.aylar,
     required this.yilToplami,
     required this.ilkAy,
     required this.buAy,
     required this.olculenAySayisi,
+    this.yilReeli = const {},
   });
+
+  /// Aynı tablo, yıl satırlarının TÜFE/reel bilgisiyle. Tablo hesabı
+  /// (isolate'e gidebilen saf iş) TÜFE'yi beklemez; provider endeksi
+  /// ayrıca okuyup buradan ekler.
+  AylikGetiriTablosu reelIle(Map<int, AylikGetiriYilReeli> reel) =>
+      AylikGetiriTablosu(
+        aylar: aylar,
+        yilToplami: yilToplami,
+        ilkAy: ilkAy,
+        buAy: buAy,
+        olculenAySayisi: olculenAySayisi,
+        yilReeli: reel,
+      );
 
   /// Ay tablonun aralığında mı (ilk alım ayı ≤ ay ≤ bu ay). Aralık dışı
   /// hücre boş çizilir, aralık içinde ölçümsüz hücre "—".
@@ -75,6 +96,147 @@ class AylikGetiriTablosu {
 
   /// Yıllar yeniden eskiye (en güncel yıl üstte).
   List<int> get yillar => aylar.keys.toList()..sort((a, b) => b - a);
+
+  /// Kartın alt cümlesi ve iki çerçeveli hücresi ([aylikGetiriOzeti]).
+  /// Tembel ve tablo başına bir kez: Performans her tick'te yeniden
+  /// çizilir, özet tablo değişmedikçe yeniden taranmaz (hesap `build`'de
+  /// değil, modelde).
+  late final AylikGetiriOzeti? ozet = aylikGetiriOzeti(this);
+}
+
+/// Yıl satırının enflasyon parçası: "· TÜFE %31,0 · reel ▼%14,2".
+@immutable
+class AylikGetiriYilReeli {
+  const AylikGetiriYilReeli({required this.tufe, required this.reel});
+
+  /// O yılın tabloda ölçülen aylarının zincirlenmiş TÜFE'si (yüzde).
+  final double tufe;
+
+  /// `(1 + getiri) / (1 + tüfe) − 1`, yüzde.
+  final double reel;
+}
+
+/// Her yılın TÜFE'si ve reel getirisi (2026-11-12). [endeks]:
+/// `InflationService.indexSeries()` (ay başı → TÜFE endeksi; uygulamanın
+/// tek TÜFE kaynağı, yeni ağ yok).
+///
+/// ## Aynı aylar, zincir çarpım
+/// Yıl toplamı o yılın tabloda ölçülen aylarının bileşiğidir (kısmi yılda
+/// ilk alımın ayından, içinde bulunulan yılda bu aya kadar). TÜFE de
+/// TAM o aylardan kurulur: her ayın TÜFE'si `endeks[ay] / endeks[ay−1]`,
+/// yıl `Π` — hücre penceresi (önceki ayın sonu → ayın sonu) TÜİK'in aylık
+/// değişimiyle aynı hiza. Takvim yılının TÜFE'si kullanılsaydı Haziran'da
+/// başlayan kullanıcının yedi aylık getirisi on iki aylık enflasyonla
+/// kıyaslanırdı.
+///
+/// ## Uydurma yok
+/// Aylardan birinin (ya da bir önceki ayın) endeksi yoksa yıl HİÇ
+/// yazılmaz; eksik ayı sıfır enflasyon saymak reeli şişirirdi. İçinde
+/// bulunulan ayın TÜFE'si henüz açıklanmadığı için bu yıl satırı reel
+/// yazmaz (açıklanınca kendiliğinden gelir). Yıl toplamı `null`sa da yok:
+/// kıyaslanacak getiri yok.
+Map<int, AylikGetiriYilReeli> aylikGetiriYilReelleri(
+    AylikGetiriTablosu tablo, Map<DateTime, double> endeks) {
+  final sonuc = <int, AylikGetiriYilReeli>{};
+  if (endeks.isEmpty) return sonuc;
+  for (final yil in tablo.aylar.keys) {
+    final getiri = tablo.yilToplami[yil];
+    if (getiri == null) continue;
+    var carpan = 1.0;
+    var tam = true;
+    var herhangi = false;
+    for (var m = 1; m <= 12; m++) {
+      if (!tablo.aralikta(yil, m)) continue;
+      final bu = endeks[DateTime(yil, m)];
+      final onceki = endeks[DateTime(yil, m - 1)];
+      if (bu == null || onceki == null || onceki <= 0) {
+        tam = false;
+        break;
+      }
+      carpan *= bu / onceki;
+      herhangi = true;
+    }
+    if (!tam || !herhangi) continue;
+    final tufe = (carpan - 1) * 100;
+    final reel = InflationService.realReturnPct(getiri, tufe);
+    if (!tufe.isFinite || !reel.isFinite) continue;
+    sonuc[yil] = AylikGetiriYilReeli(tufe: tufe, reel: reel);
+  }
+  return sonuc;
+}
+
+/// Tablodaki tek ay ve getirisi (yüzde).
+@immutable
+class AylikGetiriAyi {
+  const AylikGetiriAyi(this.yil, this.ay, this.deger);
+  final int yil;
+  final int ay;
+  final double deger;
+
+  bool ayni(int yil, int ay) => this.yil == yil && this.ay == ay;
+}
+
+/// Kartın alt cümlesi (2026-11-12): "20 ayın 14'ünü artıda kapattın. En
+/// iyi ay Tem 2026 ▲%6,4, en zor Eki 2025 ▼%6,1." ve çerçeveli iki hücre.
+///
+/// ## Neden kapanmış aylar
+/// İçinde bulunulan ay sayılmaz: ayın 3'ünde "bu ay"ın %−4'ü "en zor ay"
+/// ilan edilir, ay sonunda artıda kapanabilir. Cümle "kapattın" der, yalnız
+/// biten ayları sayar; tablo hücresi o ayı yine gösterir ("bu ay").
+///
+/// ## Neden `aylikKiyas` değil
+/// Aylık raporun kıyası TEK bir ayı son 12 ay içinde sıralar ("bu ay 9.
+/// sırada"); burada soru tablonun tamamı: kaç ay artı, uçlar hangisi.
+/// Aynı hücreleri okurlar; "artı" ikisinde de sıfırın üstü.
+@immutable
+class AylikGetiriOzeti {
+  const AylikGetiriOzeti({
+    required this.kapanan,
+    required this.arti,
+    required this.enIyi,
+    required this.enZor,
+  });
+
+  /// Getirisi ölçülmüş, kapanmış ay sayısı.
+  final int kapanan;
+
+  /// Sıfırın üstünde kapanan ay sayısı.
+  final int arti;
+
+  final AylikGetiriAyi enIyi;
+
+  /// `null`: tek ay var ya da bütün aylar eşit — "en zor" en iyiyle aynı
+  /// hücre olurdu.
+  final AylikGetiriAyi? enZor;
+}
+
+/// [tablo]'nun özeti; kapanmış ölçülü ay yoksa `null`. Eşit değerlerde
+/// en yeni ay seçilir (kullanıcının hatırladığı ay).
+AylikGetiriOzeti? aylikGetiriOzeti(AylikGetiriTablosu tablo) {
+  AylikGetiriAyi? iyi, zor;
+  var kapanan = 0, arti = 0;
+  final yillar = tablo.aylar.keys.toList()..sort();
+  for (final yil in yillar) {
+    final hucreler = tablo.aylar[yil]!;
+    for (var m = 1; m <= 12; m++) {
+      if (!tablo.aralikta(yil, m)) continue;
+      if (tablo.buAy.year == yil && tablo.buAy.month == m) continue;
+      final d = hucreler[m - 1];
+      if (d == null) continue;
+      kapanan++;
+      if (d > 0) arti++;
+      final a = AylikGetiriAyi(yil, m, d);
+      if (iyi == null || d >= iyi.deger) iyi = a;
+      if (zor == null || d <= zor.deger) zor = a;
+    }
+  }
+  if (iyi == null || zor == null) return null;
+  return AylikGetiriOzeti(
+    kapanan: kapanan,
+    arti: arti,
+    enIyi: iyi,
+    enZor: zor.deger == iyi.deger ? null : zor,
+  );
 }
 
 /// Kartın görünme eşiği: en az bu kadar ayın getirisi ölçülmüş olmalı.
@@ -100,6 +262,19 @@ int aylikGetiriAralikAySayisi(List<Asset> lotlar, DateTime simdi) {
   final ilk = PeriodSummaryService.ilkAlimTarihi(lotlar);
   if (ilk == null) return 0;
   return (simdi.year * 12 + simdi.month) - (ilk.year * 12 + ilk.month) + 1;
+}
+
+/// Tablonun hazır olacağı ay: aralığın [aylikGetiriAsgariAy]'ıncı ayı
+/// (ilk alımın ayı + 5). İlk alım yoksa `null`.
+///
+/// Kart kısa geçmişte "Şubat'ta hazır" der (2026-11-12). İçinde bulunulan
+/// ay da ölçülen aylara sayılır (bugüne kadar), bu yüzden tablo o ayın
+/// SONUNU beklemez, o ay girince açılır; cümlenin ayı budur. Seri
+/// gerekmez: aralık defterden ([aylikGetiriAralikAySayisi] ile aynı uç).
+DateTime? aylikGetiriHazirAyi(List<Asset> lotlar) {
+  final ilk = PeriodSummaryService.ilkAlimTarihi(lotlar);
+  if (ilk == null) return null;
+  return DateTime(ilk.year, ilk.month + aylikGetiriAsgariAy - 1);
 }
 
 /// Saf hesap. [seri]: portföy toplam serisi (ts → TRY; Özet'in serisiyle
@@ -140,8 +315,7 @@ AylikGetiriTablosu? aylikGetiriTablosu({
 
     // Taban: ayın 1'inden önceki son slot, önceki ayın içindeyse.
     final i = _ilkBuyukEsit(ts, basMs);
-    final int? tabanTs =
-        (i > 0 && ts[i - 1] >= oncekiAyMs) ? ts[i - 1] : null;
+    final int? tabanTs = (i > 0 && ts[i - 1] >= oncekiAyMs) ? ts[i - 1] : null;
     // Ay içinde en az bir ölçüm şart: yoksa ay "—".
     if (i >= ts.length || ts[i] > sonMs) continue;
     final dilimBas = tabanTs ?? ts[i];

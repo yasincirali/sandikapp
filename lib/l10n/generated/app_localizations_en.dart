@@ -11121,6 +11121,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'See which months you gained and which you lost with Premium';
 
   @override
+  String aylikGetiriKilitliKisisel(int ay) {
+    String _temp0 = intl.Intl.pluralLogic(
+      ay,
+      locale: localeName,
+      other:
+          'You have $ay months of history. See which months you closed in the green with Premium.',
+      one:
+          'You have 1 month of history. See which months you closed in the green with Premium.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get aylikGetiriYil => 'Year';
 
   @override
@@ -11128,12 +11141,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String aylikGetiriKazanc(String deger) {
-    return '$deger gain';
+    return '$deger% gain';
   }
 
   @override
   String aylikGetiriKayip(String deger) {
-    return '$deger loss';
+    return '$deger% loss';
   }
 
   @override
@@ -11147,6 +11160,82 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aylikGetiriDipnot =>
       'Each month is measured the same way as the return in Summary: adding or withdrawing money during the month doesn\'t change the percentage. The year compounds the months.';
+
+  @override
+  String aylikGetiriIlerleme(int asgari, int olculen, String hazir) {
+    String _temp0 = intl.Intl.pluralLogic(
+      olculen,
+      locale: localeName,
+      other: '$olculen months',
+      one: '1 month',
+    );
+    return 'The table opens here once $asgari months are measured. $_temp0 measured so far, ready in $hazir.';
+  }
+
+  @override
+  String aylikGetiriIlerlemeOkunan(int asgari, String olculenEkli) {
+    return '$olculenEkli of $asgari months measured';
+  }
+
+  @override
+  String get aylikGetiriHata =>
+      'Couldn\'t calculate the table. Pull to refresh to try again.';
+
+  @override
+  String aylikGetiriYuzde(String deger) {
+    return '$deger%';
+  }
+
+  @override
+  String aylikGetiriHucreEnIyi(String ay, String deger) {
+    return '$ay: $deger, best month in the table';
+  }
+
+  @override
+  String aylikGetiriHucreEnZor(String ay, String deger) {
+    return '$ay: $deger, toughest month in the table';
+  }
+
+  @override
+  String aylikGetiriOzetArti(int n, String artiEkli) {
+    return 'You closed $artiEkli of $n months in the green.';
+  }
+
+  @override
+  String aylikGetiriOzetArtiYok(int n) {
+    return 'No month closed in the green in $n months.';
+  }
+
+  @override
+  String aylikGetiriOzetUclar(
+      String iyiAy, String iyiDeger, String zorAy, String zorDeger) {
+    return 'Best month $iyiAy $iyiDeger, toughest $zorAy $zorDeger.';
+  }
+
+  @override
+  String aylikGetiriOzetEnIyi(String iyiAy, String iyiDeger) {
+    return 'Best month $iyiAy $iyiDeger.';
+  }
+
+  @override
+  String get aylikGetiriDipnotKisa =>
+      'Adding or withdrawing money doesn\'t change the percentage.';
+
+  @override
+  String get aylikGetiriTufe => 'CPI';
+
+  @override
+  String get aylikGetiriReel => 'real';
+
+  @override
+  String aylikGetiriYilReelOkunan(
+      String yil, String getiri, String tufe, String reel) {
+    return '$yil: $getiri. CPI $tufe%, real return $reel.';
+  }
+
+  @override
+  String get aylikGetiriKaynak =>
+      'Inflation: TurkStat CPI. The year\'s CPI is chained over the same months as the table; if any month\'s CPI isn\'t published yet, no real return is shown.';
 
   @override
   String get zkSatirBaslik => 'Zakat calculator';

@@ -76,7 +76,8 @@ import '../providers/secili_donem_provider.dart';
 import '../widgets/period_summary_view.dart';
 import '../widgets/portfoy_yorumu_karti.dart';
 import '../widgets/aylik_getiri_karti.dart';
-import '../providers/aylik_getiri_provider.dart' show AylikGetiriIstegi;
+import '../providers/aylik_getiri_provider.dart'
+    show AylikGetiriIstegi, aylikGetiriProvider;
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
 import '../widgets/grafik_stili.dart';
