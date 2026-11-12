@@ -52,8 +52,15 @@ Future<Map<int, double>> Function(List<Asset> lotlar, DateTime simdi)?
 /// gerekçe orada). İkisi de `HistoryService`'in çözünürlük önbelleğinden
 /// gelir; Özet'in 5Y/1Y ısıtması onları zaten indirmiş olur.
 ///
-/// `null`: tablo yok (ilk alım yok, seri yok ya da hata). Hata
-/// Crashlytics'e gider, kullanıcıya kart hiç çizilmez — ek bilgi.
+/// `null`: tablo yok (ilk alım yok ya da seri boş).
+///
+/// ## Hata: yutulmaz, taşınır (2026-11-12)
+/// Hata Crashlytics'e non-fatal gider ve YENİDEN fırlatılır. Eskiden
+/// `null`a çevriliyordu: Premium kullanıcının parasını verdiği kart seri
+/// hatasında sessizce siliniyordu, "yok" ile "hesaplanamadı" ayırt
+/// edilemiyordu. Kart hatada kalır ve tek satırla söyler; Performans'ın
+/// aşağı çekip yenilemesi aileyi geçersiz kılar (`_retryChartData`), hata
+/// önbellekte takılı kalmaz.
 final aylikGetiriProvider = FutureProvider.autoDispose
     .family<AylikGetiriTablosu?, AylikGetiriIstegi>((ref, istek) async {
   if (istek.seriLotlari.isEmpty || istek.hesapLotlari.isEmpty) return null;
@@ -87,6 +94,6 @@ final aylikGetiriProvider = FutureProvider.autoDispose
         seri: seri, lotlar: istek.hesapLotlari, simdi: simdi);
   } catch (e, st) {
     CrashReporter.report(e, st, reason: 'aylikGetiriProvider');
-    return null;
+    rethrow;
   }
 });

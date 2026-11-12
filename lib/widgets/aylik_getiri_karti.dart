@@ -9,6 +9,7 @@ import '../providers/premium_provider.dart'
 import '../services/aylik_getiri_tablosu.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart' show trSayiIyelikEki;
 import 'para_akisi_karti.dart' show KilitSatiri;
 
 /// Performans'ta "hangi ay kazandım, hangi ay kaybettim" kartı — yıl × ay
@@ -23,7 +24,11 @@ import 'para_akisi_karti.dart' show KilitSatiri;
 /// - Kilitliyse başlık + [KilitSatiri]; seri çekilmez. Önizleme ancak
 ///   defter en az 6 ay geriye gidiyorsa (`aylikGetiriOnizlemesiGorunur`).
 /// - Açıksa tablo, en az 6 ayın getirisi ölçülmüşse. Daha kısa geçmişte
-///   birkaç hücrelik tablo dönem çiplerinin cevabını tekrar ederdi.
+///   birkaç hücrelik tablo dönem çiplerinin cevabını tekrar ederdi; orada
+///   (2026-11-12'den beri) aynı başlıkla 6 bölmeli ilerleme ve tablonun
+///   hazır olacağı ay görünür. Eskiden kart hiç yoktu: Premium alan
+///   kullanıcı özelliği arayıp bulamıyordu.
+/// - Seri hatasında kart kalır, tek satır "hesaplanamadı" der.
 ///   Yüklenirken kart yok (iskelet de yok): liste sonunda duran ek bir
 ///   kart; iskelet her açılışta "bir şey eksik" der, kart çoğu zaman
 ///   önbellekten anında gelir.
@@ -57,9 +62,9 @@ class AylikGetiriKarti extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final l = context.l10n;
+    final bugun = simdi ?? DateTime.now();
     if (ref.watch(premiumKilitliProvider)) {
-      if (!aylikGetiriOnizlemesiGorunur(
-          istek.hesapLotlari, simdi ?? DateTime.now())) {
+      if (!aylikGetiriOnizlemesiGorunur(istek.hesapLotlari, bugun)) {
         return const SizedBox.shrink();
       }
       return _kabuk(
@@ -72,7 +77,38 @@ class AylikGetiriKarti extends ConsumerWidget {
         ),
       );
     }
-    final tablo = ref.watch(aylikGetiriProvider(istek)).valueOrNull;
+    // Kısa geçmiş (2026-11-12): eskiden kart hiç yoktu; Premium kullanıcı
+    // aldığı özelliği bulamıyordu. Aralık defterden sayılır, seri
+    // çekilmez — 3 aylık defter için beş yıllık seri indirmek boşa ağ.
+    // 0 ay (ilk alım yok / gelecekte) kart yok: ölçülecek bir şey yok ve
+    // Performans'ın boş hâli zaten "ilk varlığını ekle" der; "0 ay
+    // ölçüldü" o çağrının yanında ikinci, daha zayıf bir boş durum olurdu.
+    final aySayisi = aylikGetiriAralikAySayisi(istek.hesapLotlari, bugun);
+    if (aySayisi <= 0) return const SizedBox.shrink();
+    if (aySayisi < aylikGetiriAsgariAy) {
+      return _kabuk(
+        context,
+        _Ilerleme(
+          olculen: aySayisi,
+          hazirAy: aylikGetiriHazirAyi(istek.hesapLotlari)!,
+          bugun: bugun,
+        ),
+      );
+    }
+    final durum = ref.watch(aylikGetiriProvider(istek));
+    final tablo = durum.valueOrNull;
+    // Seri hatası: kart kalır, tek satır söyler (ham hata yok; bildirim
+    // provider'da). Önceki tablo varsa (yenileme hatası) o kalır.
+    if (tablo == null && durum.hasError) {
+      return _kabuk(
+        context,
+        Text(l.aylikGetiriHata,
+            style: context.t.bodySmall?.copyWith(color: context.c.text58)),
+      );
+    }
+    // Aralık 6 ay ama seri delikli (ölçülen < 6): tablo birkaç hücre
+    // olurdu. İlerleme cümlesi de yanlış olurdu ("Şubat'ta hazır" dediği
+    // ay çoktan geçmiş), kart yok — eski davranış.
     if (tablo == null || tablo.olculenAySayisi < aylikGetiriAsgariAy) {
       return const SizedBox.shrink();
     }
@@ -124,6 +160,64 @@ class AylikGetiriKarti extends ConsumerWidget {
 }
 
 enum _Yerlesim { genis, dar, liste }
+
+/// Kısa geçmişin ilerlemesi: 6 bölme + "Tablo 6 ay dolunca burada açılır.
+/// Şu an 3 ay ölçüldü, Şubat'ta hazır." (2026-11-12).
+///
+/// Bölmeler süs değil sayaç: dolu bölme ölçülen ay. Anlam renkte değil,
+/// cümle aynı sayıyı yazar; ekran okuyucu bölmeleri tek cümleyle okur
+/// ("6 aydan 3'ü ölçüldü"), cümle ayrıca okunur. Dolgu/boş renkleri
+/// kilometre taşı çubuğuyla aynı (`amberText` / `overlay`).
+class _Ilerleme extends StatelessWidget {
+  const _Ilerleme(
+      {required this.olculen, required this.hazirAy, required this.bugun});
+
+  final int olculen;
+  final DateTime hazirAy;
+  final DateTime bugun;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    final dil = context.tarihDili;
+    final ekli = dil.startsWith('en')
+        ? '$olculen'
+        : "$olculen'${trSayiIyelikEki(olculen)}";
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          label: l.aylikGetiriIlerlemeOkunan(aylikGetiriAsgariAy, ekli),
+          excludeSemantics: true,
+          child: Row(
+            children: [
+              for (var i = 0; i < aylikGetiriAsgariAy; i++) ...[
+                if (i > 0) const SizedBox(width: SandikSpace.xs),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: SandikRadius.smAll,
+                    child: SizedBox(
+                      height: SandikSpace.xs2,
+                      child: ColoredBox(
+                          color: i < olculen ? c.amberText : c.overlay),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: SandikSpace.sm),
+        Text(
+          l.aylikGetiriIlerleme(aylikGetiriAsgariAy, olculen,
+              ayBulunmaParcasi(hazirAy, dil: dil, bugun: bugun)),
+          style: context.t.bodySmall?.copyWith(color: c.text58),
+        ),
+      ],
+    );
+  }
+}
 
 class _YilBlogu extends StatelessWidget {
   const _YilBlogu(

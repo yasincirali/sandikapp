@@ -102,6 +102,19 @@ int aylikGetiriAralikAySayisi(List<Asset> lotlar, DateTime simdi) {
   return (simdi.year * 12 + simdi.month) - (ilk.year * 12 + ilk.month) + 1;
 }
 
+/// Tablonun hazır olacağı ay: aralığın [aylikGetiriAsgariAy]'ıncı ayı
+/// (ilk alımın ayı + 5). İlk alım yoksa `null`.
+///
+/// Kart kısa geçmişte "Şubat'ta hazır" der (2026-11-12). İçinde bulunulan
+/// ay da ölçülen aylara sayılır (bugüne kadar), bu yüzden tablo o ayın
+/// SONUNU beklemez, o ay girince açılır; cümlenin ayı budur. Seri
+/// gerekmez: aralık defterden ([aylikGetiriAralikAySayisi] ile aynı uç).
+DateTime? aylikGetiriHazirAyi(List<Asset> lotlar) {
+  final ilk = PeriodSummaryService.ilkAlimTarihi(lotlar);
+  if (ilk == null) return null;
+  return DateTime(ilk.year, ilk.month + aylikGetiriAsgariAy - 1);
+}
+
 /// Saf hesap. [seri]: portföy toplam serisi (ts → TRY; Özet'in serisiyle
 /// aynı motor). [lotlar]: akış defteri (Özet'in `targetAssets`'i).
 /// [simdi]: içinde bulunulan ay "bu ay" olarak bugüne kadar ölçülür.

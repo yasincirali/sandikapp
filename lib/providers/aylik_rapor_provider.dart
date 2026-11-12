@@ -85,10 +85,18 @@ final aylikRaporKiyasProvider = FutureProvider.autoDispose
   final durum = ref.read(portfolioProvider).valueOrNull;
   if (imza == null || durum == null) return null;
   final lotlar = aylikRaporLotlari(durum);
-  final tablo = await ref.watch(aylikGetiriProvider(AylikGetiriIstegi(
-    anahtar: 'rapor|$imza',
-    seriLotlari: lotlar,
-    hesapLotlari: lotlar,
-  )).future);
+  // Tablo hatası (2026-11-12'den beri taşınıyor, Crashlytics'e orada
+  // bildirildi) raporda satırın yokluğudur: kıyas raporun eki, rapor
+  // onsuz eksiksiz okunur.
+  final AylikGetiriTablosu? tablo;
+  try {
+    tablo = await ref.watch(aylikGetiriProvider(AylikGetiriIstegi(
+      anahtar: 'rapor|$imza',
+      seriLotlari: lotlar,
+      hesapLotlari: lotlar,
+    )).future);
+  } catch (_) {
+    return null;
+  }
   return tablo == null ? null : aylikKiyas(tablo, donem);
 });

@@ -12,6 +12,8 @@ import 'package:portfoy_takip/services/aylik_getiri_tablosu.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/aylik_getiri_karti.dart';
+import 'package:portfoy_takip/utils/tr_format.dart' show ayBulunmaParcasi;
+import 'package:portfoy_takip/utils/tr_iyelik.dart';
 import 'package:portfoy_takip/widgets/para_akisi_karti.dart' show KilitSatiri;
 
 /// Aylık getiri tablosu (2026-11-11, Premium). Kilitlenen: hücre Özet'in
@@ -183,6 +185,8 @@ void main() {
       AylikGetiriTablosu? t,
       double olcek = 1,
       double genislik = 390,
+      AylikGetiriIstegi? ist,
+      Future<AylikGetiriTablosu?> Function()? saglayici,
     }) async {
       tester.view.physicalSize = Size(genislik * 3, 2400 * 3);
       tester.view.devicePixelRatio = 3;
@@ -191,7 +195,8 @@ void main() {
         overrides: [
           premiumOzellikleriGorunurProvider.overrideWithValue(gorunur),
           premiumKilitliProvider.overrideWithValue(kilitli),
-          aylikGetiriProvider.overrideWith((ref, _) async => t ?? tablo()),
+          aylikGetiriProvider.overrideWith(
+              (ref, _) => saglayici != null ? saglayici() : Future.value(t ?? tablo())),
         ],
         child: MaterialApp(
           theme: ThemeData(extensions: const [SandikPalette.light]),
@@ -202,7 +207,7 @@ void main() {
             child: Scaffold(
               body: SingleChildScrollView(
                 child: AylikGetiriKarti(
-                    istek: istek, simdi: DateTime(2025, 11, 11)),
+                    istek: ist ?? istek, simdi: DateTime(2025, 11, 11)),
               ),
             ),
           ),
@@ -249,14 +254,100 @@ void main() {
       expect(find.text('Oca'), findsNothing);
     });
 
-    testWidgets('6 aydan az ölçüm: kart yok', (tester) async {
+    testWidgets('aralık ≥ 6 ama seri delikli (ölçülen < 6): kart yok', (tester) async {
       await pump(tester, t: tablo(ay: 5));
       expect(find.text('Aylık getiri'), findsNothing);
+    });
+
+    AylikGetiriIstegi kisaIstek(DateTime ilk) => AylikGetiriIstegi(
+          anahtar: 'kisa',
+          seriLotlari: [_alim('a', 1, 1, ilk)],
+          hesapLotlari: [_alim('a', 1, 1, ilk)],
+        );
+
+    testWidgets('kısa geçmiş: 6 bölmeli ilerleme + hazır olacağı ay; seri '
+        'çekilmez', (tester) async {
+      var cagrildi = false;
+      await pump(tester,
+          ist: kisaIstek(DateTime(2025, 9, 3)),
+          saglayici: () async {
+            cagrildi = true;
+            return tablo();
+          });
+      expect(find.text('Aylık getiri'), findsOneWidget);
+      // Eylül, Ekim, Kasım = 3 ay; 6. ay Şubat 2026.
+      expect(
+          find.text('Tablo 6 ay dolunca burada açılır. Şu an 3 ay ölçüldü, '
+              "Şubat 2026'da hazır."),
+          findsOneWidget);
+      expect(find.bySemanticsLabel("6 aydan 3'ü ölçüldü"), findsOneWidget);
+      expect(cagrildi, isFalse);
+      expect(find.text('Oca'), findsNothing);
+    });
+
+    testWidgets("kısa geçmiş, aynı yıl: yılsız \"Aralık'ta\"", (tester) async {
+      // Temmuz–Kasım 2025 = 5 ay; 6. ay Aralık 2025, bugünle aynı yıl.
+      await pump(tester, ist: kisaIstek(DateTime(2025, 7, 1)));
+      expect(
+          find.text('Tablo 6 ay dolunca burada açılır. Şu an 5 ay ölçüldü, '
+              "Aralık'ta hazır."),
+          findsOneWidget);
+    });
+
+    testWidgets('kısa geçmiş: yazı ×3,1 ve 320 pt taşma yok', (tester) async {
+      await pump(tester,
+          ist: kisaIstek(DateTime(2025, 9, 3)), olcek: 3.1, genislik: 320);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('ilk alım gelecekte (0 ay): kart yok', (tester) async {
+      await pump(tester, ist: kisaIstek(DateTime(2026, 1, 3)));
+      expect(find.text('Aylık getiri'), findsNothing);
+    });
+
+    testWidgets('seri hatası: kart kalır, tek satır; ham hata yok', (
+        tester) async {
+      await pump(tester,
+          saglayici: () => Future.error(StateError('ag koptu xyz')));
+      expect(find.text('Aylık getiri'), findsOneWidget);
+      expect(find.text('Tablo hesaplanamadı, yenileyince tekrar denenir.'),
+          findsOneWidget);
+      expect(find.textContaining('xyz'), findsNothing);
     });
 
     testWidgets('Premium özellikleri görünmüyorsa kart yok', (tester) async {
       await pump(tester, gorunur: false);
       expect(find.text('Aylık getiri'), findsNothing);
+    });
+  });
+
+  group('Türkçe ek yardımcıları (ilerleme / özet cümlesi)', () {
+    test('sayının iyelik eki', () {
+      expect(trSayiIyelikEki(3), 'ü');
+      expect(trSayiIyelikEki(1), 'i');
+      expect(trSayiIyelikEki(2), 'si');
+      expect(trSayiIyelikEki(6), 'sı');
+      expect(trSayiIyelikEki(9), 'u');
+      expect(trSayiIyelikEki(20), 'si');
+      expect(trSayiIyelikEki(30), 'u');
+    });
+    test('sayının iyelik + belirtme eki', () {
+      expect(trSayiIyelikBelirtmeEki(14), 'ünü');
+      expect(trSayiIyelikBelirtmeEki(20), 'sini');
+      expect(trSayiIyelikBelirtmeEki(6), 'sını');
+      expect(trSayiIyelikBelirtmeEki(9), 'unu');
+      expect(trSayiIyelikBelirtmeEki(1), 'ini');
+    });
+    test('ayın bulunma hâli', () {
+      final b = DateTime(2026, 1, 5);
+      expect(ayBulunmaParcasi(DateTime(2026, 2), bugun: b), "Şubat'ta");
+      expect(ayBulunmaParcasi(DateTime(2026, 4), bugun: b), "Nisan'da");
+      expect(ayBulunmaParcasi(DateTime(2026, 9), bugun: b), "Eylül'de");
+      expect(ayBulunmaParcasi(DateTime(2027, 3), bugun: b), "Mart 2027'de");
+      expect(ayBulunmaParcasi(DateTime(2025, 12), bugun: b),
+          "Aralık 2025'te");
+      expect(ayBulunmaParcasi(DateTime(2027, 3), dil: 'en_US', bugun: b),
+          'March 2027');
     });
   });
 }
