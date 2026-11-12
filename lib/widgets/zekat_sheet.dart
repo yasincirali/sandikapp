@@ -8,6 +8,7 @@ import '../services/zekat_hesabi.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'sandik_bos_durum.dart';
+import 'sandik_error_view.dart';
 import 'sandik_skeleton.dart';
 
 /// Profil'deki "Zekât hesabı" satırı (2026-11-12).
@@ -119,6 +120,9 @@ class _ZekatSayfasiState extends ConsumerState<ZekatSayfasi> {
             )
           else if (sonuc.valueOrNull case final s?)
             _Hesap(sonuc: s, borcAlani: _borcAlani(context))
+          else if (sonuc.hasError)
+            // Portföy okunamadı: hata boş durum gibi gösterilmez.
+            SandikErrorView(error: sonuc.error!)
           else
             // Kur yok (ya da kaynak hata verdi): nisap ve sonuç YOK —
             // uydurma sayı yasak. Hata boş durum gibi gösterilmez kuralının
@@ -161,7 +165,7 @@ class _Hesap extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TutarSatiri(etiket: l.zkTabi, tutar: fmtTRY(s.tabiTutar)),
+        _TutarSatiri(etiket: l.zkTabi, tutar: fmtTRY(s.eskiTutar)),
         if (s.yeniTutar > 0)
           _TutarSatiri(
               etiket: l.zkYeni, alt: l.zkYeniAlt, tutar: fmtTRY(s.yeniTutar)),
@@ -182,24 +186,7 @@ class _Hesap extends StatelessWidget {
         SandikCard(
           padding: const EdgeInsets.all(SandikSpace.md),
           child: MergeSemantics(
-            child: s.nisabaUlasti
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l.zkSonuc,
-                          style: context.t.bodyMedium
-                              ?.copyWith(color: c.text58)),
-                      const SizedBox(height: SandikSpace.xs),
-                      Text(
-                        fmtTRY(s.zekat),
-                        style: context.t.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w600, color: c.text90),
-                      ),
-                    ],
-                  )
-                : Text(l.zkNisapAlti,
-                    style:
-                        context.t.bodyMedium?.copyWith(color: c.text90)),
+            child: _sonucGovdesi(context, s),
           ),
         ),
         if (s.fiyatsizVarlik > 0)
@@ -221,6 +208,47 @@ class _Hesap extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Sonuç kartının içi — üç durum, hepsi METİNLE (renkle değil):
+/// 1. Havl dolmuş ve matrah nisap üstü → %2,5 tutarı.
+/// 2. Tüm zekâta tabi mal nisap kadar ama bir yıl dolmamış → tutar YOK,
+///    "Bir yıl dolunca hesaplanır" + hesaplanabiliyorsa yılın dolacağı gün.
+/// 3. Değilse (toplam ya da borç sonrası matrah nisap altı) → nisap altı.
+Widget _sonucGovdesi(BuildContext context, ZekatSonucu s) {
+  final l = context.l10n;
+  final c = context.c;
+  if (s.nisabaUlasti) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l.zkSonuc,
+            style: context.t.bodyMedium?.copyWith(color: c.text58)),
+        const SizedBox(height: SandikSpace.xs),
+        Text(
+          fmtTRY(s.zekat),
+          style: context.t.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w600, color: c.text90),
+        ),
+      ],
+    );
+  }
+  final govde = context.t.bodyMedium?.copyWith(color: c.text90);
+  if (!s.havlDoldu && s.eskiTutar + s.yeniTutar >= s.nisapTutari) {
+    final tarih = s.havlTarihi;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l.zkHavlBekliyor, style: govde),
+        if (tarih != null) ...[
+          const SizedBox(height: SandikSpace.xs),
+          Text(l.zkHavlTarihi(fmtTarih(tarih, dil: context.tarihDili)),
+              style: context.t.bodySmall?.copyWith(color: c.text58)),
+        ],
+      ],
+    );
+  }
+  return Text(l.zkNisapAlti, style: govde);
 }
 
 /// Etiket solda, tutar sağda. 2× yazıda tutar alta kayabilsin diye ikisi

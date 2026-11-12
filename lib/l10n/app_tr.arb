@@ -6527,13 +6527,13 @@
   "@zkSatirBaslik": {"description": "Profil satırı başlığı"},
   "zkSatirAlt": "Portföyünden Diyanet ölçüsüyle tahmini hesap",
   "@zkSatirAlt": {"description": "Profil satırı alt metni"},
-  "zkAciklama": "Bir kameri yılı (354 gün) dolmuş varlıklarının bugünkü değerinden hesaplanır.",
+  "zkAciklama": "Elinde bir kameri yıldır (354 gün) nisap kadar varlık varsa, yıl içinde eklenenler dahil tüm varlıklarının bugünkü değerinden hesaplanır.",
   "@zkAciklama": {"description": "Sheet açıklaması"},
   "zkTabi": "Bir yılı dolan varlıklar",
   "@zkTabi": {"description": "Zekâta tabi tutar satırı"},
-  "zkYeni": "Henüz bir yılı dolmayan",
+  "zkYeni": "Yıl içinde eklenenler",
   "@zkYeni": {"description": "Havli dolmamış tutar satırı"},
-  "zkYeniAlt": "Bu tutar hesaba girmez",
+  "zkYeniAlt": "Hesaba dahil",
   "@zkYeniAlt": {"description": "Havli dolmamış satır açıklaması"},
   "zkBorcEtiket": "Düşülecek borç (isteğe bağlı)",
   "@zkBorcEtiket": {"description": "Borç giriş alanı etiketi"},
@@ -6560,5 +6560,9 @@
   "zkKurYokAlt": "Nisap gram altın fiyatıyla hesaplanır. Fiyat gelince hesap burada görünür.",
   "@zkKurYokAlt": {"description": "Kur yok boş durumu açıklaması"},
   "zkDipnot": "Diyanet'in yayımladığı ölçüyle tahmini hesaptır; dini hüküm için müftülüğe danış.",
-  "@zkDipnot": {"description": "Zekât dipnotu (tam metin)"}
+  "@zkDipnot": {"description": "Zekât dipnotu (tam metin)"},
+  "zkHavlBekliyor": "Bir yıl dolunca hesaplanır.",
+  "@zkHavlBekliyor": {"description": "Havl dolmamış sonucu"},
+  "zkHavlTarihi": "Portföyün böyle kalırsa yıl {tarih} günü dolar.",
+  "@zkHavlTarihi": {"description": "Havlin dolacağı gün", "placeholders": {"tarih": {"type": "String"}}}
 }

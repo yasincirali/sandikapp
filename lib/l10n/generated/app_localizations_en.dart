@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1567,12 +1566,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String biometricLockYontem(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Lock with Face ID',
-      'touchId': 'Lock with Touch ID',
-      'biyometrik': 'Biometric lock',
-      'other': 'Lock with screen lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Lock with Face ID',
+        'touchId': 'Lock with Touch ID',
+        'biyometrik': 'Biometric lock',
+        'other': 'Lock with screen lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3599,12 +3601,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Protect with Face ID',
-      'touchId': 'Protect with Touch ID',
-      'biyometrik': 'Protect with biometrics',
-      'other': 'Protect with your screen lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Protect with Face ID',
+        'touchId': 'Protect with Touch ID',
+        'biyometrik': 'Protect with biometrics',
+        'other': 'Protect with your screen lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3621,12 +3626,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Turn on Face ID',
-      'touchId': 'Turn on Touch ID',
-      'biyometrik': 'Turn on biometric lock',
-      'other': 'Turn on app lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Turn on Face ID',
+        'touchId': 'Turn on Touch ID',
+        'biyometrik': 'Turn on biometric lock',
+        'other': 'Turn on app lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -4065,11 +4073,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  ) {
+      String acilis, String yuksek, String dusuk, String kapanis) {
     return 'O $acilis · H $yuksek · L $dusuk · C $kapanis';
   }
 
@@ -5642,11 +5646,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  ) {
+      String date, String end, String change, String cpi) {
     return 'From your first purchase ($date) to the end of $end your savings $change; inflation was $cpi.';
   }
 
@@ -6459,11 +6459,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  ) {
+      String amount, String times, String pct, String share) {
     return '$amount · $times× the average · price $pct · buyer share $share';
   }
 
@@ -9064,7 +9060,8 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           '$n transactions are deleted and a single record takes their place. Same as deleting and re-adding the asset.',
-      one: '1 transaction is deleted and a single record takes its place. Same as deleting and re-adding the asset.',
+      one:
+          '1 transaction is deleted and a single record takes its place. Same as deleting and re-adding the asset.',
     );
     return '$_temp0';
   }
@@ -10381,10 +10378,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String kilometreTasiSiradakiIlerlemeEtiket(
-    String baslik,
-    int yuzde,
-    String kalan,
-  ) {
+      String baslik, int yuzde, String kalan) {
     return 'Next milestone: $baslik, $yuzde percent, $kalan to go';
   }
 
@@ -10698,12 +10692,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String yaSemantik(
-    String baslik,
-    String dusuk,
-    String yuksek,
-    String bugun,
-    String cumle,
-  ) {
+      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
     return '$baslik: low $dusuk, high $yuksek, today $bugun. $cumle';
   }
 
@@ -10754,11 +10743,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String bedelliOnizleme(
-    String elde,
-    String yeni,
-    String birim,
-    String toplam,
-  ) {
+      String elde, String yeni, String birim, String toplam) {
     return '$yeni new shares on your $elde, $birim each, $toplam in total';
   }
 
@@ -10989,16 +10974,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get zkAciklama =>
-      'Calculated from today\'s value of holdings you\'ve owned for a lunar year (354 days).';
+      'If you\'ve held at least the nisab for a lunar year (354 days), it\'s calculated from today\'s value of all your holdings, including those added during the year.';
 
   @override
   String get zkTabi => 'Held for a year';
 
   @override
-  String get zkYeni => 'Held for less than a year';
+  String get zkYeni => 'Added during the year';
 
   @override
-  String get zkYeniAlt => 'Not included in the calculation';
+  String get zkYeniAlt => 'Included';
 
   @override
   String get zkBorcEtiket => 'Debt to deduct (optional)';
@@ -11047,4 +11032,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get zkDipnot =>
       'This is an estimate using the measure published by Diyanet; for a religious ruling, consult the mufti\'s office.';
+
+  @override
+  String get zkHavlBekliyor => 'Calculated once a year has passed.';
+
+  @override
+  String zkHavlTarihi(String tarih) {
+    return 'If your portfolio stays as it is, the year completes on $tarih.';
+  }
 }

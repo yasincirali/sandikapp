@@ -5749,13 +5749,13 @@
   "@zkSatirBaslik": {"description": "Profil satırı başlığı"},
   "zkSatirAlt": "An estimate from your portfolio, using the Diyanet measure",
   "@zkSatirAlt": {"description": "Profil satırı alt metni"},
-  "zkAciklama": "Calculated from today's value of holdings you've owned for a lunar year (354 days).",
+  "zkAciklama": "If you've held at least the nisab for a lunar year (354 days), it's calculated from today's value of all your holdings, including those added during the year.",
   "@zkAciklama": {"description": "Sheet açıklaması"},
   "zkTabi": "Held for a year",
   "@zkTabi": {"description": "Zekâta tabi tutar satırı"},
-  "zkYeni": "Held for less than a year",
+  "zkYeni": "Added during the year",
   "@zkYeni": {"description": "Havli dolmamış tutar satırı"},
-  "zkYeniAlt": "Not included in the calculation",
+  "zkYeniAlt": "Included",
   "@zkYeniAlt": {"description": "Havli dolmamış satır açıklaması"},
   "zkBorcEtiket": "Debt to deduct (optional)",
   "@zkBorcEtiket": {"description": "Borç giriş alanı etiketi"},
@@ -5782,5 +5782,9 @@
   "zkKurYokAlt": "The nisab is based on the gram gold price. The estimate appears here once the price arrives.",
   "@zkKurYokAlt": {"description": "Kur yok boş durumu açıklaması"},
   "zkDipnot": "This is an estimate using the measure published by Diyanet; for a religious ruling, consult the mufti's office.",
-  "@zkDipnot": {"description": "Zekât dipnotu (tam metin)"}
+  "@zkDipnot": {"description": "Zekât dipnotu (tam metin)"},
+  "zkHavlBekliyor": "Calculated once a year has passed.",
+  "@zkHavlBekliyor": {"description": "Havl dolmamış sonucu"},
+  "zkHavlTarihi": "If your portfolio stays as it is, the year completes on {tarih}.",
+  "@zkHavlTarihi": {"description": "Havlin dolacağı gün", "placeholders": {"tarih": {"type": "String"}}}
 }

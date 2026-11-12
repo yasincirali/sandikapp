@@ -13,8 +13,16 @@ import '../models/position.dart';
 ///   (`FiyatKaynagi.gramAltin24`): Diyanet nisabı saf altın gramıyla
 ///   verir; portföy durumundaki `goldGramTry` 22 ayardır (sikke ailesinin
 ///   ölçeği) ve yalnız baz birim altınken çekilir, bu yüzden kullanılmaz.
-/// * Havl: bir kameri yıl = 354 gün. Alış tarihinden bu yana en az 354 gün
-///   geçmiş lot zekâta tabi; daha yenisi ayrı satırda gösterilir.
+/// * Havl (Hanefi görüşü; Diyanet'in ölçüsü budur): yılın başında ve
+///   sonunda nisap varsa, yıl İÇİNDE eklenenler dahil yıl sonundaki tüm
+///   zekâta tabi mal hesaba girer. Lot lot "354 günü dolanı say" hesabı
+///   (ilk sürüm, 2026-11-12) bu görüşle çelişip zekâtı düşük gösteriyordu.
+/// * Havl ölçümü YAKLAŞIKTIR: bir kameri yıldan (354 gün) uzun süredir
+///   elde tutulan lotların BUGÜNKÜ değeri nisaba ulaşıyorsa havl dolmuş
+///   sayılır. Doğrusu yıl başı nisabını o günün altın ve varlık fiyatıyla
+///   ölçmektir; geçmiş fiyat her varlıkta yok (uydurma sayı yasak) ve
+///   tahmini hesap için bugünkü fiyat yeterli yaklaşım. Arada nisabın
+///   altına düşüp çıkma (yıl içi kesinti) da izlenmez.
 /// * Oran %2,5.
 ///
 /// ## Uydurma sayı yok
@@ -64,20 +72,23 @@ class ZekatOlcusu {
 class ZekatSonucu {
   const ZekatSonucu({
     required this.gramFiyati,
-    required this.tabiTutar,
+    required this.eskiTutar,
     required this.yeniTutar,
     required this.borc,
     required this.fiyatsizVarlik,
     required this.haricTurler,
+    this.nisabaUlasmaTarihi,
   });
 
   /// Kullanılan 24 ayar gram altın fiyatı.
   final double gramFiyati;
 
-  /// Havli dolmuş (≥354 gün) lotların bugünkü değeri, borç düşülmeden.
-  final double tabiTutar;
+  /// Bir kameri yıldan (≥354 gün) uzun süredir elde tutulan lotların
+  /// bugünkü değeri — havl ölçümü bunun nisaba ulaşmasına bakar.
+  final double eskiTutar;
 
-  /// Henüz bir yılı dolmayan lotların bugünkü değeri (zekâta girmez).
+  /// Yıl içinde eklenen (354 günden yeni) lotların bugünkü değeri. Havl
+  /// dolmuşsa hesaba DAHİLDİR (Hanefi: yıl içi kazanç asla katılır).
   final double yeniTutar;
 
   /// Düşülen borç (negatif girdi 0'a çekilir).
@@ -89,15 +100,31 @@ class ZekatSonucu {
   /// Kullanıcının elinde olup kapsam dışı kalan türler (gösterim için).
   final Set<AssetType> haricTurler;
 
+  /// Lotlar alış sırasıyla (bugünkü değerleriyle) toplandığında toplamın
+  /// nisaba İLK ulaştığı lotun alış günü; hiç ulaşmıyorsa `null`.
+  final DateTime? nisabaUlasmaTarihi;
+
   double get nisapTutari => ZekatOlcusu.nisapGram * gramFiyati;
 
-  /// Zekât matrahı: tabi tutar − borç, en az 0.
-  double get matrah => (tabiTutar - borc).clamp(0.0, double.infinity);
+  /// Havl dolmuş mu: bir yıldan eski lotların bugünkü değeri ≥ nisap.
+  bool get havlDoldu => eskiTutar >= nisapTutari;
 
-  /// Matrah nisaba ulaşıyor mu? (Nisap miktarına sahip olan da yükümlü.)
-  bool get nisabaUlasti => matrah >= nisapTutari;
+  /// Havl dolmamışsa yılın dolacağı gün (nisaba ulaşılan alış + 354 gün);
+  /// toplam nisaba hiç ulaşmıyorsa ya da havl dolmuşsa `null`.
+  DateTime? get havlTarihi => havlDoldu
+      ? null
+      : nisabaUlasmaTarihi
+          ?.add(const Duration(days: ZekatOlcusu.havlGun));
 
-  /// Verilecek zekât; nisabın altındaysa 0.
+  /// Zekât matrahı: tüm zekâta tabi mal (yeni lotlar dahil) − borç, en az 0.
+  double get matrah =>
+      (eskiTutar + yeniTutar - borc).clamp(0.0, double.infinity);
+
+  /// Havl dolmuş VE matrah nisaba ulaşıyor (borç nisabın altına
+  /// indirebilir).
+  bool get nisabaUlasti => havlDoldu && matrah >= nisapTutari;
+
+  /// Verilecek zekât; havl dolmamışsa ya da nisap altındaysa 0.
   double get zekat => nisabaUlasti ? matrah * ZekatOlcusu.oran : 0;
 }
 
@@ -109,12 +136,12 @@ class ZekatSonucu {
 ///
 /// [gramAltin24Try]: 24 ayar gram altın TL; yoksa sonuç `null`.
 ///
-/// ## Satışlar ve havl — FIFO
+/// ## Satışlar ve lot yaşı — FIFO
 /// Kısmi satılmış pozisyonda hangi lotun elde kaldığını defter söylemez
 /// (maliyet yürüyen ortalamayla tutulur). Satışlar EN ESKİ alımdan düşülür
-/// (ilk giren ilk çıkar; hisse vergisinde de yerleşik kural). Böylece
-/// "bir yılı doldu" denen tutar, kullanıcının gerçekten bir yıldır tuttuğu
-/// en temkinli tahmindir.
+/// (ilk giren ilk çıkar; hisse vergisinde de yerleşik kural). Lot yaşı
+/// yalnız havl ölçümünü ve havl tarihini etkiler; havl dolunca tutar
+/// zaten yeni lotları da kapsar.
 ZekatSonucu? zekatHesapla({
   required Iterable<Asset> lotlar,
   required double? gramAltin24Try,
@@ -126,10 +153,11 @@ ZekatSonucu? zekatHesapla({
   if (gram == null || !(gram > 0) || gram.isNaN || gram.isInfinite) {
     return null;
   }
-  var tabi = 0.0;
+  var eski = 0.0;
   var yeni = 0.0;
   var fiyatsiz = 0;
   final haric = <AssetType>{};
+  final parcalar = <({DateTime tarih, double deger})>[];
   final sinir = bugun.subtract(const Duration(days: ZekatOlcusu.havlGun));
 
   for (final p in aggregatePositions(aktifLotlar(lotlar))) {
@@ -153,21 +181,35 @@ ZekatSonucu? zekatHesapla({
       final kalan = l.quantity - dusen;
       if (kalan <= 0) continue;
       final deger = toTRY(kalan * r.currentPrice, r.currency);
-      // `isAfter` değil `!isAfter`: tam 354. gün havl dolmuş sayılır.
+      parcalar.add((tarih: l.addedDate, deger: deger));
+      // `isAfter` değil `!isAfter`: tam 354. gün bir yıl dolmuş sayılır.
       if (!l.addedDate.isAfter(sinir)) {
-        tabi += deger;
+        eski += deger;
       } else {
         yeni += deger;
       }
     }
   }
 
+  final nisap = ZekatOlcusu.nisapGram * gram;
+  parcalar.sort((a, b) => a.tarih.compareTo(b.tarih));
+  DateTime? ulasma;
+  var birikim = 0.0;
+  for (final p in parcalar) {
+    birikim += p.deger;
+    if (birikim >= nisap) {
+      ulasma = p.tarih;
+      break;
+    }
+  }
+
   return ZekatSonucu(
     gramFiyati: gram,
-    tabiTutar: tabi,
+    eskiTutar: eski,
     yeniTutar: yeni,
     borc: borc > 0 ? borc : 0,
     fiyatsizVarlik: fiyatsiz,
     haricTurler: haric,
+    nisabaUlasmaTarihi: ulasma,
   );
 }

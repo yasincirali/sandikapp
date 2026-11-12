@@ -34,17 +34,25 @@ final zekatSonucuProvider = Provider.autoDispose
     .family<AsyncValue<ZekatSonucu?>, double>((ref, borc) {
   final gram = ref.watch(zekatGramAltinProvider);
   final uid = ref.watch(authProvider).valueOrNull?.id;
-  final ps = ref.watch(portfolioProvider).valueOrNull;
-  return gram.whenData((g) {
-    if (ps == null) return null;
-    final lotlar =
-        uid == null ? ps.assets : ps.assets.where((a) => a.userId == uid);
-    return zekatHesapla(
-      lotlar: lotlar,
-      gramAltin24Try: g,
-      toTRY: ps.toTRY,
-      bugun: DateTime.now(),
-      borc: borc,
-    );
-  });
+  final portfoy = ref.watch(portfolioProvider);
+  final ps = portfoy.valueOrNull;
+  // Portföy henüz yok: yükleniyor (iskelet), hata ise hata — "altın fiyatı
+  // alınamadı" boş durumu yalnız fiyat eksikken (tek yükleniyor davranışı).
+  if (ps == null) {
+    return portfoy.hasError
+        ? AsyncValue.error(portfoy.error!, portfoy.stackTrace!)
+        : const AsyncValue.loading();
+  }
+  if (gram.isLoading && !gram.hasValue) return const AsyncValue.loading();
+  // Fiyat kaynağı hatası "fiyat yok"tur: nisap gösterilmez (boş durum).
+  final g = gram.hasError ? null : gram.valueOrNull;
+  final lotlar =
+      uid == null ? ps.assets : ps.assets.where((a) => a.userId == uid);
+  return AsyncValue.data(zekatHesapla(
+    lotlar: lotlar,
+    gramAltin24Try: g,
+    toTRY: ps.toTRY,
+    bugun: DateTime.now(),
+    borc: borc,
+  ));
 });
