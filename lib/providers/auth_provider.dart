@@ -234,7 +234,20 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
   /// `getPartnershipsWithStatus` + iki `getProfilesByIds`, ölçüldü
   /// 2026-09-28). Başlangıç zamanı tutulur ki eşzamanlı istek de sayılsın.
   DateTime? _sonYukleme;
-  static const _taptaze = Duration(seconds: 10);
+
+  /// Öne dönüşte liste yeniden çekilir mi? Saf karar (test edilir).
+  ///
+  /// Eşik eskiden 10 sn'ydi (yalnız soğuk açılıştaki çift isteği
+  /// ayıklıyordu). 2026-11-12 performans turu: iOS'ta Face ID istemi,
+  /// bildirim merkezi, Kontrol Merkezi `inactive → resumed` üretir ve her
+  /// biri bir `getPartnershipsWithStatus` + `getProfilesByIds` turuydu.
+  /// Liste zaten en fazla [_pollInterval]'da bir yoklanıyor; son yüklemeden
+  /// bu yana bir yoklama aralığı geçmediyse ekrandaki liste yoklamanın
+  /// sözünden bayat değildir, yeniden çekmek yalnız kota ve pil harcar.
+  /// Soğuk açılıştaki çift istek de bu eşikle ayıklanmaya devam eder.
+  @visibleForTesting
+  static bool donusteYuklemeGerekir(DateTime? son, DateTime simdi) =>
+      son == null || simdi.difference(son) >= _pollInterval;
 
   /// Uygulama ön planda mı — yoklama yalnız öndeyken kurulur.
   bool _onPlanda = true;
@@ -290,7 +303,7 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
     if (state == AppLifecycleState.resumed) {
       _onPlanda = true;
       final son = _sonYukleme;
-      if (son == null || DateTime.now().difference(son) > _taptaze) _tick();
+      if (donusteYuklemeGerekir(son, DateTime.now())) _tick();
       // Eldeki listeye göre karar; `_tick` dönünce taze listeyle yeniden
       // ayarlanır (arka plandayken ortak gelmiş/gitmiş olabilir).
       // `this.state`: parametre adı `state` notifier durumunu gölgeliyor.

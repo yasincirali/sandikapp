@@ -213,8 +213,9 @@ abstract final class TazelikRitmi {
 /// [TazelikRitmi.nabiz] — uygulama ömrünce tek sayac.
 ///
 /// `ForegroundPoller` ile aynı yaşam döngüsü disiplini: arka planda
-/// durur, öne gelince HEMEN bir tur atar (kullanıcı bayat rakam
-/// görmesin) ve sayacı yeniden kurar.
+/// durur, öne gelince son nabızdan bir aralık geçtiyse HEMEN bir tur atar
+/// (kullanıcı bayat rakam görmesin), geçmediyse ritmi kaldığı yerden
+/// sürdürür (bkz. `donusteTurGerekir`, 2026-11-12).
 ///
 /// Dinleyici YOKSA sayac çalışmaz — hiçbir yüzey açık değilken
 /// boşuna tur atmak pil tüketirdi.
@@ -235,6 +236,9 @@ class TazelikNabzi with WidgetsBindingObserver {
   /// (piyasa kapalı, yalnız borsa portföyü). Tur sahibi bağlar.
   bool Function()? _sakinMi;
   DateTime? _sonTur;
+
+  /// Son nabzın (tur atılsın atılmasın) anı — öne dönüş kararı için.
+  DateTime? _sonNabiz;
 
   /// Testte saati sabitlemek için.
   @visibleForTesting
@@ -310,10 +314,21 @@ class TazelikNabzi with WidgetsBindingObserver {
     _kur();
   }
 
-  void _kur() {
+  /// [ilkGecikme] verilirse ilk nabız o kadar sonra atar, ardından
+  /// normal ritim — kısa ayrılıştan dönüşte faz korunur (bkz.
+  /// [donusteTurGerekir]).
+  void _kur({Duration? ilkGecikme}) {
     _sayac?.cancel();
     if (_dinleyiciler.isEmpty) return;
-    _sayac = Timer.periodic(aralik, (_) => _at());
+    if (ilkGecikme == null || ilkGecikme <= Duration.zero) {
+      _sayac = Timer.periodic(aralik, (_) => _at());
+      return;
+    }
+    _sayac = Timer(ilkGecikme, () {
+      _sayac = null;
+      _at();
+      _kur();
+    });
   }
 
   void _durdur() {
@@ -326,6 +341,7 @@ class TazelikNabzi with WidgetsBindingObserver {
   }
 
   Future<void> _at({bool zorla = false}) async {
+    _sonNabiz = saat();
     final tur = _fiyatTuru;
     if (tur != null && (zorla || !_turAtlanir())) {
       _sonTur = saat();
@@ -348,16 +364,46 @@ class TazelikNabzi with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Öne gelince HEMEN bir tur: arka planda geçen süre kadar bayat
-      // rakam gösterilmemeli.
-      // `_at` hatayı kendi içinde yutar; yine de başıboş bırakılmaz.
-      CrashReporter.arkaPlan(_at(zorla: true), reason: 'TazelikNabzi.resumed');
-      _kur();
+      final simdi = saat();
+      if (donusteTurGerekir(_sonNabiz, simdi, aralik)) {
+        // Uzun ayrılıştan dönüş: HEMEN bir tur — arka planda geçen süre
+        // kadar bayat rakam gösterilmemeli. `_at` hatayı kendi içinde
+        // yutar; yine de başıboş bırakılmaz.
+        CrashReporter.arkaPlan(_at(zorla: true),
+            reason: 'TazelikNabzi.resumed');
+        _kur();
+      } else {
+        // Kısa ayrılış: tur yok, yalnız ritim kaldığı yerden sürer —
+        // sıradaki nabız son nabızdan bir [aralik] sonra atar.
+        _kur(ilkGecikme: aralik - simdi.difference(_sonNabiz!));
+      }
     } else {
       _sayac?.cancel();
       _sayac = null;
     }
   }
+
+  /// Öne dönüşte zorla tur gerekir mi? Saf karar (test edilir).
+  ///
+  /// ## Neden (performans, 2026-11-12)
+  /// Eskiden her `resumed` zorla tam fiyat turu + tüm dinleyicileri
+  /// koşturuyordu. iOS'ta Face ID istemi, bildirim merkezi, Kontrol
+  /// Merkezi ve uygulama değiştiriciye kısa bakış `inactive → resumed`
+  /// üretir; her biri bir ağ turu ve yüzeylerin yeniden kurulmasıydı.
+  ///
+  /// ## Ölçüt neden "paused'a gidildi mi" değil de süre
+  /// Sayaç `inactive`'te de durur (yukarıdaki `else`): bildirim merkezi
+  /// iki dakika açık kalırsa rakamlar `paused`'daki kadar bayatlar.
+  /// Tersine 10 sn'lik `paused` (uygulama değiştirip hemen dönme) bir
+  /// nabız aralığından kısa olduğu için ekrandaki rakam zaten ritmin
+  /// izin verdiği tazelikte. Doğru soru durum türü değil, **son nabızdan
+  /// bu yana bir [aralik] geçti mi**: geçtiyse rakam ritmin sözünden
+  /// bayattır, hemen tur; geçmediyse sıradaki nabız kalan sürede atar
+  /// (bayatlık hiçbir zaman bir aralığı aşmaz).
+  @visibleForTesting
+  static bool donusteTurGerekir(
+          DateTime? sonNabiz, DateTime simdi, Duration aralik) =>
+      sonNabiz == null || simdi.difference(sonNabiz) >= aralik;
 
   /// Testler için: nabzı elle at. Fiyat turu bağlı değilse dinleyiciler
   /// eşzamanlı koşar; bağlıysa dönen future tur + dinleyicilerle biter.

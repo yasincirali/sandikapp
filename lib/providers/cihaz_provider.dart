@@ -53,11 +53,30 @@ class CihazKapisiNotifier extends AsyncNotifier<CihazKapisi>
     }
   }
 
+  /// Son öne dönüşten beri uygulama `paused`'a (arka plana) gitti mi.
+  bool _arkayaGitti = false;
+
+  /// Öne dönüşte "hâlâ aktif miyim" sorusu sorulur mu? Saf karar.
+  ///
+  /// 2026-11-12 performans turu: iOS'ta Face ID istemi, bildirim merkezi,
+  /// Kontrol Merkezi `inactive → resumed` üretir; her biri bir RPC'ydi.
+  /// Sorunun gerekçesi Realtime soketinin askıya alınmasıdır ve bu yalnız
+  /// uygulama ARKA PLANA (`paused`) düşünce olur; `inactive`'te uygulama
+  /// görünür, soket açık, atılma olayı akıştan gelir. Süre eşiği konmadı:
+  /// kısa bir arka plan bile soketi düşürüp atılma olayını kaçırtabilir ve
+  /// bu bir güvenlik kapısıdır — her `paused` dönüşünde sorulur.
+  @visibleForTesting
+  static bool donusteSorGerekir({required bool arkayaGitti}) => arkayaGitti;
+
   /// Realtime uygulama arkadayken kopabilir (iOS soketi askıya alır):
-  /// öne dönüşte aynı soru doğrudan sorulur.
+  /// arka plandan dönüşte aynı soru doğrudan sorulur.
   @override
   void didChangeAppLifecycleState(AppLifecycleState s) {
+    if (s == AppLifecycleState.paused) _arkayaGitti = true;
     if (s != AppLifecycleState.resumed) return;
+    final arkayaGitti = _arkayaGitti;
+    _arkayaGitti = false;
+    if (!donusteSorGerekir(arkayaGitti: arkayaGitti)) return;
     final uid = ref.read(authProvider).valueOrNull?.id;
     if (uid == null || state.valueOrNull != CihazKapisi.serbest) return;
     CrashReporter.arkaPlan(() async {
