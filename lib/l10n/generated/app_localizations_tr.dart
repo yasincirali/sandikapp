@@ -10834,4 +10834,71 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get aylikGetiriDipnot =>
       'Her ay, Özet\'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.';
+
+  @override
+  String get zkSatirBaslik => 'Zekât hesabı';
+
+  @override
+  String get zkSatirAlt => 'Portföyünden Diyanet ölçüsüyle tahmini hesap';
+
+  @override
+  String get zkAciklama =>
+      'Bir kameri yılı (354 gün) dolmuş varlıklarının bugünkü değerinden hesaplanır.';
+
+  @override
+  String get zkTabi => 'Bir yılı dolan varlıklar';
+
+  @override
+  String get zkYeni => 'Henüz bir yılı dolmayan';
+
+  @override
+  String get zkYeniAlt => 'Bu tutar hesaba girmez';
+
+  @override
+  String get zkBorcEtiket => 'Düşülecek borç (isteğe bağlı)';
+
+  @override
+  String get zkBorcIpucu => 'Kaydedilmez';
+
+  @override
+  String get zkBorcSatir => 'Düşülen borç';
+
+  @override
+  String get zkMatrah => 'Hesaba giren tutar';
+
+  @override
+  String get zkNisap => 'Nisap';
+
+  @override
+  String zkNisapAyrinti(String gram, String fiyat) {
+    return '$gram g altın × $fiyat (24 ayar gram)';
+  }
+
+  @override
+  String get zkSonuc => 'Verilecek zekât (%2,5)';
+
+  @override
+  String get zkNisapAlti =>
+      'Hesaba giren tutar nisabın altında; bu hesaba göre zekât düşmüyor.';
+
+  @override
+  String zkFiyatsiz(int sayi) {
+    return '$sayi varlığın fiyatı alınamadı, hesaba girmedi.';
+  }
+
+  @override
+  String zkHaric(String turler) {
+    return 'Hesaba girmeyen türler: $turler';
+  }
+
+  @override
+  String get zkKurYok => 'Altın fiyatı şu an alınamadı';
+
+  @override
+  String get zkKurYokAlt =>
+      'Nisap gram altın fiyatıyla hesaplanır. Fiyat gelince hesap burada görünür.';
+
+  @override
+  String get zkDipnot =>
+      'Diyanet\'in yayımladığı ölçüyle tahmini hesaptır; dini hüküm için müftülüğe danış.';
 }

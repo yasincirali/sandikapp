@@ -131,6 +131,8 @@ void main() {
     'lib/screens/bulk_add_asset_screen.dart': 2,
     'lib/screens/home_screen.dart': 2,
     'lib/widgets/gunler_satiri.dart': 0,
+    'lib/widgets/zekat_sheet.dart': 0,
+    'lib/services/zekat_hesabi.dart': 0,
     'lib/screens/leaderboard_screen.dart': 3,
     'lib/screens/portfolio_performance/grafik_kabi.dart': 2,
     'lib/screens/portfolio_performance/kartlar.dart': 0,

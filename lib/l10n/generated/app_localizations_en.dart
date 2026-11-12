@@ -10979,4 +10979,72 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aylikGetiriDipnot =>
       'Each month is measured the same way as the return in Summary: adding or withdrawing money during the month doesn\'t change the percentage. The year compounds the months.';
+
+  @override
+  String get zkSatirBaslik => 'Zakat calculator';
+
+  @override
+  String get zkSatirAlt =>
+      'An estimate from your portfolio, using the Diyanet measure';
+
+  @override
+  String get zkAciklama =>
+      'Calculated from today\'s value of holdings you\'ve owned for a lunar year (354 days).';
+
+  @override
+  String get zkTabi => 'Held for a year';
+
+  @override
+  String get zkYeni => 'Held for less than a year';
+
+  @override
+  String get zkYeniAlt => 'Not included in the calculation';
+
+  @override
+  String get zkBorcEtiket => 'Debt to deduct (optional)';
+
+  @override
+  String get zkBorcIpucu => 'Not saved';
+
+  @override
+  String get zkBorcSatir => 'Debt deducted';
+
+  @override
+  String get zkMatrah => 'Amount counted';
+
+  @override
+  String get zkNisap => 'Nisab';
+
+  @override
+  String zkNisapAyrinti(String gram, String fiyat) {
+    return '$gram g gold × $fiyat (24k gram)';
+  }
+
+  @override
+  String get zkSonuc => 'Zakat due (2.5%)';
+
+  @override
+  String get zkNisapAlti =>
+      'The amount counted is below the nisab; by this estimate no zakat is due.';
+
+  @override
+  String zkFiyatsiz(int sayi) {
+    return '$sayi holdings had no price and weren\'t counted.';
+  }
+
+  @override
+  String zkHaric(String turler) {
+    return 'Types not counted: $turler';
+  }
+
+  @override
+  String get zkKurYok => 'Gold price unavailable right now';
+
+  @override
+  String get zkKurYokAlt =>
+      'The nisab is based on the gram gold price. The estimate appears here once the price arrives.';
+
+  @override
+  String get zkDipnot =>
+      'This is an estimate using the measure published by Diyanet; for a religious ruling, consult the mufti\'s office.';
 }

@@ -113,6 +113,8 @@ void main() {
       'Ayarlar',
       'Apple',
       'Google',
+      // Kurum adı (Diyanet İşleri Başkanlığı; zekât hesabı, 2026-11-12).
+      'Diyanet',
     };
     const tavan = 0;
     final harf = RegExp(r'[^\W\d_]', unicode: true);

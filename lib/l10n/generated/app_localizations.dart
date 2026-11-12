@@ -17714,6 +17714,120 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Her ay, Özet\'teki getiriyle aynı yöntemle ölçülür: ay içinde para eklemen ya da çekmen yüzdeyi değiştirmez. Yıl, ayların bileşiğidir.'**
   String get aylikGetiriDipnot;
+
+  /// Profil satırı başlığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Zekât hesabı'**
+  String get zkSatirBaslik;
+
+  /// Profil satırı alt metni
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyünden Diyanet ölçüsüyle tahmini hesap'**
+  String get zkSatirAlt;
+
+  /// Sheet açıklaması
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir kameri yılı (354 gün) dolmuş varlıklarının bugünkü değerinden hesaplanır.'**
+  String get zkAciklama;
+
+  /// Zekâta tabi tutar satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir yılı dolan varlıklar'**
+  String get zkTabi;
+
+  /// Havli dolmamış tutar satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz bir yılı dolmayan'**
+  String get zkYeni;
+
+  /// Havli dolmamış satır açıklaması
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu tutar hesaba girmez'**
+  String get zkYeniAlt;
+
+  /// Borç giriş alanı etiketi
+  ///
+  /// In tr, this message translates to:
+  /// **'Düşülecek borç (isteğe bağlı)'**
+  String get zkBorcEtiket;
+
+  /// Borç alanı yardım metni
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydedilmez'**
+  String get zkBorcIpucu;
+
+  /// Borç satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Düşülen borç'**
+  String get zkBorcSatir;
+
+  /// Matrah satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesaba giren tutar'**
+  String get zkMatrah;
+
+  /// Nisap satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Nisap'**
+  String get zkNisap;
+
+  /// Nisap gramı ve kullanılan gram fiyatı
+  ///
+  /// In tr, this message translates to:
+  /// **'{gram} g altın × {fiyat} (24 ayar gram)'**
+  String zkNisapAyrinti(String gram, String fiyat);
+
+  /// Sonuç başlığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Verilecek zekât (%2,5)'**
+  String get zkSonuc;
+
+  /// Nisap altı sonucu
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesaba giren tutar nisabın altında; bu hesaba göre zekât düşmüyor.'**
+  String get zkNisapAlti;
+
+  /// Fiyatsız varlık notu
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} varlığın fiyatı alınamadı, hesaba girmedi.'**
+  String zkFiyatsiz(int sayi);
+
+  /// Kapsam dışı türler
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesaba girmeyen türler: {turler}'**
+  String zkHaric(String turler);
+
+  /// Kur yok boş durumu
+  ///
+  /// In tr, this message translates to:
+  /// **'Altın fiyatı şu an alınamadı'**
+  String get zkKurYok;
+
+  /// Kur yok boş durumu açıklaması
+  ///
+  /// In tr, this message translates to:
+  /// **'Nisap gram altın fiyatıyla hesaplanır. Fiyat gelince hesap burada görünür.'**
+  String get zkKurYokAlt;
+
+  /// Zekât dipnotu (tam metin)
+  ///
+  /// In tr, this message translates to:
+  /// **'Diyanet\'in yayımladığı ölçüyle tahmini hesaptır; dini hüküm için müftülüğe danış.'**
+  String get zkDipnot;
 }
 
 class _AppLocalizationsDelegate
