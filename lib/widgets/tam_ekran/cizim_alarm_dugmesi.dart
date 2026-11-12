@@ -448,7 +448,20 @@ class CizimAlarmCopu {
 /// - Çalmış (kapanmış) alarmın çizimi taşındıysa dokunulmaz: liste geçmişi.
 ///
 /// Notifier'lar çağrı anında alınır: sıradaki eşitleme ekran kapandıktan
-/// sonra koşabilir, o zaman `ref` artık okunamaz.
+/// sonra koşabilir, o zaman `ref` artık okunamaz. Aynı nedenle tavan sayımı
+/// [oku] ile yapılır (ekran `ProviderScope.containerOf(...).read` geçirir);
+/// verilmezse `ref.read` (ekran açıkken eşdeğer).
+///
+/// Geri al ve ücretsiz alarm tavanı (yasin 2026-11-12, "sonsuz alarm"):
+/// geri gelen alarm da bir alarmı AKTİF yapan yazmadır, diğer bütün
+/// yollarla aynı karara uyar ([alarmYazimiTavanliOku]). Eskiden "az önce
+/// silindi, tavanı aşmaz" diye bakılmıyordu; çizgiyi sil → başka alarm kur
+/// → geri al döngüsü sınırsız alarm açıyordu. Tavan doluysa ÇİZGİ geri
+/// gelir (çizim kullanıcınındır, alarm kuralına rehin edilmez) ama alarmı
+/// gelmez, zil boş kalır; [tavanDolu] bir kez çağrılır ve ekran ortak
+/// sınır uyarısını (Premium yolu dahil) gösterir. Çöpteki kayıt düşer:
+/// sonraki eşitleme alarmı sessizce geri getirmez, kullanıcı zile yeniden
+/// dokunarak kurar (o yol da aynı tavana bakar).
 ///
 /// Arka planda koşar; hata Crashlytics'e gider, çizim kaydını durdurmaz.
 Future<void> cizimAlarmlariniEsitle(
@@ -460,9 +473,12 @@ Future<void> cizimAlarmlariniEsitle(
   required void Function(String metin) bildir,
   required AppLocalizations l10n,
   CizimAlarmCopu? cop,
+  AlarmOkuyucu? oku,
+  void Function()? tavanDolu,
 }) {
   final sembol = cizimAlarmSembolu(varlik, canliBirim);
   if (sembol == null) return Future.value();
+  final okuyucu = oku ?? ref.read;
   final cizgiN = ref.read(cizimAlarmlariProvider.notifier);
   final fiyatN = ref.read(priceAlertsProvider.notifier);
   final bagN = ref.read(yatayAlarmBaglariProvider.notifier);
@@ -477,6 +493,8 @@ Future<void> cizimAlarmlariniEsitle(
         cizgiN: cizgiN,
         fiyatN: fiyatN,
         bagN: bagN,
+        oku: okuyucu,
+        tavanDolu: tavanDolu,
       );
   return cop == null ? isle() : cop.sirala(isle);
 }
@@ -492,6 +510,8 @@ Future<void> _esitle({
   required CizimAlarmlariNotifier cizgiN,
   required PriceAlertsNotifier fiyatN,
   required YatayAlarmBaglariNotifier bagN,
+  required AlarmOkuyucu oku,
+  required void Function()? tavanDolu,
 }) async {
   final cizimIle = {
     for (final c in cizimler)
@@ -499,6 +519,19 @@ Future<void> _esitle({
   };
   var silinen = 0;
   var gelen = 0;
+  var tavanaTakilan = 0;
+
+  // Geri gelen alarmın yazması: tavan doluysa (istemci sayımı ya da
+  // sunucunun 0181 reddi) `false`, alarm kurulmaz.
+  Future<bool> tavanli(Future<void> Function() yaz) async {
+    try {
+      await alarmYazimiTavanliOku(oku, yaz);
+      return true;
+    } on AlarmSiniriDolu {
+      tavanaTakilan += 1;
+      return false;
+    }
+  }
 
   CizimDogrusu? dogru(GrafikCizimi c) => olcek == null
       ? null
@@ -553,9 +586,11 @@ Future<void> _esitle({
           : dogru(c);
       if (d == null) continue; // Çizgi bu arada geçmişte bitti.
       try {
-        await cizgiN.create(_cizgiAlarmi(eski, c, d, canliBirim,
-            id: '', createdAt: DateTime.now()));
-        gelen += 1;
+        if (await tavanli(() => cizgiN.create(_cizgiAlarmi(
+            eski, c, d, canliBirim,
+            id: '', createdAt: DateTime.now())))) {
+          gelen += 1;
+        }
       } catch (e, st) {
         CrashReporter.report(e, st, reason: 'cizimAlarmi.geriAl');
       }
@@ -607,21 +642,28 @@ Future<void> _esitle({
         if (bagN.baglar.containsKey(e.key)) continue;
         final eski = e.value;
         try {
-          // Tavan denetlenmez: alarm az önce aynı eylemle silindi, geri al
-          // tavanı aşmaz (arada başka alarm kurulduysa sunucu yine karar
-          // verir).
-          final yeni = await fiyatN.create(PriceAlert(
-            id: '',
-            userId: eski.userId,
-            symbol: eski.symbol,
-            label: eski.label,
-            targetPrice: _hedefFiyati(c.a.p),
-            direction: PriceAlert.suggestDirection(
-                currentPrice: canliBirim, targetPrice: c.a.p),
-            enabled: true,
-            createdAt: DateTime.now(),
-          ));
-          bagN.bagla(e.key, yeni.id, c.a.p);
+          // Tavan [tavanli] içinde: arada başka alarm kurulduysa geri al
+          // tavanı aşardı (bkz. [cizimAlarmlariniEsitle]). Sunucu (0181)
+          // yalnız aktif cihazı iOS olan ücretsiz hesapta keser; Android
+          // build'inde paywall henüz açık değil (RevenueCat anahtarı yok),
+          // sunucu orada keserse istemcide sınırsız olan canlı kullanıcı
+          // duvara çarpar. Bu yüzden karar burada da verilir.
+          PriceAlert? yeni;
+          final kuruldu = await tavanli(() async {
+            yeni = await fiyatN.create(PriceAlert(
+              id: '',
+              userId: eski.userId,
+              symbol: eski.symbol,
+              label: eski.label,
+              targetPrice: _hedefFiyati(c.a.p),
+              direction: PriceAlert.suggestDirection(
+                  currentPrice: canliBirim, targetPrice: c.a.p),
+              enabled: true,
+              createdAt: DateTime.now(),
+            ));
+          });
+          if (!kuruldu) continue;
+          bagN.bagla(e.key, yeni!.id, c.a.p);
           gelen += 1;
         } catch (e, st) {
           CrashReporter.report(e, st, reason: 'cizimAlarmi.yatayGeriAl');
@@ -631,6 +673,7 @@ Future<void> _esitle({
   }
   if (silinen > 0) bildir(l10n.tegAlarmSilindi);
   if (gelen > 0) bildir(l10n.tegAlarmGeriGeldi);
+  if (tavanaTakilan > 0) tavanDolu?.call();
 }
 
 CizimAlarmi _cizgiAlarmi(

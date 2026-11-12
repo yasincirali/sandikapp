@@ -229,7 +229,11 @@ void main() {
               .replaceAll('_alarmCopu', '')
               // Alarmlı çizginin adı (2026-10-29): boyacıda değil, ayrı
               // katman ve yalnız paylaşım kipi kapalıyken (aşağıdaki kapı).
-              .replaceAll('CizimAlarmAdlari', '');
+              .replaceAll('CizimAlarmAdlari', '')
+              // Geri alınan alarm tavana takılınca ortak sınır uyarısı
+              // (2026-11-12): bir sayfa açar, grafiğe hiçbir şey çizmez.
+              .replaceAll('alarmSiniriUyarisi', '')
+              .replaceAll('priceAlertLimitProvider', '');
       for (final yasak in [
         'purchasePrice',
         '.quantity',

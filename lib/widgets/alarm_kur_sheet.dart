@@ -507,9 +507,22 @@ Future<void> alarmiYenidenKur(
 /// (açılıştaki kontrol ile yazma arasında tavan dolmuş olabilir) ve
 /// sunucunun tavan reddini (0181) aynı [AlarmSiniriDolu] türüne çevirir.
 /// Çağıran tek türü yakalar, ortak uyarıyı gösterir; ham hata görünmez.
-Future<T> alarmYazimiTavanli<T>(
-    WidgetRef ref, Future<T> Function() yaz) async {
-  if (await alarmSiniriDoluMu(ref)) throw const AlarmSiniriDolu();
+Future<T> alarmYazimiTavanli<T>(WidgetRef ref, Future<T> Function() yaz) =>
+    alarmYazimiTavanliOku(ref.read, yaz);
+
+/// Sağlayıcı okuyucusu: `WidgetRef.read` ya da `ProviderContainer.read`.
+///
+/// Neden: grafik çizim eşitlemesi (`cizimAlarmlariniEsitle`) sıralı koşar,
+/// geri alınan alarmı ekran kapandıktan sonra da yazabilir; o an `ref`
+/// okunamaz. Tavan kararı tek yerde kalsın diye ([alarmSiniriDoluMu],
+/// [etkinAlarmSayisi]) okuyucuyu alan biçim de var; ekran kapsayıcının
+/// okuyucusunu geçirir.
+typedef AlarmOkuyucu = T Function<T>(ProviderListenable<T> saglayici);
+
+/// [alarmYazimiTavanli]'nın okuyucu alan biçimi (aynı karar).
+Future<T> alarmYazimiTavanliOku<T>(
+    AlarmOkuyucu oku, Future<T> Function() yaz) async {
+  if (await alarmSiniriDoluMuOku(oku)) throw const AlarmSiniriDolu();
   try {
     return await yaz();
   } catch (e) {
@@ -1454,10 +1467,14 @@ Future<bool> alarmSiniriDoluysaUyar(
 ///
 /// Sınırsız planda (paywall kapalı ya da Premium) hiçbir liste beklenmez:
 /// karar birebir eskisi, ağ beklemesi yok.
-Future<bool> alarmSiniriDoluMu(WidgetRef ref) async {
-  final limit = ref.read(priceAlertLimitProvider);
+Future<bool> alarmSiniriDoluMu(WidgetRef ref) =>
+    alarmSiniriDoluMuOku(ref.read);
+
+/// [alarmSiniriDoluMu]'nın okuyucu alan biçimi ([AlarmOkuyucu]).
+Future<bool> alarmSiniriDoluMuOku(AlarmOkuyucu oku) async {
+  final limit = oku(priceAlertLimitProvider);
   if (limit >= _sinirsizEsik) return false;
-  return await etkinAlarmSayisi(ref) >= limit;
+  return await etkinAlarmSayisiOku(oku) >= limit;
 }
 
 /// `priceAlertLimitProvider` sınırsızı `1 << 30` ile temsil eder;
@@ -1485,15 +1502,18 @@ const Duration _sayimBeklemesi = Duration(seconds: 8);
 ///
 /// `ref` yalnız ilk (eşzamanlı) adımda okunur: bekleme sırasında çağıran
 /// widget kapanırsa kapanmış `ref`e dokunulmaz.
-Future<int> etkinAlarmSayisi(WidgetRef ref) async {
-  final fiyat = _listeyiBekle(
-      ref.read(priceAlertsProvider), ref.read(priceAlertsProvider.future));
-  final yuzde = _listeyiBekle(ref.read(yuzdeAlarmlariProvider),
-      ref.read(yuzdeAlarmlariProvider.future));
-  final gosterge = _listeyiBekle(ref.read(gostergeAlarmlariProvider),
-      ref.read(gostergeAlarmlariProvider.future));
-  final cizim = _listeyiBekle(ref.read(cizimAlarmlariProvider),
-      ref.read(cizimAlarmlariProvider.future));
+Future<int> etkinAlarmSayisi(WidgetRef ref) => etkinAlarmSayisiOku(ref.read);
+
+/// [etkinAlarmSayisi]'nın okuyucu alan biçimi ([AlarmOkuyucu]).
+Future<int> etkinAlarmSayisiOku(AlarmOkuyucu oku) async {
+  final fiyat =
+      _listeyiBekle(oku(priceAlertsProvider), oku(priceAlertsProvider.future));
+  final yuzde = _listeyiBekle(
+      oku(yuzdeAlarmlariProvider), oku(yuzdeAlarmlariProvider.future));
+  final gosterge = _listeyiBekle(
+      oku(gostergeAlarmlariProvider), oku(gostergeAlarmlariProvider.future));
+  final cizim = _listeyiBekle(
+      oku(cizimAlarmlariProvider), oku(cizimAlarmlariProvider.future));
   return etkinAlarmlariSay(
     fiyat: await fiyat,
     yuzde: await yuzde,

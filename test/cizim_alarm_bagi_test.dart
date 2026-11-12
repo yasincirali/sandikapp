@@ -11,12 +11,14 @@ import 'package:portfoy_takip/models/grafik_cizimi.dart';
 import 'package:portfoy_takip/models/seviye_alarmi.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
+import 'package:portfoy_takip/models/yuzde_alarmi.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart'
-    show premiumKilitliProvider;
+    show premiumKilitliProvider, priceAlertLimitProvider;
 import 'package:portfoy_takip/providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import 'package:portfoy_takip/providers/price_alert_provider.dart';
 import 'package:portfoy_takip/providers/seviye_alarmi_provider.dart';
+import 'package:portfoy_takip/providers/yuzde_alarmi_provider.dart';
 import 'package:portfoy_takip/screens/price_alerts_screen.dart';
 import 'package:portfoy_takip/services/price_alert_service.dart';
 import 'package:portfoy_takip/services/seviye_alarmi_service.dart';
@@ -170,12 +172,25 @@ GrafikCizimi _trend(String id) => GrafikCizimi(
       id: id,
     );
 
+class _BosYuzde extends YuzdeAlarmlariNotifier {
+  @override
+  Future<List<YuzdeAlarmi>> build() async => const [];
+}
+
 class _Ortam {
+  _Ortam({this.limit});
+
+  /// Ücretsiz alarm tavanı; `null` → ortamın varsayılanı (bu testte sınırsız).
+  final int? limit;
   final fiyat = _FiyatKapi();
   final seviye = _SeviyeDepo();
   late WidgetRef ref;
 
   List<Override> get overrides => [
+        if (limit != null) ...[
+          priceAlertLimitProvider.overrideWithValue(limit!),
+          yuzdeAlarmlariProvider.overrideWith(_BosYuzde.new),
+        ],
         authProvider.overrideWith(_FakeAuth.new),
         priceAlertServiceProvider.overrideWithValue(PriceAlertService(fiyat)),
         seviyeAlarmiServiceProvider
@@ -221,7 +236,9 @@ class _Ortam {
 
   Future<void> esitle(WidgetTester t, List<GrafikCizimi> cizimler,
       CizimAlarmCopu cop,
-      {double canliBirim = 101, List<String>? bildirimler}) async {
+      {double canliBirim = 101,
+      List<String>? bildirimler,
+      void Function()? tavanDolu}) async {
     var bitti = false;
     unawaited(cizimAlarmlariniEsitle(ref,
         varlik: _varlik,
@@ -230,7 +247,8 @@ class _Ortam {
         olcek: null,
         bildir: (m) => bildirimler?.add(m),
         l10n: lookupAppLocalizations(const Locale('tr')),
-        cop: cop).then((_) => bitti = true));
+        cop: cop,
+        tavanDolu: tavanDolu).then((_) => bitti = true));
     for (var i = 0; i < 5 && !bitti; i++) {
       await t.pump(const Duration(milliseconds: 20));
     }
@@ -302,6 +320,87 @@ void main() {
       // Başka bir ekranın çöpü bu çizimi bilmez.
       await o.esitle(t, [_trend('c1')], CizimAlarmCopu());
       expect(o.seviye.satirlar[SeviyeAlarmiService.cizimTablosu], isEmpty);
+    });
+  });
+
+  // Yasin 2026-11-12 ("sonsuz alarm"): çizgiyi sil → başka alarm kur →
+  // geri al döngüsü tavanı aşıyordu; geri gelen alarm da tavana uyar.
+  group('geri al ücretsiz tavana uyar (5)', () {
+    testWidgets('trend: tavan doluysa çizgi gelir, alarm gelmez, uyarı bir kez',
+        (t) async {
+      final o = _Ortam(limit: 1);
+      o.seviye.satirlar[SeviyeAlarmiService.cizimTablosu] = [
+        _cizgiSatiri('s0', 'c1'),
+      ];
+      // Silmeden sonra kurulan "başka alarm": tavan (1) dolu.
+      o.fiyat.rows.add(_fiyatSatiri('a9', 50));
+      await o.kur(t);
+      final cop = CizimAlarmCopu();
+      var uyari = 0;
+      final bildirim = <String>[];
+      await o.esitle(t, const [], cop);
+      await o.esitle(t, [_trend('c1')], cop,
+          bildirimler: bildirim, tavanDolu: () => uyari += 1);
+      expect(o.seviye.satirlar[SeviyeAlarmiService.cizimTablosu], isEmpty);
+      expect(uyari, 1);
+      expect(bildirim, isNot(contains('Çizginin alarmı da geri geldi')));
+      expect(cop.cizgi, isEmpty, reason: 'sonraki eşitleme sessizce kurmaz');
+    });
+
+    testWidgets('trend: tavan boşsa alarm geri gelir, uyarı yok', (t) async {
+      final o = _Ortam(limit: 2);
+      o.seviye.satirlar[SeviyeAlarmiService.cizimTablosu] = [
+        _cizgiSatiri('s0', 'c1'),
+      ];
+      o.fiyat.rows.add(_fiyatSatiri('a9', 50));
+      await o.kur(t);
+      final cop = CizimAlarmCopu();
+      var uyari = 0;
+      await o.esitle(t, const [], cop);
+      await o.esitle(t, [_trend('c1')], cop, tavanDolu: () => uyari += 1);
+      expect(
+          o.seviye.satirlar[SeviyeAlarmiService.cizimTablosu]!
+              .single['cizim_id'],
+          'c1');
+      expect(uyari, 0);
+    });
+
+    testWidgets('yatay: tavan doluysa çizgi gelir, fiyat alarmı gelmez',
+        (t) async {
+      final o = _Ortam(limit: 1);
+      o.fiyat.rows
+        ..add(_fiyatSatiri('a1', 120))
+        ..add(_fiyatSatiri('a9', 50));
+      await o.kur(t);
+      o.ref.read(yatayAlarmBaglariProvider.notifier).bagla('y1', 'a1', 120);
+      final cop = CizimAlarmCopu();
+      var uyari = 0;
+      await o.esitle(t, const [], cop);
+      expect(o.fiyat.rows.map((r) => r['id']), ['a9']);
+      await o.esitle(t, [_yatay('y1', 120)], cop, tavanDolu: () => uyari += 1);
+      expect(o.fiyat.rows.map((r) => r['id']), ['a9']);
+      expect(o.ref.read(yatayAlarmBaglariProvider), isEmpty,
+          reason: 'zil boş kalır');
+      expect(uyari, 1);
+      expect(cop.yatay, isEmpty);
+    });
+
+    testWidgets('yatay: tavan boşsa fiyat alarmı geri gelir ve bağlanır',
+        (t) async {
+      final o = _Ortam(limit: 2);
+      o.fiyat.rows
+        ..add(_fiyatSatiri('a1', 120))
+        ..add(_fiyatSatiri('a9', 50));
+      await o.kur(t);
+      o.ref.read(yatayAlarmBaglariProvider.notifier).bagla('y1', 'a1', 120);
+      final cop = CizimAlarmCopu();
+      var uyari = 0;
+      await o.esitle(t, const [], cop);
+      await o.esitle(t, [_yatay('y1', 120)], cop, tavanDolu: () => uyari += 1);
+      expect(o.fiyat.rows, hasLength(2));
+      final yeni = o.fiyat.rows.firstWhere((r) => r['id'] != 'a9');
+      expect(o.ref.read(yatayAlarmBaglariProvider)['y1']?.alarmId, yeni['id']);
+      expect(uyari, 0);
     });
   });
 

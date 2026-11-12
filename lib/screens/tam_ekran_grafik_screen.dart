@@ -34,6 +34,7 @@ import '../widgets/custom_loading_indicator.dart';
 import '../widgets/gosterge_cizimi.dart' show betikRengi;
 import '../widgets/grafik_arac_cubugu.dart' show GrafikCipi, MumAraligiAdi;
 import '../widgets/sandik_async_button.dart';
+import '../widgets/sinir_uyarisi.dart' show alarmSiniriUyarisi;
 import '../widgets/tam_ekran/cizim_alarm_dugmesi.dart';
 import '../widgets/tam_ekran/grafik_olcegi.dart';
 import '../widgets/tam_ekran/grafik_paylasimi.dart';
@@ -355,7 +356,16 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
               if (mounted) _bildir(m);
             },
             l10n: context.l10n,
-            cop: _alarmCopu),
+            cop: _alarmCopu,
+            // Kapsayıcı ekrandan uzun yaşar: sıradaki geri al ekran
+            // kapandıktan sonra koşsa da tavan sayılabilir.
+            oku: ProviderScope.containerOf(context, listen: false).read,
+            tavanDolu: () {
+              if (mounted) {
+                alarmSiniriUyarisi(
+                    context, ref, ref.read(priceAlertLimitProvider));
+              }
+            }),
         reason: 'TamEkranGrafik.zilEsitle');
   }
 
