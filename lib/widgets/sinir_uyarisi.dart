@@ -1,11 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../providers/preferences_provider.dart' show paywallVisibleProvider;
 import '../screens/paywall_screen.dart';
+import '../services/crash_reporter.dart';
 import '../utils/sandik_snack.dart';
 
 /// Ücretsiz sınır dolunca tek uyarı (Premium seti netleştirme, 2026-10-10).
@@ -38,7 +37,8 @@ void sinirUyarisi(
     sandikSnack(context, urunMetni, kind: SandikSnackKind.warning);
     return;
   }
-  unawaited(_paywallAc(context, ucretsizMetin, kaynak));
+  CrashReporter.arkaPlan(_paywallAc(context, ucretsizMetin, kaynak),
+      reason: 'sinirUyarisi.paywall');
 }
 
 Future<void> _paywallAc(
