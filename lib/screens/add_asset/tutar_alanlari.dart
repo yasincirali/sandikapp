@@ -134,6 +134,76 @@ extension _TutarAlanlari on _AddAssetScreenState {
         : l.kuyumcuFarkiDoviz(fark, tutar);
   }
 
+  // ── Bu alımla ortalama maliyet (Ar-Ge 2026-11-12 #5) ──────────────────────
+  //
+  // Hızlı Al "Yeni ortalama maliyetin X (şimdi Y)" satırını gösteriyordu ama
+  // portföydeki varlığa bu formdan alım eklenince aynı soru cevapsızdı. Aynı
+  // metin (`quickBuyAvgCost`), aynı hesap ([yeniOrtalamaMaliyet]: komisyon
+  // girmez, renksiz — yeni ortalama iyi ya da kötü değil, bilgi) ve aynı
+  // maliyet tabanı (aktif lotların ağırlıklı ortalaması,
+  // [eldekiPozisyonMaliyeti]). Gizli bakiyede tutar maskelenir (Hızlı Al
+  // gibi).
+  //
+  // Yok: yeni varlıkta (elde yok), düzenlemede/yeniden kurmada (alım değil),
+  // sepette (satış satırı olabilir, sepetteki öteki alımlar hesaba girmez),
+  // sözleşmeli türde, maliyeti bilinmeyen lotta, fiyat ya da miktar
+  // bilinmiyorken.
+
+  /// Seçili varlığın bugünkü pozisyonu; sağlayıcı izlemesi olduğu için
+  /// ekran kurulumunda çağrılır (her tuşta değil).
+  ({double adet, double maliyet})? _eldekiPozisyon() {
+    if (_isEditing || widget.cartMode || _type.sozlesmeli) return null;
+    final k = _s.resolveIdentity(nameText: _name.text, tickerText: _ticker.text);
+    if (k.ticker.isEmpty && k.name.isEmpty) return null;
+    final anahtar = positionKey(Asset(
+      id: '',
+      userId: '',
+      name: k.name,
+      ticker: k.ticker,
+      type: _type,
+      quantity: 0,
+      purchasePrice: 0,
+      currency: _currency,
+      notes: '',
+      subCategory: _subCategory,
+    ));
+    return ref.watch(eldekiPozisyonMaliyetiProvider(anahtar));
+  }
+
+  Widget? _ortalamaSatiri(
+      ({double adet, double maliyet})? eldeki, bool gizli) {
+    if (eldeki == null) return null;
+    final birim = _s.isEurobond
+        ? _s.eurobondBirimFiyati(_parse(_price.text))
+        : _tutarBirimFiyati;
+    final yeni = yeniOrtalamaMaliyet(
+      eskiAdet: eldeki.adet,
+      eskiMaliyet: eldeki.maliyet,
+      yeniAdet: _etkinAdet,
+      fiyat: birim,
+    );
+    if (yeni == null) return null;
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: Text(
+        context.l10n.quickBuyAvgCost(
+            _birimMaliyetMetni(yeni, gizli), _birimMaliyetMetni(eldeki.maliyet, gizli)),
+        key: const ValueKey('form-ortalama-onizleme'),
+        style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+      ),
+    );
+  }
+
+  /// Birim maliyet biçimi Hızlı Al'daki gibi: ₺ varlıkta `fmtTRYFiyat`
+  /// (0 ondalık ₺41,23'ü ₺41 okuturdu), dövizde 4 haneye kadar.
+  String _birimMaliyetMetni(double v, bool gizli) {
+    if (_currency == 'TRY') {
+      return gizli ? const BazPara.lira().gizliTutar : fmtTRYFiyat(v);
+    }
+    if (gizli) return '•••• $_currency';
+    return '${qtyFormatter(maxDigits: 4).format(v)} $_currency';
+  }
+
   // ── Miktar bloğu ───────────────────────────────────────────────────────────
   Widget _quantityBlock(ColorScheme cs) {
     return Column(

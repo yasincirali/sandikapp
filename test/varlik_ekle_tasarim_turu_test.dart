@@ -5,7 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_categories.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
-
+import 'package:portfoy_takip/models/ilk_varlik_secimi.dart';
 import 'package:portfoy_takip/providers/add_asset_form_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/add_asset_screen.dart';
@@ -36,7 +36,6 @@ class _Kapi implements AddAssetPriceLookup {
   Future<String?> companyName(String ticker) async => null;
 }
 
-// ignore: unused_element
 Asset _gram(double qty, double fiyat, {bool? maliyetBilinmiyor}) {
   final g = GoldSubCategory.gr24;
   return Asset(
@@ -105,7 +104,6 @@ Future<void> _ac(
 
 final _toplam = find.byKey(const ValueKey('alt-cubuk-toplam'));
 final _tutar = find.byKey(const ValueKey('alt-cubuk-toplam-tutar'));
-// ignore: unused_element
 final _ortalama = find.byKey(const ValueKey('form-ortalama-onizleme'));
 final _ipucu = find.byKey(const ValueKey('fiyat-bos-ipucu'));
 
@@ -230,6 +228,57 @@ void main() {
       a.purchasePrice = 0;
       await _ac(tester, ekran: AddAssetScreen(editingAsset: a));
       expect(_ipucu, findsNothing);
+    });
+  });
+
+  group('#5 bu alımla ortalama maliyet', () {
+    testWidgets('portföydeki varlığa alım: Hızlı Al ile aynı satır',
+        (tester) async {
+      await _ac(tester,
+          ekran: const AddAssetScreen(hizliSecim: IlkVarlikSecimi.gramAltin),
+          lotlar: [_gram(5, 3000)]);
+      expect(_ortalama, findsNothing, reason: 'Miktar yokken satır yok.');
+      await _yaz(tester, miktar: '10', fiyat: '3300');
+      await tester.pumpAndSettle();
+      expect(_ortalama, findsOneWidget);
+      // (5 × 3000 + 10 × 3300) / 15 = 3200
+      expect(tester.widget<Text>(_ortalama).data,
+          'Yeni ortalama maliyetin ${fmtTRYFiyat(3200)} '
+          '(şimdi ${fmtTRYFiyat(3000)})');
+    });
+
+    testWidgets('yeni varlıkta yok', (tester) async {
+      await _ac(tester,
+          ekran: const AddAssetScreen(hizliSecim: IlkVarlikSecimi.gramAltin));
+      await _yaz(tester, miktar: '10', fiyat: '3300');
+      await tester.pumpAndSettle();
+      expect(_ortalama, findsNothing);
+    });
+
+    testWidgets('maliyeti bilinmeyen lotta yok', (tester) async {
+      await _ac(tester,
+          ekran: const AddAssetScreen(hizliSecim: IlkVarlikSecimi.gramAltin),
+          lotlar: [_gram(5, 3000, maliyetBilinmiyor: true)]);
+      await _yaz(tester, miktar: '10', fiyat: '3300');
+      await tester.pumpAndSettle();
+      expect(_ortalama, findsNothing);
+    });
+
+    testWidgets('düzenlemede yok', (tester) async {
+      final lot = _gram(5, 3000);
+      await _ac(tester, ekran: AddAssetScreen(editingAsset: lot), lotlar: [lot]);
+      await _yaz(tester, miktar: '10', fiyat: '3300');
+      await tester.pumpAndSettle();
+      expect(_ortalama, findsNothing);
+    });
+
+    testWidgets('fiyat bilinmiyorken yok (önizleme gelmedi)', (tester) async {
+      await _ac(tester,
+          ekran: const AddAssetScreen(hizliSecim: IlkVarlikSecimi.gramAltin),
+          lotlar: [_gram(5, 3000)]);
+      await _yaz(tester, miktar: '10');
+      await tester.pumpAndSettle();
+      expect(_ortalama, findsNothing);
     });
   });
 }

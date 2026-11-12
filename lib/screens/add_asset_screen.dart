@@ -16,6 +16,10 @@ import '../models/secici_arama.dart';
 import '../models/altin_kisayollari.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/varlik_kimligi.dart';
+import '../models/position.dart' show positionKey;
+import '../providers/preferences_provider.dart' show balanceHiddenProvider;
+import '../utils/money_format.dart' show BazPara;
+import '../widgets/quick_adjust_dialog.dart' show yeniOrtalamaMaliyet;
 import '../providers/add_asset_form_provider.dart';
 import '../providers/bekleyen_fon_alimi_provider.dart';
 import '../providers/bulk_cart_provider.dart';
@@ -644,6 +648,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             ? context.l10n.varlikGuncelleBaslik
             : (_isEditing ? context.l10n.editAsset : context.l10n.addAssetTitle);
 
+    // Ortalama maliyet satırının tabanı ve gizlilik: sağlayıcı okumaları
+    // burada (ekran kurulumu), satırın kendisi metin dinleyicisinde.
+    final eldeki = _eldekiPozisyon();
+    final gizli = ref.watch(balanceHiddenProvider);
+
     final ekran = Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
@@ -781,6 +790,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       const SizedBox(height: 10),
                       _metinle(_quantity, (_) => _quantityPresetsRow(cs)),
                     ],
+                    // ── Bu alımla ortalama maliyet (Ar-Ge 2026-11-12 #5) ──
+                    _metinle(Listenable.merge([_quantity, _price, _tutar]),
+                        (_) => _Beliren(child: _ortalamaSatiri(eldeki, gizli))),
                     // Toplam maliyet 2026-11-12'de alt çubuğa indi
                     // (`_toplamSatiri`, kaydet düğmesinin üstünde).
                     const SizedBox(height: 20),
