@@ -240,7 +240,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
         Text(
           baslik(g),
           style: context.t.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: context.c.text36,
           ),
         ),
@@ -325,7 +325,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
                 style: context.t.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: secili ? context.c.text90 : context.c.text58,
                 ),
               ),
@@ -375,7 +375,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
         Text(
           l.tekrarAlBaslik,
           style: context.t.labelMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: context.c.text36,
           ),
         ),
@@ -461,7 +461,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: context.c.text90,
                   ),
                 ),
@@ -561,7 +561,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: context.t.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: context.c.text90,
                         ),
                       ),
@@ -588,7 +588,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
                     pazar,
                     maxLines: 1,
                     style: context.t.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: s.kutu.tur.onSurface(context),
                     ),
                   ),
@@ -637,7 +637,7 @@ class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: context.c.text90,
                     ),
                   ),

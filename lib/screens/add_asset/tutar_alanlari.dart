@@ -198,7 +198,10 @@ extension _TutarAlanlari on _AddAssetScreenState {
   /// (0 ondalık ₺41,23'ü ₺41 okuturdu), dövizde 4 haneye kadar.
   String _birimMaliyetMetni(double v, bool gizli) {
     if (_currency == 'TRY') {
-      return gizli ? const BazPara.lira().gizliTutar : fmtTRYFiyat(v);
+      // Maske Hızlı Al'daki lira maskesiyle aynı biçim. Baz para nesnesi
+      // burada kullanılmaz: form fiyat dosyasıdır, kote fiyat baz para
+      // birimine çevrilmez (`money_format_scope_test`).
+      return gizli ? '₺••••' : fmtTRYFiyat(v);
     }
     if (gizli) return '•••• $_currency';
     return '${qtyFormatter(maxDigits: 4).format(v)} $_currency';
@@ -394,7 +397,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
             padding: const EdgeInsets.only(right: 12),
             child: Text(_currency,
                 style: context.t.titleSmall?.copyWith(
-                    color: context.c.text58, fontWeight: FontWeight.w700)),
+                    color: context.c.text58, fontWeight: FontWeight.w600)),
           ),
         ),
         const SizedBox(height: 6),
@@ -416,7 +419,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
         message: context.l10n.eurobondCurrencyLocked,
         child: Text(_currency,
             style: context.t.titleSmall?.copyWith(
-                color: context.c.text58, fontWeight: FontWeight.w700)),
+                color: context.c.text58, fontWeight: FontWeight.w600)),
       );
     }
     if (_s.isAbd) {
@@ -424,7 +427,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
         message: context.l10n.usStockCurrencyLocked,
         child: Text('USD',
             style: context.t.titleSmall?.copyWith(
-                color: context.c.text58, fontWeight: FontWeight.w700)),
+                color: context.c.text58, fontWeight: FontWeight.w600)),
       );
     }
     // Fon ve BIST hissesi her zaman TL (müşteri raporu 2 Kas 17:15 #2):
@@ -440,7 +443,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
         message: context.l10n.tlCurrencyLocked,
         child: Text('TRY',
             style: context.t.titleSmall?.copyWith(
-                color: context.c.text58, fontWeight: FontWeight.w700)),
+                color: context.c.text58, fontWeight: FontWeight.w600)),
       );
     }
     // `DropdownButton` içeride kendi `Row`'unu kurar ve o Row daralamaz;
@@ -457,10 +460,12 @@ extension _TutarAlanlari on _AddAssetScreenState {
           value: _currency,
           isDense: true,
           dropdownColor: context.c.surface2,
+          // Nötr (amber bütçesi, Ar-Ge 2026-11-12 #1): açılır ok seçilebilir
+          // olduğunu söyler; amber kaydet düğmesine kalır.
           style: context.t.titleSmall?.copyWith(
-              color: context.c.amberText, fontWeight: FontWeight.w700),
+              color: context.c.text90, fontWeight: FontWeight.w600),
           icon:
-              Icon(Icons.arrow_drop_down_rounded, color: context.c.amberText, size: 18),
+              Icon(Icons.arrow_drop_down_rounded, color: context.c.text58, size: 18),
           items: _AddAssetScreenState._currencies
               .map((c) => DropdownMenuItem(
                     value: c,
@@ -553,8 +558,15 @@ extension _TutarAlanlari on _AddAssetScreenState {
                     tutar,
                     key: const ValueKey('alt-cubuk-toplam-tutar'),
                     // Tabular figür (numMedium): yazarken rakamlar zıplamasın.
-                    style: context.t.numMedium.copyWith(
-                        fontWeight: FontWeight.w600, color: context.c.text90),
+                    // 20 pt (headlineMedium) + tabular: eski kartın ham
+                    // 22 pt ham boyutu yerine token; düğmenin yanında
+                    // okunur ama onunla yarışmaz (renk nötr, w600).
+                    style: (context.t.headlineMedium ?? const TextStyle())
+                        .copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: context.c.text90,
+                    ),
                   ),
                 ),
                 if (tl != null)
@@ -726,7 +738,7 @@ extension _TutarAlanlari on _AddAssetScreenState {
                   Text(
                     title,
                     style: context.t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: context.c.text90,
                     ),
                     maxLines: 1,

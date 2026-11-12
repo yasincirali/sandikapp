@@ -18,7 +18,6 @@ import '../models/kripto_fiyat.dart';
 import '../models/varlik_kimligi.dart';
 import '../models/position.dart' show positionKey;
 import '../providers/preferences_provider.dart' show balanceHiddenProvider;
-import '../utils/money_format.dart' show BazPara;
 import '../widgets/quick_adjust_dialog.dart' show yeniOrtalamaMaliyet;
 import '../providers/add_asset_form_provider.dart';
 import '../providers/bekleyen_fon_alimi_provider.dart';
@@ -581,7 +580,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   /// Formun TEK etiket stili (Ar-Ge 2026-11-12 tasarım bölümü, apple-design
-  /// "Craft"): "Varlık türü" küçük gri w700, "Miktar"/"İşlem tarihi" büyük
+  /// "Craft"): "Varlık türü" küçük gri kalın, "Miktar"/"İşlem tarihi" büyük
   /// beyaz w600 idi; iki hiyerarşi aynı düzeyi anlatıyordu. Hepsi ikincil
   /// etiket: küçük, gri, w600 (ağırlık tavanı 2026-11-05).
   TextStyle? get _etiketStili => context.t.labelLarge?.copyWith(
@@ -660,7 +659,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         titleWidget: Text(
           title,
           style: context.t.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700, color: context.c.text90),
+              ?.copyWith(fontWeight: FontWeight.w600, color: context.c.text90),
         ),
         actions: [
           if (!_isEditing && !widget.cartMode) ...[

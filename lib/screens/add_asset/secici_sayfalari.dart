@@ -52,9 +52,13 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
               const SizedBox(width: 8),
               Text(
                 context.l10n.quickEntryTitle,
-                style: context.t.headlineSmall?.copyWith(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
+                // Ham 17 pt yazı boyutu → `titleLarge` (16), sheet başlık
+                // standardının boyu (`SandikSheetBasligi`; Ar-Ge 2026-11-12
+                // #8, ağırlık tavanı w600). `headlineSmall` (18) bu sayfayı
+                // klavyeyle 12 satırda alttan taşırıyordu
+                // (`klavye_yerlesimi_test`).
+                style: context.t.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
                   color: context.c.text90,
                 ),
               ),
@@ -142,7 +146,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                         // Renk açıkça `onAmber` — `_stickyBottomBar` notu.
                         child: Text(context.l10n.saveNAssets(_previews.length),
                             style: context.t.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w600,
                                 color: context.c.onAmber)),
                       )
                     : FilledButton.icon(
@@ -157,7 +161,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                         // koyu `onAmber` okunmazdı.
                         label: Text(context.l10n.fillTheForm,
                             style: context.t.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w600,
                                 color: _previews.isEmpty
                                     ? null
                                     : context.c.onAmber)),
@@ -420,7 +424,7 @@ class _GoldPickerState extends State<_GoldPicker> {
                       header: true,
                       child: Text(_grupAdi(o),
                           style: context.t.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                               color: context.c.text58)),
                     ),
                   );

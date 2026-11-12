@@ -214,7 +214,7 @@ extension _KimlikAlanlari on _AddAssetScreenState {
                   text: ad,
                   style: context.t.bodyMedium?.copyWith(
                       color: context.c.text90,
-                      fontWeight: secili ? FontWeight.w700 : FontWeight.w400),
+                      fontWeight: secili ? FontWeight.w600 : FontWeight.w400),
                 ),
                 if (birim != null)
                   TextSpan(

@@ -54,7 +54,10 @@ void main() {
     // "Gösterim aralığı" başlığı `titleMedium`'a geçti → 96.
     // 2026-11-11: gerçek 95; Portföy halkasının orta bloğu (18/16/22)
     // ölçeğe geçti → 93.
-    expect(hits.length, lessThanOrEqualTo(93),
+    // 2026-11-12: gerçek 92; Varlık Ekle'deki döviz simgesi (22), toplam
+    // kartı (22, kart alt çubuğa indi) ve hızlı giriş başlığı (17) ölçeğe
+    // geçti → 89.
+    expect(hits.length, lessThanOrEqualTo(89),
         reason: 'context.t.* kullan (ya da SandikTypography ölçeğine ekle):\n'
             '${hits.join('\n')}');
   });

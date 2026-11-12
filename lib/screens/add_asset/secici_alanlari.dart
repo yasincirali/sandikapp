@@ -47,8 +47,9 @@ extension _SeciciAlanlari on _AddAssetScreenState {
                   children: [
                     Text(
                       opt.symbol,
-                      style: context.t.headlineLarge?.copyWith(
-                        fontSize: 22,
+                      // Ham 22 pt yazı boyutu → `headlineMedium` (20) token'ı
+                      // (Ar-Ge 2026-11-12 #8).
+                      style: context.t.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: selected
                             ? AssetType.doviz.onSurface(context)
@@ -59,7 +60,7 @@ extension _SeciciAlanlari on _AddAssetScreenState {
                     Text(
                       opt.label,
                       style: context.t.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: selected
                             ? AssetType.doviz.onSurface(context)
                             : context.c.text58,

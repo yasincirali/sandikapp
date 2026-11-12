@@ -169,11 +169,13 @@ void main() {
   // w600'e, Yarış/Zirve'de token yerine açık w700 (istisna korunur), 290 → 269;
   // 2026-11-12: temettü tahmini satır tutarı, 269 → 268; Takip ve
   // Hareketler ekranlarının ham w700'leri w600'e, 268 → 254).
+  // 2026-11-12: Varlık Ekle ve seçici sayfaları (tür ızgarası, tutar alanları,
+  // seçici sayfaları, sözleşme seçicileri, başlık) w600'e, 268 → 240; ikisi birlikte 226).
   // w800/w900 sayılmaz: yarış/düello sahneleri ve ana sayfa toplam kartı
   // istisnası yukarıdaki testte ayrıca kilitli. Tüm lib/ dizini tarandığı
   // için part dosyaları zaten dahil (`ekranKaynagiSync` tek ekran içindir).
   test('FontWeight.w700 sayısı artmaz (cırcır)', () {
-    const tavan = 254;
+    const tavan = 226;
     var sayi = 0;
     for (final f in Directory('lib')
         .listSync(recursive: true)
