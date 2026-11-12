@@ -21,7 +21,7 @@ import 'helpers/kaynak.dart';
 /// 1. Aylık tutar düz bölme: kalan ÷ kalan TAM ay (en az 1), yukarı
 ///    yuvarlanır; gün geçtiyse ya da kalan ≤ 0 ise söylenmez.
 /// 2. Ücretsizde satır kilitli, dokununca paywall kapısı; tarih yazılmaz.
-/// 3. Premium'da çipler + "ayda yaklaşık" cümlesi + "getiri hariç".
+/// 3. Premium'da çipler + "ayda yaklaşık … (getiri hariç)" cümlesi.
 /// 4. 44 pt, 2× yazı, İngilizce.
 void main() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
@@ -230,10 +230,11 @@ void main() {
           bugun: now)!;
       expect(beklenen, 42999); // 515.980 ÷ 12 = 42.998,33 → yukarı
       expect(
-          find.text(
-              'Ayda yaklaşık ${fmtTRY(beklenen.toDouble())} eklersen yetişirsin'),
+          find.text('Ayda yaklaşık ${fmtTRY(beklenen.toDouble())} eklersen '
+              'yetişirsin (getiri hariç)'),
           findsOneWidget);
-      expect(find.text('Getiri hariç'), findsOneWidget);
+      // "Getiri hariç" cümlenin içinde; ayrı satır kalmadı (2026-11-12).
+      expect(find.text('Getiri hariç'), findsNothing);
       await tester.tap(find.text('Kaydet'));
       await tester.pumpAndSettle();
       expect(await kayitliGun(),
@@ -256,7 +257,8 @@ void main() {
       await tester.tap(find.text('1 yıl'));
       await tester.pumpAndSettle();
       expect(
-          find.text('Ayda yaklaşık •••• eklersen yetişirsin'), findsOneWidget);
+          find.text('Ayda yaklaşık •••• eklersen yetişirsin (getiri hariç)'),
+          findsOneWidget);
     });
 
     testWidgets('dokunma alanı ≥ 44 pt (çipler ve kilit satırı)',
@@ -292,7 +294,7 @@ void main() {
       await tester.tap(find.text('1 yıl'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.text('Getiri hariç'), findsOneWidget);
+      expect(find.textContaining('(getiri hariç)'), findsOneWidget);
     });
 
     testWidgets('İngilizce metin', (tester) async {
@@ -304,8 +306,8 @@ void main() {
       await hedefYaz(tester, '1.000.000');
       await tester.tap(find.text('1 year'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('a month to make it'), findsOneWidget);
-      expect(find.text('Excludes returns'), findsOneWidget);
+      expect(find.textContaining('a month to make it (excluding returns)'),
+          findsOneWidget);
     });
 
     testWidgets('İngilizce kilit satırı', (tester) async {

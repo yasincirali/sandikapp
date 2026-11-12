@@ -17163,14 +17163,8 @@ abstract class AppLocalizations {
   /// No description provided for @goalDateMonthly.
   ///
   /// In tr, this message translates to:
-  /// **'Ayda yaklaşık {tutar} eklersen yetişirsin'**
+  /// **'Ayda yaklaşık {tutar} eklersen yetişirsin (getiri hariç)'**
   String goalDateMonthly(String tutar);
-
-  /// No description provided for @goalDateNoReturn.
-  ///
-  /// In tr, this message translates to:
-  /// **'Getiri hariç'**
-  String get goalDateNoReturn;
 
   /// No description provided for @goalDateBy.
   ///

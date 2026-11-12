@@ -10476,11 +10476,8 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String goalDateMonthly(String tutar) {
-    return 'Ayda yaklaşık $tutar eklersen yetişirsin';
+    return 'Ayda yaklaşık $tutar eklersen yetişirsin (getiri hariç)';
   }
-
-  @override
-  String get goalDateNoReturn => 'Getiri hariç';
 
   @override
   String goalDateBy(String tarih, String ek) {

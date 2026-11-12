@@ -5,7 +5,8 @@ import '../utils/tr_format.dart';
 //
 // Hesap bilerek düz bölmedir: kalan ÷ kalan ay. Getiri varsayımı yok —
 // varsayılan bir yüzde, piyasanın vermediği bir sayıyı vaat eder
-// ("uydurma sayı yasak"). Ekran bunu "getiri hariç" notuyla söyler.
+// ("uydurma sayı yasak"). Ekran bunu cümlenin içinde "(getiri hariç)" diye
+// söyler.
 
 /// "Ne zamana kadar?" seçenekleri. [ozel] = takvimden seçilen gün.
 enum HedefTarihSecenegi { yok, birYil, yilSonu, ozel }

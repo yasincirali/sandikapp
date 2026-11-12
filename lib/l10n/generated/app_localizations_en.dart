@@ -10634,11 +10634,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String goalDateMonthly(String tutar) {
-    return 'Add about $tutar a month to make it';
+    return 'Add about $tutar a month to make it (excluding returns)';
   }
-
-  @override
-  String get goalDateNoReturn => 'Excludes returns';
 
   @override
   String goalDateBy(String tarih, String ek) {

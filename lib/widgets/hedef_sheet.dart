@@ -9,7 +9,10 @@
 //
 // "Ne zamana kadar?" (Premium, yasin 2026-11-06): hedefin kendisi ücretsiz,
 // tarihi Premium. Tarih seçilince "ayda yaklaşık ₺X" satırı (düz bölme,
-// getiri hariç; hesap `models/hedef_tarihi.dart`). Ücretsizde satır kilitli
+// getiri hariç; hesap `models/hedef_tarihi.dart`). "Getiri hariç" ayrı gri
+// satırdı; 2026-11-12'de cümlenin içine girdi ("… yetişirsin (getiri
+// hariç)"): koşul cümleden kopunca okunmuyordu, altına "plandasın" satırı
+// gelince de üç satır üst üste biniyordu. Ücretsizde satır kilitli
 // görünür, dokununca paywall; hiçbir şey kaydedilmez.
 import 'dart:async';
 
@@ -500,10 +503,6 @@ class _TarihBolumu extends StatelessWidget {
             Text(
               l10n.goalDateMonthly(gizli ? '••••' : fmtTRY(aylik.toDouble())),
               style: context.t.bodyMedium?.copyWith(color: context.c.text90),
-            ),
-            Text(
-              l10n.goalDateNoReturn,
-              style: context.t.bodySmall?.copyWith(color: context.c.text58),
             ),
             if (ritim != null) ...[
               const SizedBox(height: SandikSpace.xs),
