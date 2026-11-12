@@ -2193,6 +2193,7 @@
       }
     }
   },
+  "watchlistRowAdded": "{ad} added to the list",
   "removeFromWatchlist": "Remove from watchlist",
   "removeFromWatchlistFailed": "Could not remove it. Check your connection.",
   "currentPriceUpper": "Current price",

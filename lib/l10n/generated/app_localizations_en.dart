@@ -3498,6 +3498,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String watchlistRowAdded(String ad) {
+    return '$ad added to the list';
+  }
+
+  @override
   String get removeFromWatchlist => 'Remove from watchlist';
 
   @override

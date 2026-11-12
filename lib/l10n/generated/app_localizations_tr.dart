@@ -3472,6 +3472,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String watchlistRowAdded(String ad) {
+    return '$ad listeye eklendi';
+  }
+
+  @override
   String get removeFromWatchlist => 'Takipten çıkar';
 
   @override

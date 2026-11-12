@@ -2324,6 +2324,15 @@
       }
     }
   },
+  "watchlistRowAdded": "{ad} listeye eklendi",
+  "@watchlistRowAdded": {
+    "description": "Takip listesine yeni eklenen satır göründüğünde ekran okuyucu duyurusu.",
+    "placeholders": {
+      "ad": {
+        "type": "String"
+      }
+    }
+  },
   "removeFromWatchlist": "Takipten çıkar",
   "removeFromWatchlistFailed": "Takipten çıkarılamadı. Bağlantını kontrol et.",
   "currentPriceUpper": "Güncel fiyat",

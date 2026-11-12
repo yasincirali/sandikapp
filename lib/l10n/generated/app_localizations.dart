@@ -5846,6 +5846,12 @@ abstract class AppLocalizations {
   /// **'Tümünü kaydet ({n})'**
   String saveAllCount(int n);
 
+  /// Takip listesine yeni eklenen satır göründüğünde ekran okuyucu duyurusu.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} listeye eklendi'**
+  String watchlistRowAdded(String ad);
+
   /// No description provided for @removeFromWatchlist.
   ///
   /// In tr, this message translates to:
