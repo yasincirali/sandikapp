@@ -1169,7 +1169,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
               Text(
                 etiket,
                 style: context.t.titleSmall?.copyWith(
-                  fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: secili ? FontWeight.w600 : FontWeight.w500,
                   color: secili ? context.c.amberText : context.c.text58,
                 ),
               ),
@@ -1265,7 +1265,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
             Text(
               context.l10n.filterButton,
               style: context.t.titleSmall?.copyWith(
-                fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: secili ? FontWeight.w600 : FontWeight.w500,
                 color: renk,
               ),
             ),
@@ -1372,7 +1372,7 @@ class _EtkinCip extends StatelessWidget {
             Text(
               etiket,
               style: context.t.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700, color: renk),
+                  ?.copyWith(fontWeight: FontWeight.w600, color: renk),
             ),
             const SizedBox(width: SandikSpace.xs),
             Icon(Icons.close_rounded, size: 16, color: renk),
@@ -1445,7 +1445,7 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
                 child: Text(
                   l.filterButton,
                   style: context.t.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700, color: context.c.text90),
+                      fontWeight: FontWeight.w600, color: context.c.text90),
                 ),
               ),
               SandikTappable(
@@ -1460,7 +1460,7 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
                   child: Text(
                     l.filterReset,
                     style: context.t.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: context.c.amberText),
                   ),
                 ),
@@ -1644,7 +1644,7 @@ class _SecimKutusu extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.titleSmall?.copyWith(
-                    fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: secili ? FontWeight.w600 : FontWeight.w500,
                     color: metinRengi,
                   ),
                 ),

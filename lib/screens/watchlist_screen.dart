@@ -311,7 +311,7 @@ class _ListState extends ConsumerState<_List> {
                     child: Text(
                       context.l10n.nAssetsPeriod(items.length, periodLabel),
                       style: context.t.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: context.c.text36),
                     ),
                   ),
@@ -589,7 +589,7 @@ class _ChartCard extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: context.c.text36),
                   ),
                 ),
@@ -1063,7 +1063,7 @@ class _Row extends ConsumerWidget {
                               maxLines: 1,
                               style: context.t.numSmall.copyWith(
                                   color: context.c.text90,
-                                  fontWeight: FontWeight.w700),
+                                  fontWeight: FontWeight.w600),
                             ),
                           ),
                           Text(
@@ -1457,7 +1457,7 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
             context.l10n.noWatchlistYet,
             textAlign: TextAlign.center,
             style: context.t.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700, color: context.c.text90),
+                fontWeight: FontWeight.w600, color: context.c.text90),
           ),
           const SizedBox(height: SandikSpace.sm),
           Text(
@@ -1506,7 +1506,7 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
               ),
               child: Text('Varlık Ekle',
                   style: context.t.titleSmall?.copyWith(
-                      color: context.c.onStatus, fontWeight: FontWeight.w700)),
+                      color: context.c.onStatus, fontWeight: FontWeight.w600)),
             ),
           ),
           // Eskiden ekranın altında sabit dipnottu; artık yalnız burada,
@@ -1665,7 +1665,7 @@ class _AddHeader extends ConsumerWidget {
                             TextSpan(
                               text: '$n',
                               style: context.t.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w600,
                                   color: dolu ? c.loss : c.text90),
                               children: [
                                 if (sinirli)
@@ -1727,7 +1727,7 @@ class _AddHeader extends ConsumerWidget {
                                 : context.l10n.watchlistAddShort,
                             style: context.t.titleSmall?.copyWith(
                                 color: dolu ? c.text58 : c.onStatus,
-                                fontWeight: FontWeight.w700),
+                                fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
