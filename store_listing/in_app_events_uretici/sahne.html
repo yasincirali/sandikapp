@@ -60,6 +60,10 @@ const kutu = dikey
   : { x0: W * .10, x1: W * .90, y0: H * .10, y1: H * .62 };
 
 if (SAHNE === 'enf') {
+  // Kartta App Store önizlemesi sağ üst köşeye koyu bir yuvarlak koyuyor
+  // (yasin'in ASC ekranı, 2026-11-12): yolun ucu onun altında kalıyordu.
+  // Kartta motif sağdan ve üstten içeri çekilir; detay aynı kalır.
+  if (!dikey) Object.assign(kutu, { x1: W * .80, y0: H * .22 });
   // 3. tur (yasin 2026-11-12, "odaktan ilerleyelim"; eski sahne 12 eşit
   // ağırlıklı sütun + bekleyen ay yuvasıydı, "daha ilgi çekici" istendi).
   // Soluk sütunlar = aylık TÜFE, kesikli çizgi = birikimli TÜFE (ikisi de
