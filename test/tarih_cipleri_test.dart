@@ -339,7 +339,13 @@ void main() {
       expect(_cip('Bugün'), findsOneWidget);
       expect(_cip('Dün'), findsOneWidget);
       expect(find.text('Başka tarih'), findsNothing);
-      expect(find.byType(SandikFiltreCipi), findsNWidgets(2));
+      // Yalnız tarih şeridinde say: miktar çipleri de aynı bileşen
+      // (SandikFiltreCipi, Hızlı Al tasarım turu 2026-11-12).
+      expect(
+          find.descendant(
+              of: find.byType(TarihCipleri),
+              matching: find.byType(SandikFiltreCipi)),
+          findsNWidgets(2));
       await tester.enterText(find.byType(TextField).first, '3');
       await onayla(tester, 'Al');
       expect(portfoy.kayitlar.single.tarih, isNull);

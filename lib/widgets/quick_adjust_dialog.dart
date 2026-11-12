@@ -28,6 +28,7 @@ import 'sandik_acilir.dart';
 import 'sandik_async_button.dart';
 import 'sandik_segment.dart';
 import 'tarih_cipleri.dart';
+import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import '../l10n/l10n.dart';
 
 /// Bir varlığa hızlıca miktar EKLE veya ÇIKAR — form açmadan.
@@ -991,7 +992,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          padding: const EdgeInsets.fromLTRB(
+              SandikSpace.lgs, SandikSpace.lgs, SandikSpace.lgs, SandikSpace.md),
           // Klavye açıkken (miktar alanı autofocus) diyalog ekranın
           // yarısına sığmak zorunda: başlık + iki alan + toplam + düğmeler
           // ~490px, iOS ondalık klavyeyle kalan ~410–490px. Gövde kayar,
@@ -1022,10 +1024,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                         ? Icons.trending_up_rounded
                         : Icons.trending_down_rounded,
                     color: accent,
-                    size: 24,
+                    size: SandikSpace.lg,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: SandikSpace.smd),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1061,16 +1063,15 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: SandikSpace.sm),
 
             // ── Mevcut durum ──────────────────────────────────────────
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: context.c.overlay,
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-              ),
+            // Düz satır (tasarım turu 2026-11-12, Ar-Ge #5): eskiden gri
+            // dolgulu kutuydu; bilgi satırı kutu istemez, Varlık Ekle'deki
+            // gibi etiket + değer. Kutular sayfada yalnız giriş alanlarına
+            // kaldı — göz neyin yazılabilir olduğunu şekilden okur.
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm2),
               child: Row(
                 children: [
                   Text(context.l10n.quickHolding,
@@ -1088,17 +1089,14 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                         : '${numFmt.format(asset.quantity)} $_unitLabel · '
                             '${context.l10n.quickAvgShort('${numFmt.format(asset.purchasePrice)} $_currencySymbol')}',
                     textAlign: TextAlign.end,
-                    style: context.t.numSmall.copyWith(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: context.c.text90,
-                    ),
+                    style: context.t.numSmall
+                        .copyWith(color: context.c.text90),
                   ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: SandikSpace.md),
 
             // ── İşlem günü ────────────────────────────────────────────
             // Mevduatta yok: birim değer güne göre sözleşmeden işler, geçmiş
@@ -1128,7 +1126,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 style: context.t.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: context.c.text58)),
-            const SizedBox(height: 6),
+            const SizedBox(height: SandikSpace.xs2),
             TextField(
               // Kip değişince denetleyici değişir, alan (ve odak) aynı kalır.
               controller: _tutarKipinde ? _tutarCtrl : _qtyCtrl,
@@ -1138,15 +1136,14 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
               ],
-              style: context.t.numLarge.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text90),
+              // Sayfanın birincil girdisi: hero tutar ölçeği (`numLarge`,
+              // w600 tavanı, tabular). Eskiden ham 18 + w700 idi; Varlık
+              // Ekle ile aynı tipografi.
+              style: context.t.numLarge.copyWith(color: context.c.text90),
               onChanged: (_) => setState(() => _error = null),
               decoration: InputDecoration(
                 hintText: '0',
-                hintStyle:
-                    context.t.headlineSmall?.copyWith(color: context.c.text36),
+                hintStyle: context.t.numLarge.copyWith(color: context.c.text36),
                 suffixText:
                     _tutarla || _tutarKipinde ? _currencySymbol : _unitLabel,
                 suffixStyle:
@@ -1155,7 +1152,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               ),
             ),
             if (_tutarKipinde) _tutardanAdetSatiri(context),
-            const SizedBox(height: 8),
+            const SizedBox(height: SandikSpace.sm),
             _quickChips(),
 
             // Remove modunda tüm miktarı çıkarırken kısa bilgi: bu bir
@@ -1199,12 +1196,12 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
 
             // ── Fiyat (sadece ekleme için) ────────────────────────────
             if (_isAdd && !_tutarla) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: SandikSpace.md),
               Text(context.l10n.quickUnitPrice,
                   style: context.t.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: context.c.text58)),
-              const SizedBox(height: 6),
+              const SizedBox(height: SandikSpace.xs2),
               TextField(
                 controller: _priceCtrl,
                 keyboardType:
@@ -1234,41 +1231,39 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             // Mevduatta ve Tutar kipinde toplam yazılan tutarın kendisidir;
             // tekrar etmez.
             if (qty > 0 && !_tutarla && !_tutarKipinde) ...[
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(
-                      color: accent.withValues(alpha: 0.25), width: 1),
-                ),
-                child: Row(
-                  children: [
-                    Text(
+              const SizedBox(height: SandikSpace.md2),
+              // Düz satır (tasarım turu 2026-11-12): eskiden işlem renginde
+              // dolgu + çerçeveli kutuydu. Toplam bir bilgi; renkli kutu onu
+              // uyarı gibi okutuyordu ve işlemin rengi kenar vurgusunda ile
+              // düğmede zaten var. Etiket esnek: 2× yazıda "Satış değeri"
+              // sabit genişlikte satırı taşırıyordu.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Flexible(
+                    child: Text(
                         _isAdd
                             ? context.l10n.quickTotalCost
                             : context.l10n.saleValue,
-                        style: context.t.titleSmall?.copyWith(color: context.c.text58)),
-                    const SizedBox(width: SandikSpace.sm),
-                    // Esnek + sağa yaslı (2026-11-11): kabuk 360 pt'de
-                    // sınırlı; dört haneli tutarda (ya da büyük yazıda) sabit
-                    // genişlikli değer satırı taşıyordu, testler bu yüzden
-                    // 600 pt yüzey kullanıyordu. Sığmazsa alta kırılır.
-                    Expanded(
-                      child: Text(
-                        '${numFmt.format(total)} $_currencySymbol',
-                        textAlign: TextAlign.end,
-                        style: context.t.numSmall.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: accent,
-                        ),
-                      ),
+                        style: context.t.titleSmall
+                            ?.copyWith(color: context.c.text58)),
+                  ),
+                  const SizedBox(width: SandikSpace.sm),
+                  // Esnek + sağa yaslı (2026-11-11): kabuk 360 pt'de
+                  // sınırlı; dört haneli tutarda (ya da büyük yazıda) sabit
+                  // genişlikli değer satırı taşıyordu, testler bu yüzden
+                  // 600 pt yüzey kullanıyordu. Sığmazsa alta kırılır.
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${numFmt.format(total)} $_currencySymbol',
+                      textAlign: TextAlign.end,
+                      style: context.t.numMedium
+                          .copyWith(color: context.c.text90),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
 
@@ -1316,7 +1311,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             ],
 
             if (_error != null) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: SandikSpace.sm2),
               Text(
                 _error!,
                 style: context.t.titleSmall?.copyWith(color: context.c.loss),
@@ -1328,7 +1323,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             ),
            ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: SandikSpace.lgs),
 
             // ── Butonlar ──────────────────────────────────────────────
             Row(
@@ -1337,18 +1332,19 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   child: TextButton(
                     onPressed: _saving ? null : () => Navigator.pop(context),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: SandikSpace.md2),
                       backgroundColor: context.c.overlay,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
                     child: Text(context.l10n.cancel,
                         style: context.t.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             color: context.c.text90)),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: SandikSpace.sm2),
                 Expanded(
                   flex: 2,
                   // Gösterge + çift dokunuş kilidi standart bileşende (tek
@@ -1360,7 +1356,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     basari: _basari,
                     style: FilledButton.styleFrom(
                       backgroundColor: accent,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: SandikSpace.md2),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
@@ -1536,19 +1533,24 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     ];
 
     // Sabit 32pt şerit kalktı (HIG denetimi 2026-10-10): hedef 32pt'de
-    // kalıyor, büyük yazıda çip metni kesiliyordu. Çip görseli aynı; dokunma
-    // alanı en az 44pt, satır içeriğin boyunda.
+    // kalıyor, büyük yazıda çip metni kesiliyordu. Tasarım turu (2026-11-12,
+    // Ar-Ge #5): Varlık Ekle önayarları ve tarih çipleriyle AYNI bileşen
+    // ([SandikFiltreCipi]) — görsel de 44 pt, alandaki değere eşit çip
+    // seçili (amber dolgu + onay işareti; yalnız renkle anlam yok). Kilitli
+    // Premium çipi baştaki kilit ikonuyla okunur, hiç seçili olmaz.
+    final alan = (_tutarKipinde ? _tutarCtrl : _qtyCtrl).text;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
           for (final chip in chips)
             Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: SandikTappable(
-                soluk: true,
-                haptic: SandikHaptic.none,
-                semanticLabel: chip.ses,
+              padding: const EdgeInsets.only(right: SandikSpace.sm),
+              child: SandikFiltreCipi(
+                ad: chip.etiket,
+                semantik: chip.ses,
+                secili: !chip.kilit && alan == chip.deger,
+                ikon: chip.kilit ? Icons.lock_outline_rounded : null,
                 onTap: chip.kilit
                     ? _anaparamPaywall
                     : () => setState(() {
@@ -1556,44 +1558,6 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                               chip.deger;
                           _error = null;
                         }),
-                child: ConstrainedBox(
-                  constraints:
-                      const BoxConstraints(minHeight: SandikTouch.min),
-                  child: Center(
-                    heightFactor: 1,
-                    child: Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: context.c.overlay,
-                        borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      ),
-                      child: ExcludeSemantics(
-                        excluding: chip.ses != null,
-                        child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                        if (chip.kilit) ...[
-                          Icon(Icons.lock_outline_rounded,
-                              key: const ValueKey('anaparam_kilit'),
-                              size: SandikSpace.md,
-                              color: context.c.text58),
-                          const SizedBox(width: SandikSpace.xs),
-                        ],
-                        Text(
-                        chip.etiket,
-                        style: context.t.numSmall.copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: context.c.text90,
-                        ),
-                      ),
-                        ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ),
             ),
         ],

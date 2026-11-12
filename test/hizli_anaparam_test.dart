@@ -215,7 +215,7 @@ void main() {
       await _ac(tester, _varlik(), kilitli: true);
       expect(find.text(tr.quickPrincipalChipLocked), findsOneWidget);
       expect(_cip('Anaparam · '), findsNothing);
-      expect(find.byKey(const ValueKey('anaparam_kilit')), findsOneWidget);
+      expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);
       final dokunma = find.ancestor(
           of: find.text(tr.quickPrincipalChipLocked),
           matching: find.byType(SandikTappable));
@@ -224,6 +224,14 @@ void main() {
       expect(
           find.bySemanticsLabel(tr.quickPrincipalChipLockedSemantics),
           findsOneWidget);
+    });
+
+    testWidgets('2× yazıda taşma yok', (tester) async {
+      await _ac(tester, _varlik(), yazi: 2);
+      await tester.tap(_cip('Anaparam · 63'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const ValueKey('anaparam_aciklama')), findsOneWidget);
     });
   });
 }

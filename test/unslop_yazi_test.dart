@@ -171,11 +171,12 @@ void main() {
   // Hareketler ekranlarının ham w700'leri w600'e, 268 → 254).
   // 2026-11-12: Varlık Ekle ve seçici sayfaları (tür ızgarası, tutar alanları,
   // seçici sayfaları, sözleşme seçicileri, başlık) w600'e, 268 → 240; ikisi birlikte 226).
+  // 2026-11-12: Hızlı Al/Sat diyaloğu (miktar alanı, İptal düğmesi), 226 → 224.
   // w800/w900 sayılmaz: yarış/düello sahneleri ve ana sayfa toplam kartı
   // istisnası yukarıdaki testte ayrıca kilitli. Tüm lib/ dizini tarandığı
   // için part dosyaları zaten dahil (`ekranKaynagiSync` tek ekran içindir).
   test('FontWeight.w700 sayısı artmaz (cırcır)', () {
-    const tavan = 226;
+    const tavan = 224;
     var sayi = 0;
     for (final f in Directory('lib')
         .listSync(recursive: true)
