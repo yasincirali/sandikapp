@@ -3662,12 +3662,6 @@ abstract class AppLocalizations {
   /// **'Satış {when} · {price}'**
   String chartTxSell(String when, String price);
 
-  /// No description provided for @tradeVolumeUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'Alım · satış'**
-  String get tradeVolumeUpper;
-
   /// No description provided for @crosshairNetBuy.
   ///
   /// In tr, this message translates to:

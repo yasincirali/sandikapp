@@ -318,7 +318,8 @@ void main() {
     });
 
     test('Grafik sekmesi: ham sembol ve "işlem hacmi" dili kalmadı', () {
-      expect(trMetni('tradeVolumeUpper'), 'Alım · satış');
+      // Alım · satış hacim paneli 2026-11-14'te kalktı (anahtar da).
+      expect(() => trMetni('tradeVolumeUpper'), throwsStateError);
       // 2026-10-04: "piyasanın kattığı" → "fiyat etkisi" (Özet köprüsü ve Bugün
       // kartıyla tek ad); anlam aynı: satır piyasa etkisini söyler.
       expect(trMetni('changeByTypeUpper'), contains('fiyat etkisi'));

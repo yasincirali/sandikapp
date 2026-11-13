@@ -1,15 +1,7 @@
 part of '../portfolio_performance_screen.dart';
 
-/// Küçük yardımcı widget'lar: hacim çubuğu modeli, gün içi not, grafik yer
+/// Küçük yardımcı widget'lar: gün içi not, grafik yer
 /// tutucu, lider tablosu çipi. `portfolio_performance_screen.dart`'ın part'ı.
-class _VolumeBar {
-  final double x;
-  final double buy;
-  final double sell;
-  const _VolumeBar({required this.x, required this.buy, required this.sell});
-  double get total => buy + sell;
-}
-
 /// Seçili dönem ve sekmeye göre HER VARLIK TÜRÜNÜN — ve açıldığında o türün
 /// içindeki HER ÜRÜNÜN — dönem değişimi.
 ///

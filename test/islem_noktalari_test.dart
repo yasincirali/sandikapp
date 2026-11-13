@@ -171,13 +171,14 @@ void main() {
     });
   });
 
-  test('kaynak: işaret, crosshair ve hacim AYNI haritadan', () {
+  test('kaynak: işaret ve crosshair AYNI haritadan; hacim paneli yok', () {
     final src = ekranKaynagiSync(
             'lib/screens/portfolio_performance/grafik_kabi.dart')
         .replaceAll(RegExp(r'\s+'), ' ');
     expect(src.contains('candidates: noktalar.keys.toList(),'), isTrue);
     expect(src.contains('final n = noktalar[snapped.x];'), isTrue);
-    expect(src.contains('_computeVolumeBars(noktalar)'), isTrue);
+    // Hacim paneli 2026-11-14'te kalktı (yasin: işaretler yetiyor).
+    expect(src.contains('_computeVolumeBars'), isFalse);
     expect(src.contains('if (addMid != spotDayMs) continue;'), isFalse,
         reason: 'crosshair takvim gününe değil noktaya bakmalı');
     expect(src.contains('crosshairNetBuy'), isTrue,

@@ -318,22 +318,23 @@ void main() {
       // Tek akışta manşet `numLarge`: altı haneli tutar yüzde rozetiyle
       // satıra sığmayınca küçülür (yeri sabit); punto yalnız eski düzende.
       _ayniYerde(o, 'Performans', punto: olcek == 1.0 && !tek);
-      // Grafik kartının DİBİ de yerinde: işlem hacmi paneli her dönemde
-      // durur (Bugün/1 hf'de yoktu, kart ~98 pt kısalıp altını çekiyordu).
-      final hacimYeri = <String, double>{};
+      // Grafik kartının DİBİ de yerinde: kartın düzeni her dönemde aynı,
+      // yalnız içindeki çizim değişir (yasin 2026-11-14). Alım · satış
+      // hacim paneli kalktı; işlem tutarı çizgideki işarette okunur.
+      final dip = <String, double>{};
       for (final e in _etiketler(tester)) {
         await tester.tap(find
             .descendant(of: find.byType(DonemSecici), matching: find.text(e))
             .first);
         await _yerles(tester, 40);
-        final etiket = find.text('Alım · satış');
-        expect(etiket, findsOneWidget, reason: '$e: hacim paneli yok');
-        hacimYeri[e] = tester.getRect(etiket).top;
+        expect(find.text('Alım · satış'), findsNothing,
+            reason: '$e: hacim paneli geri gelmemeli');
+        dip[e] = tester.getRect(find.byType(ZoomableChart).first).bottom;
       }
-      final ilkHacim = hacimYeri.values.first;
-      for (final x in hacimYeri.entries) {
-        expect((x.value - ilkHacim).abs(), lessThanOrEqualTo(0.5),
-            reason: 'hacim paneli kaydı: $hacimYeri');
+      final ilkDip = dip.values.first;
+      for (final x in dip.entries) {
+        expect((x.value - ilkDip).abs(), lessThanOrEqualTo(0.5),
+            reason: 'grafik kartı kaydı: $dip');
       }
       // Kartın üstü de (grafik kutusunun dış çerçevesi) yerinde.
       expect(tester.takeException(), isNull);
