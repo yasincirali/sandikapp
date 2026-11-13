@@ -588,6 +588,34 @@ class NotificationService {
     );
   }
 
+  /// Sinyal Ayarları'ndaki "Örnek bildirimi gönder" satırının metni
+  /// (2026-11-13).
+  ///
+  /// Neden: kullanıcı sinyal bildiriminin neye benzediğini ancak gerçek bir
+  /// sinyal düşünce görüyordu; izin/kanal sorununu da o gün fark ediyordu.
+  /// Metin GERÇEK bildirimin metnidir ([buildSignalMessage]), yalnız başına
+  /// "Örnek: " eklenir ki kilit ekranında gerçek sinyal sanılmasın. Varlık
+  /// "ABC": gerçek bir hisse adı yatırım önerisi gibi okunurdu.
+  static ({String title, String body}) ornekSinyalMesaji() {
+    final m = buildSignalMessage(
+      assetName: 'ABC',
+      ticker: 'ABC',
+      signal: SignalType.buy,
+      buyCount: 2,
+      sellCount: 1,
+      toplam: 3,
+    );
+    return (title: 'Örnek: ${m.title}', body: m.body);
+  }
+
+  /// Örnek sinyal bildirimini gerçek sinyalle AYNI yoldan basar
+  /// ([showSignalNotification]: aynı kanal, ikon, iOS ön plan sunumu).
+  /// Varlık kimliği boş: dokununca bir ekrana gitmez (payload yok).
+  Future<void> ornekSinyalBildirimiGoster() {
+    final m = ornekSinyalMesaji();
+    return showSignalNotification(title: m.title, body: m.body, assetId: '');
+  }
+
   /// Ön planda gelen genel push'u (alarm, takip listesi, brifing, özet…)
   /// yerel bildirim olarak basar — yalnız Android (iOS sunumu değişmedi).
   ///

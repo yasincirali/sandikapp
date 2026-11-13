@@ -476,21 +476,23 @@ class _OzelGostergeEditorScreenState
                   ],
                   // Kodun çalışıp ekranda karşılığı olmayan kısımları
                   // (Pine'dan gelen label/bgcolor/strateji) sessizce
-                  // yutulmaz.
-                  for (final not in sonuc?.notlar ?? const <BetikNotu>{}) ...[
-                    const SizedBox(height: SandikSpace.xs),
-                    Text(
-                        switch (not) {
-                          BetikNotu.cizimNesnesi => l.ozgNotCizimNesnesi,
-                          BetikNotu.boyama => l.ozgNotBoyama,
-                          BetikNotu.strateji => l.ozgNotStrateji,
-                          BetikNotu.fazlaCizgi =>
-                            l.ozgNotFazlaCizgi(kBetikAzamiCizgi),
-                          BetikNotu.paneldeIsaret => l.ozgNotPaneldeIsaret,
-                        },
-                        style: context.t.bodySmall
-                            ?.copyWith(color: context.c.text58)),
-                  ],
+                  // yutulmaz. İki ve fazlası tek katlı satırda toplanır
+                  // (2026-11-13): yığılan notlar önizlemeyi aşağı itiyordu.
+                  if (sonuc != null && sonuc.notlar.isNotEmpty)
+                    SandikKatliNotlar(
+                      ozet: l.ozgNotOzet(sonuc.notlar.length),
+                      notlar: [
+                        for (final not in sonuc.notlar)
+                          switch (not) {
+                            BetikNotu.cizimNesnesi => l.ozgNotCizimNesnesi,
+                            BetikNotu.boyama => l.ozgNotBoyama,
+                            BetikNotu.strateji => l.ozgNotStrateji,
+                            BetikNotu.fazlaCizgi =>
+                              l.ozgNotFazlaCizgi(kBetikAzamiCizgi),
+                            BetikNotu.paneldeIsaret => l.ozgNotPaneldeIsaret,
+                          },
+                      ],
+                    ),
                   const SizedBox(height: SandikSpace.md),
                   _OnizlemeKarti(
                     sonuc: sonuc,

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1647,15 +1648,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String biometricLockYontem(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Lock with Face ID',
-        'touchId': 'Lock with Touch ID',
-        'biyometrik': 'Biometric lock',
-        'other': 'Lock with screen lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Lock with Face ID',
+      'touchId': 'Lock with Touch ID',
+      'biyometrik': 'Biometric lock',
+      'other': 'Lock with screen lock',
+    });
     return '$_temp0';
   }
 
@@ -3758,15 +3756,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Protect with Face ID',
-        'touchId': 'Protect with Touch ID',
-        'biyometrik': 'Protect with biometrics',
-        'other': 'Protect with your screen lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Protect with Face ID',
+      'touchId': 'Protect with Touch ID',
+      'biyometrik': 'Protect with biometrics',
+      'other': 'Protect with your screen lock',
+    });
     return '$_temp0';
   }
 
@@ -3783,15 +3778,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Turn on Face ID',
-        'touchId': 'Turn on Touch ID',
-        'biyometrik': 'Turn on biometric lock',
-        'other': 'Turn on app lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Turn on Face ID',
+      'touchId': 'Turn on Touch ID',
+      'biyometrik': 'Turn on biometric lock',
+      'other': 'Turn on app lock',
+    });
     return '$_temp0';
   }
 
@@ -4230,7 +4222,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis) {
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  ) {
     return 'O $acilis · H $yuksek · L $dusuk · C $kapanis';
   }
 
@@ -5803,7 +5799,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi) {
+    String date,
+    String end,
+    String change,
+    String cpi,
+  ) {
     return 'From your first purchase ($date) to the end of $end your savings $change; inflation was $cpi.';
   }
 
@@ -6616,7 +6616,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cryEventEvidence(
-      String amount, String times, String pct, String share) {
+    String amount,
+    String times,
+    String pct,
+    String share,
+  ) {
     return '$amount · $times× the average · price $pct · buyer share $share';
   }
 
@@ -9287,6 +9291,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Markers (plotshape) in a separate pane are not shown.';
 
   @override
+  String ozgNotOzet(int sayi) {
+    return '$sayi items are not shown · Details';
+  }
+
+  @override
   String get varlikGuncelleBaslik => 'Update asset';
 
   @override
@@ -9302,8 +9311,7 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           '$n transactions are deleted and a single record takes their place. Same as deleting and re-adding the asset.',
-      one:
-          '1 transaction is deleted and a single record takes its place. Same as deleting and re-adding the asset.',
+      one: '1 transaction is deleted and a single record takes its place. Same as deleting and re-adding the asset.',
     );
     return '$_temp0';
   }
@@ -9329,6 +9337,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sgnAyarAciklamaUcretsiz =>
       'Pick which indicators produce signals for each asset type. RSI, MACD and Bollinger are free, with one alert a day.';
+
+  @override
+  String get sgnOrnekBildirim => 'Send a sample notification';
+
+  @override
+  String get sgnOrnekBildirimGonderildi => 'Sample notification sent';
+
+  @override
+  String get sgnIzinKapaliAyarlar => 'Notifications are off · Open Settings';
+
+  @override
+  String get sgnIzinSorulmadi => 'Notifications are off · Allow';
 
   @override
   String sgnParametreAciklama(String tur) {
@@ -9595,40 +9615,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pyzKilitOzet(String donem, String yuzde, String yon) {
-    String _temp0 = intl.Intl.selectLogic(
-      donem,
-      {
-        'hafta': 'Last week',
-        'other': 'Last month',
-      },
-    );
-    String _temp1 = intl.Intl.selectLogic(
-      yon,
-      {
-        'artti': 'rose',
-        'other': 'fell',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(donem, {
+      'hafta': 'Last week',
+      'other': 'Last month',
+    });
+    String _temp1 = intl.Intl.selectLogic(yon, {
+      'artti': 'rose',
+      'other': 'fell',
+    });
     return '$_temp0 your portfolio $_temp1 $yuzde · Premium\'s AI explains why.';
   }
 
   @override
   String pyzKilitOzetEtkili(
-      String donem, String yuzde, String yon, String varlik) {
-    String _temp0 = intl.Intl.selectLogic(
-      donem,
-      {
-        'hafta': 'Last week',
-        'other': 'Last month',
-      },
-    );
-    String _temp1 = intl.Intl.selectLogic(
-      yon,
-      {
-        'artti': 'rose',
-        'other': 'fell',
-      },
-    );
+    String donem,
+    String yuzde,
+    String yon,
+    String varlik,
+  ) {
+    String _temp0 = intl.Intl.selectLogic(donem, {
+      'hafta': 'Last week',
+      'other': 'Last month',
+    });
+    String _temp1 = intl.Intl.selectLogic(yon, {
+      'artti': 'rose',
+      'other': 'fell',
+    });
     return '$_temp0 your portfolio $_temp1 $yuzde, moved most by $varlik · Premium\'s AI explains why.';
   }
 
@@ -10669,7 +10681,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String kilometreTasiSiradakiIlerlemeEtiket(
-      String baslik, int yuzde, String kalan) {
+    String baslik,
+    int yuzde,
+    String kalan,
+  ) {
     return 'Next milestone: $baslik, $yuzde percent, $kalan to go';
   }
 
@@ -11031,7 +11046,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String yaSemantik(
-      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
+    String baslik,
+    String dusuk,
+    String yuksek,
+    String bugun,
+    String cumle,
+  ) {
     return '$baslik: low $dusuk, high $yuksek, today $bugun. $cumle';
   }
 
@@ -11082,7 +11102,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String bedelliOnizleme(
-      String elde, String yeni, String birim, String toplam) {
+    String elde,
+    String yeni,
+    String birim,
+    String toplam,
+  ) {
     return '$yeni new shares on your $elde, $birim each, $toplam in total';
   }
 
@@ -11218,8 +11242,7 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           'Total realized gain or loss on $count closed positions with known cost is not read out because your balance is hidden.',
-      one:
-          'Realized gain or loss on 1 closed position with known cost is not read out because your balance is hidden.',
+      one: 'Realized gain or loss on 1 closed position with known cost is not read out because your balance is hidden.',
     );
     return '$_temp0';
   }
@@ -11358,8 +11381,7 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           'You have $ay months of history. See which months you closed in the green with Premium.',
-      one:
-          'You have 1 month of history. See which months you closed in the green with Premium.',
+      one: 'You have 1 month of history. See which months you closed in the green with Premium.',
     );
     return '$_temp0';
   }
@@ -11439,7 +11461,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String aylikGetiriOzetUclar(
-      String iyiAy, String iyiDeger, String zorAy, String zorDeger) {
+    String iyiAy,
+    String iyiDeger,
+    String zorAy,
+    String zorDeger,
+  ) {
     return 'Best month $iyiAy $iyiDeger, toughest $zorAy $zorDeger.';
   }
 
@@ -11460,7 +11486,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String aylikGetiriYilReelOkunan(
-      String yil, String getiri, String tufe, String reel) {
+    String yil,
+    String getiri,
+    String tufe,
+    String reel,
+  ) {
     return '$yil: $getiri. CPI $tufe%, real return $reel.';
   }
 
