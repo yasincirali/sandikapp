@@ -11,6 +11,7 @@ import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/widgets/bugun_karti.dart';
+import 'package:portfoy_takip/widgets/hedef_sheet.dart' show hedefSheetSaati;
 import 'package:portfoy_takip/widgets/sigan_metin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:portfoy_takip/widgets/hedef_sheet.dart' show hedefSheetSaati;

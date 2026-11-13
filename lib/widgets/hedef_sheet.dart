@@ -36,6 +36,13 @@ import 'sandik_async_button.dart';
 import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import '../utils/tr_format.dart';
 
+/// Sayfanın "bugün"ü. Kart [BugunKarti.saat] ile aynı anı kullanmalı: kart
+/// sabit saatle test edilirken sayfa gerçek saati okuyunca kalan ay sayısı
+/// (dolayısıyla "ayda ₺Z daha gerek") günden güne kayıyordu (2026-11-13,
+/// `hedef_tarihi_kart_test` takvim günü değişince kırıldı).
+@visibleForTesting
+DateTime Function() hedefSheetSaati = DateTime.now;
+
 /// Hazır hedef merdiveni (TRY). Basamaklar yukarı doğru genişler: 100
 /// binlik portföye 250 bin anlamlı bir hedef, 10 milyonluğa 25 milyon.
 const hedefMerdiveni = <int>[
@@ -589,7 +596,7 @@ class HedefProfilSatiri extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hedefVar = ref.watch(portfolioGoalProvider) > 0;
     final oneri = HedefOnerisiDurumu.coz(ref.watch(hedefOnerisiProvider));
-    if (hedefVar || oneri.gorunur(DateTime.now())) {
+    if (hedefVar || oneri.gorunur(hedefSheetSaati())) {
       return const SizedBox.shrink();
     }
     final l = context.l10n;
