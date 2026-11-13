@@ -836,16 +836,11 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
       fullMaxX: maxX,
     );
 
-    // Volume verisi: gün-bazlı buy/sell TRY. Intraday'de bar chart mantıklı
-    // değil (gün içi işlem yoğunluğu farklı bir metrik) → sadece intraday
-    // olmayan periyotlarda çizilir.
-    // Panel HER dönemde durur (yasin'ın ekran kaydı 2026-11-13: Bugün ve
-    // 1 hf'de panel yoktu, 1 ay/3 ay'da vardı; grafik kartının boyu her
-    // geçişte ~98 pt değişip altındaki her şeyi itiyordu). İşlemsiz
-    // dönemde aynı boyda boş panel ve tek cümle. Gün içinde de bugünün
-    // işlemleri saatine çubuk olarak düşer (eskiden gün içinde hiç
-    // çizilmiyordu).
-    final volumeBars = _computeVolumeBars(noktalar);
+    // Alım · satış hacim paneli 2026-11-14'te kalktı (yasin: "zaten alım
+    // satım noktaları var, alttakine gerek yoksa kaldır; tüm zaman
+    // aralıkları için chart layoutu aynı olmalı, sadece içindeki grafik
+    // değişecek"). İşlem tutarı çizgideki işarette ve crosshair satırında
+    // okunur; kartın boyu artık hiçbir dönemde değişmez.
 
     return Container(
       padding: GrafikStili.kartDolgusu,
@@ -1015,133 +1010,6 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             },
           ),
           ),
-          // İşlem hacmi paneli GRAFİĞİN ALTINDA gelir/gider: grafik yerinde
-          // kalır, yalnız kartın dibi uzar/kısalır — o da tek karede değil,
-          // yumuşak (yasin 2026-11-11, "dönem değişince grafik yer
-          // değiştiriyor"; ölçüldü: işlem olan döneme geçişte +98 pt).
-          // Hareketi azalt → anında. 2026-11-13'ten beri panel her dönemde
-          // durur (gerekçe `volumeBars` notunda); işlemsiz dönemde boş kutu
-          // yerine "Bu dönemde alım ya da satış yok." yazar, "veri gelmedi"
-          // diye okunmaz.
-          AnimatedSize(
-            duration: SandikMotion.stateOf(context),
-            curve: SandikMotion.move,
-            alignment: Alignment.topCenter,
-            child: Column(
-                    children: [
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 4, right: 4),
-              child: Text(
-                context.l10n.tradeVolumeUpper,
-                style: context.t.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text58,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            SizedBox(
-              height: 70,
-              child: ListenableBuilder(
-                listenable: viewport,
-                builder: (_, __) {
-                  final vp = viewport;
-                  final maxY = volumeBars.fold<double>(
-                      0, (m, b) => b.total > m ? b.total : m);
-                  // Her bar için 2 spot'lu ayrı bir LineChartBarData → dikey
-                  // çubuk. fl_chart'ın BarChart'ında X data-space değil, group
-                  // index olduğu için sync viewport için LineChart hilesi kullanıyoruz.
-                  final chartMaxY = maxY == 0 ? 1.0 : maxY * 1.15;
-                  // En küçük çubuk bile görünür kalsın. Tek büyük alım
-                  // ölçeği belirlediğinde küçük işlemler 1px'in altına
-                  // düşüp "kırıntı" gibi görünüyordu — panelin %6'sı kadar
-                  // bir taban yüksekliği veriyoruz. Ölçek yine gerçek: bu
-                  // yalnızca ÇİZİM tabanı, `b.total` değeri değişmiyor.
-                  final minVisibleY = chartMaxY * 0.06;
-                  final bars = <LineChartBarData>[];
-                  for (final b in volumeBars) {
-                    final buyPositive = b.buy >= b.sell;
-                    final color = buyPositive ? context.c.gain : context.c.loss;
-                    final drawY = b.total < minVisibleY ? minVisibleY : b.total;
-                    bars.add(LineChartBarData(
-                      spots: [FlSpot(b.x, 0), FlSpot(b.x, drawY)],
-                      isCurved: false,
-                      color: color.withValues(alpha: 0.85),
-                      barWidth: 3,
-                      isStrokeCapRound: false,
-                      dotData: const FlDotData(show: false),
-                      belowBarData: BarAreaData(show: false),
-                    ));
-                  }
-                  final hacim = LineChart(
-                    LineChartData(
-                      minX: vp.minX,
-                      maxX: vp.maxX,
-                      minY: 0,
-                      maxY: chartMaxY,
-                      clipData: const FlClipData.all(),
-                      lineTouchData: const LineTouchData(enabled: false),
-                      gridData: const FlGridData(show: false),
-                      borderData: FlBorderData(show: false),
-                      // ⚠️ Ana grafik sağda 60px'i Y-ekseni etiketlerine
-                      // ayırıyor (`rightTitles.reservedSize`). Bu panel hiç
-                      // rezerv ayırmazsa AYNI X değeri iki panelde farklı
-                      // piksele düşer — çubuklar fiyat grafiğine göre sağa
-                      // kayar. Etiketleri gizli ama aynı genişlikte bir
-                      // rezerv koyarak iki plot area'yı hizalıyoruz.
-                      titlesData: FlTitlesData(
-                        show: true,
-                        topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false)),
-                        leftTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false)),
-                        bottomTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 60,
-                            // Etiket yok — yalnızca hizalama rezervi.
-                            getTitlesWidget: (_, __) => const SizedBox.shrink(),
-                          ),
-                        ),
-                      ),
-                      lineBarsData: bars,
-                    ),
-                    // Ana grafikle aynı motion token'ları — hacim paneli
-                    // periyot değişiminde onunla birlikte morf'lansın, kendi
-                    // başına (fl_chart varsayılanı 150ms/linear) kaymasın.
-                    // Jest sırasında ana grafik gibi morf YOK (bkz.
-                    // `ChartViewport.jestSuruyor`); hareketi azalt'ta da yok.
-                    duration: vp.jestSuruyor
-                        ? Duration.zero
-                        : SandikMotion.stateOf(context),
-                    curve: SandikMotion.enter,
-                  );
-                  if (volumeBars.isNotEmpty) return hacim;
-                  // İşlemsiz dönem: panel aynı boyda, boş kutu yerine cümle.
-                  return Stack(
-                    children: [
-                      Positioned.fill(child: hacim),
-                      Center(
-                        child: Text(
-                          context.l10n.s2AkisYok,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: context.t.bodySmall
-                              ?.copyWith(color: context.c.text36),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-                    ],
-                  ),
-          ),
           // Grafik tipi seçici — kabın DİBİNDE, etkilediği şeyin yanında.
           //
           // 2026-09-15'e kadar dönem satırının sağ ucundaydı; kullanıcı
@@ -1257,19 +1125,6 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           genislik: genislik, gorunurAralik: gorunurAralik, kapali: kapali));
     }
     return out;
-  }
-
-  /// Hacim çubukları — işaretlerle AYNI noktalarda (2026-09-24).
-  ///
-  /// Eskiden çubuk takvim gününün başına konuyordu; saatlik seride işaret
-  /// 18:00 noktasındayken çubuk 00:00'daydı ve iki panel "timeline'da
-  /// eşleşmiyor" görünüyordu. Şimdi çubuğun X'i işlemin bağlandığı
-  /// noktanın X'idir, bkz. `islemNoktalari`.
-  List<_VolumeBar> _computeVolumeBars(Map<double, IslemNoktasi> noktalar) {
-    return [
-      for (final n in noktalar.values)
-        if (n.alim + n.satis > 0) _VolumeBar(x: n.x, buy: n.alim, sell: n.satis),
-    ];
   }
 
   /// [islemNoktalari]'nın önbellekli hâli — segment/varlık kümesi başına bir

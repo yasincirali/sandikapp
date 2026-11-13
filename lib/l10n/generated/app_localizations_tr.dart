@@ -2104,9 +2104,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get tradeVolumeUpper => 'Alım · satış';
-
-  @override
   String crosshairNetBuy(String amount) {
     return 'Net alım +$amount';
   }

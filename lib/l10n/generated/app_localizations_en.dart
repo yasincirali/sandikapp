@@ -2122,9 +2122,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tradeVolumeUpper => 'Buys · sells';
-
-  @override
   String crosshairNetBuy(String amount) {
     return 'Net buy +$amount';
   }
