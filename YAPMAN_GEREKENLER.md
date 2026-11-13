@@ -12,6 +12,23 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-13 Play istatistiği haftalık özete (iki adım, sen)
+
+Pazartesi "Mağaza özeti (App Store + Play)" işi Play çökme/ANR oranını ve
+kurulum sayısını da basar. Bunun için:
+
+- [ ] **İzin:** Play Console › Kullanıcılar ve izinler › yükleme için
+      kullandığın servis hesabı (…@….iam.gserviceaccount.com) › Uygulama
+      izinleri: "Uygulama bilgilerini görüntüleme (salt okunur)" ve
+      "Toplu raporları indirme" işaretli olsun. Yeni izin birkaç saatte
+      işler.
+- [ ] **Kova adı:** Play Console › Raporları indir › İstatistikler ›
+      "Cloud Storage URI'sini kopyala". `gs://pubsite_prod_…/stats/installs/`
+      gibi bir adres gelir; ortadaki `pubsite_prod_…` kısmını GitHub ›
+      sandikapp › Settings › Secrets › Actions'a `PLAY_GCS_BUCKET` adıyla ekle.
+      Eklemezsen yalnız kurulum satırı atlanır, çökme/ANR yine gelir.
+- [ ] Denemek için Actions › "Mağaza özeti" › Run workflow.
+
 ## ⏳ 2026-11-12 Ücretsiz alarm tavanı sunucuda (migration 0181)
 
 "Sonsuz alarm" hatası: istemci düzeltmesi tek başına çalışır (deploy
