@@ -43,8 +43,10 @@ String _defterImzasi(List<Asset>? assets) {
 final portfoyYorumRizaProvider = FutureProvider.autoDispose<bool?>(
     (ref) => PortfoyYorumuService.instance.rizaVarMi());
 
-final portfoyYorumuProvider = FutureProvider.autoDispose
-    .family<PortfoyYorumDurumu?, YorumTuru>((ref, tur) async {
+/// Kapanmış dönem (geçen hafta/ay) paketi — kayıt okumadan. Yorum kartı
+/// ile kilitli kartın cümlesi ([portfoyYorumTanitimProvider]) aynı paketi
+/// kurar; ikinci bir hesap yolu yazılmadı.
+Future<PortfoyYorumPaketi?> _kapanmisPaket(Ref ref, YorumTuru tur) async {
   ref.watch(portfolioProvider.select((s) => _defterImzasi(s.valueOrNull?.assets)));
   final uid = ref.watch(authProvider.select((s) => s.valueOrNull?.id));
   final assets = ref.read(portfolioProvider).valueOrNull?.assets;
@@ -57,15 +59,28 @@ final portfoyYorumuProvider = FutureProvider.autoDispose
   // Ölçüm adları modele Türkçe gider (talimat Türkçe); arayüz dili ne olursa olsun.
   final tr = lookupAppLocalizations(const Locale('tr'));
   final adlar = <String, String>{for (final a in lotlar) positionKey(a): a.name};
-  final svc = PortfoyYorumuService.instance;
-  final paket = await svc.paketHazirla(
+  return PortfoyYorumuService.instance.paketHazirla(
     tur: tur,
     lotlar: lotlar,
     etiket: (k, t) => pozisyonEtiketi(k, t, tr, ad: adlar[k]),
   );
-  final kayit = await svc.kayitliYorum(tur, paket.baslangic);
+}
+
+final portfoyYorumuProvider = FutureProvider.autoDispose
+    .family<PortfoyYorumDurumu?, YorumTuru>((ref, tur) async {
+  final paket = await _kapanmisPaket(ref, tur);
+  if (paket == null) return null;
+  final kayit = await PortfoyYorumuService.instance.kayitliYorum(tur, paket.baslangic);
   return PortfoyYorumDurumu(paket: paket, kayit: kayit);
 });
+
+/// Ücretsiz hesabın kilitli kartı (2026-11-13): "Geçen ay portföyün %3,2
+/// arttı, en çok THYAO etkiledi · nedenini yapay zekâ Premium'da anlatır".
+/// Yalnız paket kurulur: saklı yorum OKUNMAZ (ücretsizde yorum yok, istek
+/// boşa olurdu), model çağrılmaz. Seri Performans'ın kullandığı geçmiş
+/// servisinden gelir.
+final portfoyYorumTanitimProvider = FutureProvider.autoDispose
+    .family<PortfoyYorumPaketi?, YorumTuru>(_kapanmisPaket);
 
 /// Seçili dönemin portföy yorumu (0151) — Performans'ın dönem seçicisi.
 ///

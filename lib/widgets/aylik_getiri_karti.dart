@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../providers/aylik_getiri_provider.dart';
-import '../providers/preferences_provider.dart' show premiumKilitliProvider;
+import '../providers/preferences_provider.dart'
+    show aylikGetiriAcikProvider, premiumKilitliProvider;
 import '../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../services/aylik_getiri_tablosu.dart';
@@ -58,6 +59,14 @@ import 'sandik_skeleton.dart' show SandikIcerikGecisi;
 /// kullanıcı için ok + yüzde aynen duruyor. Tablonun en iyi ve en zor
 /// (kapanmış) ayı ince çerçeveli — yalnız iki hücre; hangisi olduğu alt
 /// cümlede ve ekran okuyucu etiketinde yazılı.
+///
+/// ## Katlanır (2026-11-13, yasin: "çok yer kaplıyor")
+/// Tablo hâlinde kart başlığından katlanır; seçim [aylikGetiriAcikProvider]
+/// (cihaz tercihi, varsayılan açık). Kapalıyken başlığın altında yalnız
+/// özetin ilk cümlesi kalır ("20 ayın 14'ünü artıda kapattın.") — kart
+/// katlanınca da sorunun cevabı görünür, uç aylar ve tablo açınca.
+/// Kilit, ilerleme ve hata hâlleri zaten tek satır; katlanacak bir şey yok,
+/// başlıkları düz kalır (ok olsa hiçbir şey saklamayan bir düğme olurdu).
 class AylikGetiriKarti extends ConsumerWidget {
   const AylikGetiriKarti({super.key, required this.istek, this.simdi});
 
@@ -156,11 +165,15 @@ class AylikGetiriKarti extends ConsumerWidget {
     }
     final olcek = MediaQuery.textScalerOf(context).scale(1);
     final ozet = tablo.ozet;
+    final acik = ref.watch(aylikGetiriAcikProvider);
     return (
       'tablo',
-      _kabuk(
+      _acilirKabuk(
         context,
-        Column(
+        ref,
+        acik: acik,
+        kapaliOzet: ozet == null ? null : _ozetIlkCumlesi(context, ozet),
+        govde: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             LayoutBuilder(builder: (context, k) {
@@ -192,6 +205,48 @@ class AylikGetiriKarti extends ConsumerWidget {
     );
   }
 
+  /// Tablo hâlinin kabuğu: başlık dokununca katlanır. Panel ve kapalı özet
+  /// iki ayrı [SandikAcilir] — biri kapanırken öteki açılır, aynı süre ve
+  /// eğride (hareketi azaltta ikisi de anında).
+  Widget _acilirKabuk(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool acik,
+    required String? kapaliOzet,
+    required Widget govde,
+  }) =>
+      Padding(
+        padding: const EdgeInsets.only(top: SandikSpace.md),
+        child: SandikCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _AcilirBaslik(
+                acik: acik,
+                onTap: () =>
+                    ref.read(aylikGetiriAcikProvider.notifier).set(!acik),
+              ),
+              if (kapaliOzet != null)
+                SandikAcilir(
+                  acik: !acik,
+                  child: Text(
+                    kapaliOzet,
+                    style: context.t.bodyMedium
+                        ?.copyWith(color: context.c.text90),
+                  ),
+                ),
+              SandikAcilir(
+                acik: acik,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: SandikSpace.sm),
+                  child: govde,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
   Widget _kabuk(BuildContext context, Widget govde) => Padding(
         padding: const EdgeInsets.only(top: SandikSpace.md),
         child: SandikCard(
@@ -208,6 +263,62 @@ class AylikGetiriKarti extends ConsumerWidget {
 }
 
 enum _Yerlesim { genis, dar, liste }
+
+/// Katlanır kartın başlığı: "Aylık getiri" + ok. Tüm satır dokunma alanı
+/// (≥ 44 pt); durum ok yönüyle ve erişilebilirlikte `expanded` ile söylenir.
+///
+/// iOS'ta Flutter `expanded`'ı VoiceOver'a taşımıyor; durum orada değer
+/// olarak ("açık"/"kapalı") okunur. Android'de TalkBack `expanded`'ı zaten
+/// söyler, değer eklenirse iki kez duyulurdu (Çalanlar başlığıyla aynı
+/// karar, `price_alerts_screen`).
+class _AcilirBaslik extends StatelessWidget {
+  const _AcilirBaslik({required this.acik, required this.onTap});
+
+  final bool acik;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final elma = switch (Theme.of(context).platform) {
+      TargetPlatform.iOS || TargetPlatform.macOS => true,
+      _ => false,
+    };
+    return Semantics(
+      button: true,
+      expanded: acik,
+      value: !elma ? null : (acik ? l.bolumAcik : l.bolumKapali),
+      child: SandikTappable(
+        key: const ValueKey('aylikGetiriBaslik'),
+        soluk: true,
+        haptic: SandikHaptic.selection,
+        scale: 0.99,
+        onTap: onTap,
+        child: SandikSectionHeader(
+          title: l.aylikGetiriBaslik,
+          minHeight: SandikTouch.min,
+          trailing: SandikAcilirOk(
+            acik: acik,
+            child: Icon(Icons.expand_more_rounded,
+                size: SandikSpace.lgs, color: context.c.text58),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Özet cümlesinin ilk yarısı: "20 ayın 14'ünü artıda kapattın." Hem tam
+/// cümlede hem katlanmış kartta aynı metin (iki yerde kurulmasın).
+String _ozetIlkCumlesi(BuildContext context, AylikGetiriOzeti ozet) {
+  final l = context.l10n;
+  final artiEkli = context.tarihDili.startsWith('en')
+      ? '${ozet.arti}'
+      : "${ozet.arti}'${trSayiIyelikBelirtmeEki(ozet.arti)}";
+  return ozet.arti == 0
+      ? l.aylikGetiriOzetArtiYok(ozet.kapanan)
+      : l.aylikGetiriOzetArti(ozet.kapanan, artiEkli);
+}
 
 /// Yüzdenin ekranda yazılışı ("▲ %2,1", sıfırda "%0,0") ve ekran okuyucu
 /// cümlesi ("yüzde 2,1 kazanç"). Hane: 1 ondalık — tabloda on iki sayı
@@ -570,13 +681,7 @@ class _OzetCumlesi extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final dil = context.tarihDili;
-    final en = dil.startsWith('en');
-    final artiEkli = en
-        ? '${ozet.arti}'
-        : "${ozet.arti}'${trSayiIyelikBelirtmeEki(ozet.arti)}";
-    final ilk = ozet.arti == 0
-        ? l.aylikGetiriOzetArtiYok(ozet.kapanan)
-        : l.aylikGetiriOzetArti(ozet.kapanan, artiEkli);
+    final ilk = _ozetIlkCumlesi(context, ozet);
 
     String ay(AylikGetiriAyi a, {required bool kisa}) =>
         '${ayAdi(a.ay, dil: dil, kisa: kisa)} ${a.yil}';

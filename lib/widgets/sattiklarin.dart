@@ -29,6 +29,11 @@ import 'para_akisi_karti.dart' show KilitSatiri;
 /// - Kapanmış pozisyon yoksa satır yok: boş bir listeye çağırmayız.
 /// - `premiumKilitliProvider` → [KilitSatiri] (kaynak `sattiklarin` →
 ///   paywall rapor kartı: gerçekleşen kâr yıllık raporun sorusu).
+///   Kilitli satır yarı açıktır (2026-11-13, `elde_tutma_satiri.dart`
+///   deseni): kaç pozisyon kapattığı kullanıcının KENDİ defterinden
+///   ücretsiz okunur, gerçekleşen kâr kilitli kalır ("3 pozisyonu
+///   kapattın · gerçekleşen kârın Premium'da"). Kâr, işareti dahil, bu
+///   metne hiç girmez: kilidin sattığı şey o.
 /// - Açıksa satır listeyi alt sayfada açar ([showSattiklarin]).
 class SattiklarinSatiri extends ConsumerWidget {
   const SattiklarinSatiri({super.key});
@@ -44,7 +49,7 @@ class SattiklarinSatiri extends ConsumerWidget {
     final c = context.c;
     final Widget satir = ref.watch(premiumKilitliProvider)
         ? KilitSatiri(
-            metin: l.sattiklarinKilitli,
+            metin: l.sattiklarinKilitli(liste.length),
             kaynak: 'sattiklarin',
             ozellik: 'sattiklarin',
             kilitEtiketi: l.goalDateLockedLabel,
@@ -60,11 +65,16 @@ class SattiklarinSatiri extends ConsumerWidget {
                     child: Text(
                       l.sattiklarinSatir(liste.length),
                       style: context.t.bodyMedium?.copyWith(
-                          color: c.text90, fontWeight: FontWeight.w600),
+                        color: c.text90,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  Icon(Icons.chevron_right_rounded,
-                      size: SandikSpace.lgs, color: c.text58),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: SandikSpace.lgs,
+                    color: c.text58,
+                  ),
                 ],
               ),
             ),
@@ -82,14 +92,18 @@ class SattiklarinSatiri extends ConsumerWidget {
 /// kazançta, yalnız yüzde. Değerlendirme istemi sorulmaz (eski kapanış
 /// "mutlu an" değil).
 Future<void> showSattiklarin(BuildContext context, WidgetRef ref) =>
-    showSattiklarinListesi(context,
-        tutarGizli: () => ref.read(balanceHiddenProvider));
+    showSattiklarinListesi(
+      context,
+      tutarGizli: () => ref.read(balanceHiddenProvider),
+    );
 
 /// [showSattiklarin]'in `WidgetRef` istemeyen hâli. Satın alma sonrası
 /// sayfa listeyi paywall kapandıktan SONRA açar; o an paywall'ın `ref`'i
 /// ölmüştür, gizli tutar tercihi kapsayıcıdan okunur.
-Future<void> showSattiklarinListesi(BuildContext context,
-    {required bool Function() tutarGizli}) async {
+Future<void> showSattiklarinListesi(
+  BuildContext context, {
+  required bool Function() tutarGizli,
+}) async {
   final l = context.l10n;
   final secim = await showSandikSheet<KapanmisPozisyon>(
     context: context,
@@ -98,17 +112,23 @@ Future<void> showSattiklarinListesi(BuildContext context,
     builder: (_) => const SattiklarinSayfasi(),
   );
   if (secim == null || !context.mounted) return;
-  await showKapanisOzeti(context, secim.ozet,
-      tutarGizli: tutarGizli(), degerlendirme: false);
+  await showKapanisOzeti(
+    context,
+    secim.ozet,
+    tutarGizli: tutarGizli(),
+    degerlendirme: false,
+  );
 }
 
-/// Kapanmış pozisyonların listesi: ad, tutma süresi, gerçekleşen kâr/zarar.
+/// Kapanmış pozisyonların listesi: başta tek özet satırı (gerçekleşen
+/// toplam), altında ad, tutma süresi, gerçekleşen kâr/zarar.
 class SattiklarinSayfasi extends ConsumerWidget {
   const SattiklarinSayfasi({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final liste = ref.watch(sattiklarinProvider);
+    final toplam = ref.watch(sattiklarinToplamiProvider);
     final gizli = ref.watch(balanceHiddenProvider);
     final h = SandikSpace.screenH(context);
     return SafeArea(
@@ -116,12 +136,92 @@ class SattiklarinSayfasi extends ConsumerWidget {
       child: ListView.builder(
         shrinkWrap: true,
         padding: EdgeInsets.fromLTRB(h, SandikSpace.sm, h, SandikSpace.lg),
-        itemCount: liste.length,
-        itemBuilder: (context, i) => _SattiginSatir(
-          kapanmis: liste[i],
-          tutarGizli: gizli,
-          onTap: () => Navigator.pop(context, liste[i]),
-        ),
+        itemCount: liste.length + 1,
+        itemBuilder: (context, i) => i == 0
+            ? _SattiklarinOzetSatiri(toplam: toplam, tutarGizli: gizli)
+            : _SattiginSatir(
+                kapanmis: liste[i - 1],
+                tutarGizli: gizli,
+                onTap: () => Navigator.pop(context, liste[i - 1]),
+              ),
+      ),
+    );
+  }
+}
+
+/// Toplam tutar metni: "+₺1.200"; bakiye gizliyken satırlarla aynı maske.
+/// Hiçbir pozisyonun maliyeti bilinmiyorsa `null` (toplam yazılmaz).
+String? sattiklarinToplamTutari(
+  SattiklarinToplami t, {
+  required bool tutarGizli,
+}) {
+  final kar = t.karTry;
+  if (kar == null) return null;
+  if (tutarGizli) return const BazPara.lira().gizliTutar;
+  return '${kar > 0 ? '+' : ''}${fmtTRY(kar)}';
+}
+
+/// "Gerçekleşen toplam +₺X · 7 pozisyon" ve gerekirse dipnot.
+///
+/// ## Kararlar (2026-11-13)
+/// - Sayı toplama GİREN pozisyonlardır (maliyeti bilinen): "7 pozisyon"
+///   tutarın kaçının toplamı olduğunu söyler; girmeyenler dipnotta ayrıca
+///   sayılır, iki sayı birbirini yalanlamaz.
+/// - Dipnot varken satırlardaki tek tek "Maliyet bilinmiyor" yazısı
+///   görünmez (aynı bilgi bir kez); satır listede kalır, sonucu boş.
+///   Ekran okuyucu satır cümlesinde yine söyler: dipnotu satırla
+///   eşleştiremez.
+/// - Hepsi bilinmiyorsa toplam satırı yok, yalnız dipnot (₺0 "başa baş"
+///   demek olurdu).
+/// - Renk yön için ek ipucu; anlam işarette (+/−) ve cümlede.
+/// - Bakiye gizliyken ekran okuyucu maskeyi değil "gizli" cümlesini okur.
+class _SattiklarinOzetSatiri extends StatelessWidget {
+  const _SattiklarinOzetSatiri({
+    required this.toplam,
+    required this.tutarGizli,
+  });
+
+  final SattiklarinToplami toplam;
+  final bool tutarGizli;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    final tutar = sattiklarinToplamTutari(toplam, tutarGizli: tutarGizli);
+    final kar = toplam.karTry ?? 0;
+    final renk =
+        tutarGizli || kar == 0 ? c.text90 : (kar > 0 ? c.gain : c.loss);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+      child: Column(
+        key: const ValueKey('sattiklarin_ozet'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (tutar != null)
+            Semantics(
+              label: tutarGizli
+                  ? l.sattiklarinToplamGizliA11y(toplam.bilinen)
+                  : l.sattiklarinToplamA11y(tutar, toplam.bilinen),
+              container: true,
+              excludeSemantics: true,
+              child: Text(
+                l.sattiklarinToplam(tutar, toplam.bilinen),
+                style: context.t.bodyMedium?.copyWith(
+                  color: renk,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          if (toplam.bilinmeyen > 0) ...[
+            if (tutar != null) const SizedBox(height: SandikSpace.xxs),
+            Text(
+              l.sattiklarinDipnot(toplam.bilinmeyen),
+              key: const ValueKey('sattiklarin_dipnot'),
+              style: context.t.bodySmall?.copyWith(color: c.text58),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -163,23 +263,30 @@ class _SattiginSatir extends StatelessWidget {
     final sure = l.sattiklarinTuttun(kapanisSureMetni(l, o));
     final sonuc = sattiginSonucu(o, tutarGizli: tutarGizli);
     final kar = o.karTry ?? 0;
-    // Anlam renkte değil yalnız: tutar ve yüzde işaretli (+/−), maliyet
-    // bilinmiyorsa cümle (HIG renk körlüğü).
-    final sonucMetni = Text(
-      sonuc ?? l.sattiklarinMaliyetYok,
-      style: sonuc == null
-          ? context.t.bodySmall?.copyWith(color: c.text58)
-          : context.t.numSmall.copyWith(
-              color: kar >= 0 ? c.gain : c.loss, fontWeight: FontWeight.w600),
-    );
+    // Anlam renkte değil yalnız: tutar ve yüzde işaretli (+/−) (HIG renk
+    // körlüğü). Maliyet bilinmiyorsa sonuç boş: sayfanın başındaki dipnot
+    // bunu bir kez söyler (2026-11-13); ekran okuyucu cümlesi aşağıda.
+    final Widget sonucMetni = sonuc == null
+        ? const SizedBox.shrink()
+        : Text(
+            sonuc,
+            style: context.t.numSmall.copyWith(
+              color: kar >= 0 ? c.gain : c.loss,
+              fontWeight: FontWeight.w600,
+            ),
+          );
     final adSure = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(o.ad,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.bodyMedium
-                ?.copyWith(color: c.text90, fontWeight: FontWeight.w600)),
+        Text(
+          o.ad,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: context.t.bodyMedium?.copyWith(
+            color: c.text90,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: SandikSpace.xxs),
         Text(sure, style: context.t.bodySmall?.copyWith(color: c.text58)),
       ],
@@ -192,7 +299,7 @@ class _SattiginSatir extends StatelessWidget {
             children: [
               adSure,
               const SizedBox(height: SandikSpace.xs),
-              sonucMetni
+              sonucMetni,
             ],
           )
         : Row(
@@ -223,8 +330,11 @@ class _SattiginSatir extends StatelessWidget {
               children: [
                 Expanded(child: icerik),
                 const SizedBox(width: SandikSpace.xs),
-                Icon(Icons.chevron_right_rounded,
-                    size: SandikSpace.lgs, color: c.text58),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: SandikSpace.lgs,
+                  color: c.text58,
+                ),
               ],
             ),
           ),

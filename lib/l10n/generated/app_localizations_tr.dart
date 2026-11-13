@@ -1071,6 +1071,26 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String eldeTutmaTufeSatiri(String tufe, String reel) {
+    return 'Aynı sürede TÜFE yıllık $tufe · reel $reel';
+  }
+
+  @override
+  String eldeTutmaTufeA11yKazanc(String tufe, String reel) {
+    return 'Aynı sürede enflasyon yıllık yüzde $tufe, reel getiri yüzde $reel kazanç.';
+  }
+
+  @override
+  String eldeTutmaTufeA11yKayip(String tufe, String reel) {
+    return 'Aynı sürede enflasyon yıllık yüzde $tufe, reel getiri yüzde $reel kayıp.';
+  }
+
+  @override
+  String eldeTutmaTufeA11yBasaBas(String tufe) {
+    return 'Aynı sürede enflasyon yıllık yüzde $tufe, reel getiri başa baş.';
+  }
+
+  @override
   String get fxSplitPrice => 'Fiyattan';
 
   @override
@@ -1084,6 +1104,37 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get fxSplitLocked =>
       'Kârının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da';
+
+  @override
+  String get fxSplitMissingRate =>
+      'Alış kuru kayıtlı değil; işlemi düzenleyip ekleyebilirsin';
+
+  @override
+  String get fxSplitSheetTitle => 'Kâr nereden geldi';
+
+  @override
+  String get fxSplitSheetRate => 'Alış kuru → bugünkü kur';
+
+  @override
+  String fxSplitSheetRateValue(String from, String to) {
+    return '$from → $to';
+  }
+
+  @override
+  String fxSplitSheetPriceBody(String gain, String rate) {
+    return 'Döviz bazında kâr $gain × alış kuru $rate';
+  }
+
+  @override
+  String fxSplitSheetFxBody(String value, String diff) {
+    return 'Bugünkü döviz değeri $value × kur farkı $diff';
+  }
+
+  @override
+  String get fxSplitSheetTotal => 'İkisinin toplamı: TL kâr';
+
+  @override
+  String get fxSplitOpenHint => 'Hesabın ayrıntısını açar';
 
   @override
   String get gecmisFiyatlarSatiri => 'Tablo olarak gör';
@@ -8275,6 +8326,38 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yrKilitSatir => 'Yıllık rapor Premium\'da';
 
   @override
+  String yrKilitSayim(String yil, String kayitlar) {
+    return '$yil yılında $kayitlar kayıtlı · raporun Premium\'da hazır';
+  }
+
+  @override
+  String yrKilitSatisParca(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count satışın',
+      one: '1 satışın',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yrKilitTemettuParca(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count temettün',
+      one: '1 temettün',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yrKilitVe(String a, String b) {
+    return '$a ve $b';
+  }
+
+  @override
   String get yrBos => 'Raporlanacak kayıt yok';
 
   @override
@@ -8396,6 +8479,46 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String ttNetNot(String brut) {
     return 'Stopaj sonrası net · brüt $brut';
+  }
+
+  @override
+  String ttOzet(String aylik, String verim) {
+    return 'Ayda ortalama $aylik · maliyetine göre $verim';
+  }
+
+  @override
+  String ttOzetAylik(String aylik) {
+    return 'Ayda ortalama $aylik';
+  }
+
+  @override
+  String ttOzetSemantik(String aylik, String verim) {
+    return 'Tahmin ayda ortalama $aylik ediyor. Bu, temettü dağıtan hisselerinin maliyetinin yılda $verim kadarı.';
+  }
+
+  @override
+  String ttOzetAylikSemantik(String aylik) {
+    return 'Tahmin ayda ortalama $aylik ediyor.';
+  }
+
+  @override
+  String ttKiyas(String tutar, String fark) {
+    return 'Geçen 12 ayda $tutar aldın · tahmin $fark';
+  }
+
+  @override
+  String ttKiyasTutar(String tutar) {
+    return 'Geçen 12 ayda $tutar aldın';
+  }
+
+  @override
+  String ttKiyasSemantik(String tutar, String fark) {
+    return 'Geçen 12 ayda deftere kaydettiğin net temettü $tutar. Önümüzdeki 12 ayın tahmini buna göre $fark.';
+  }
+
+  @override
+  String ttKiyasTutarSemantik(String tutar) {
+    return 'Geçen 12 ayda deftere kaydettiğin net temettü $tutar.';
   }
 
   @override
@@ -9314,11 +9437,22 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yazılmış yorumların silinir ve portföy yüzdelerin artık gönderilmez.';
 
   @override
-  String get pyzHataKota => 'Bugünlük yorum hakkın doldu, yarın yeniden dene.';
+  String get pyzHataKota =>
+      'Günlük yorum hakkın doldu, birkaç saat sonra yeniden dene.';
+
+  @override
+  String pyzHataKotaSaat(String saat) {
+    return 'Günlük yorum hakkın doldu, $saat itibarıyla yeniden deneyebilirsin.';
+  }
 
   @override
   String get pyzHataKotaAy =>
       'Bu ayki yorum hakkın doldu, gelecek ay yeniden dene.';
+
+  @override
+  String pyzHataTavan(String tarih) {
+    return 'Yorumlar bu ay için geçici olarak durdu, $tarih itibarıyla yeniden açılır.';
+  }
 
   @override
   String get pyzHataRed =>
@@ -9333,6 +9467,45 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pyzKilit => 'Portföyünü yapay zekâyla yorumlamak Premium\'da.';
+
+  @override
+  String pyzKilitOzet(String donem, String yuzde, String yon) {
+    String _temp0 = intl.Intl.selectLogic(
+      donem,
+      {
+        'hafta': 'Geçen hafta',
+        'other': 'Geçen ay',
+      },
+    );
+    String _temp1 = intl.Intl.selectLogic(
+      yon,
+      {
+        'artti': 'arttı',
+        'other': 'azaldı',
+      },
+    );
+    return '$_temp0 portföyün $yuzde $_temp1 · nedenini yapay zekâ Premium\'da anlatır.';
+  }
+
+  @override
+  String pyzKilitOzetEtkili(
+      String donem, String yuzde, String yon, String varlik) {
+    String _temp0 = intl.Intl.selectLogic(
+      donem,
+      {
+        'hafta': 'Geçen hafta',
+        'other': 'Geçen ay',
+      },
+    );
+    String _temp1 = intl.Intl.selectLogic(
+      yon,
+      {
+        'artti': 'arttı',
+        'other': 'azaldı',
+      },
+    );
+    return '$_temp0 portföyün $yuzde $_temp1, en çok $varlik etkiledi · nedenini yapay zekâ Premium\'da anlatır.';
+  }
 
   @override
   String get pyzDonemSecici => 'Yorum dönemi';
@@ -10815,6 +10988,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get kapanisYillikRapor => 'Yıllık raporda gör';
 
   @override
+  String get kapanisYillikRaporKilitli =>
+      'Bu satışın yıllık raporu Premium\'da';
+
+  @override
   String sattiklarinSatir(int count) {
     return 'Sattıkların ($count)';
   }
@@ -10827,8 +11004,63 @@ class AppLocalizationsTr extends AppLocalizations {
       'Tamamını sattığın pozisyonlar, son kapanan önde';
 
   @override
-  String get sattiklarinKilitli =>
-      'Sattıkların ve gerçekleşen kârları Premium\'da';
+  String sattiklarinKilitli(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pozisyonu kapattın · gerçekleşen kârın Premium\'da',
+      one: '1 pozisyonu kapattın · gerçekleşen kârın Premium\'da',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinToplam(String tutar, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pozisyon',
+      one: '1 pozisyon',
+    );
+    return 'Gerçekleşen toplam $tutar · $_temp0';
+  }
+
+  @override
+  String sattiklarinToplamA11y(String tutar, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Maliyeti bilinen $count kapanmış pozisyonun gerçekleşen toplam kâr ya da zararı $tutar.',
+      one:
+          'Maliyeti bilinen 1 kapanmış pozisyonun gerçekleşen kâr ya da zararı $tutar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinToplamGizliA11y(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Maliyeti bilinen $count kapanmış pozisyonun gerçekleşen toplamı, bakiye gizli olduğu için okunmuyor.',
+      one:
+          'Maliyeti bilinen 1 kapanmış pozisyonun gerçekleşen kâr ya da zararı, bakiye gizli olduğu için okunmuyor.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinDipnot(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pozisyonun maliyeti bilinmiyor, toplama girmedi',
+      one: '1 pozisyonun maliyeti bilinmiyor, toplama girmedi',
+    );
+    return '$_temp0';
+  }
 
   @override
   String sattiklarinTuttun(String sure) {

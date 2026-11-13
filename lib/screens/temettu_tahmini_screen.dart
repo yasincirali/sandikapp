@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
-import '../providers/preferences_provider.dart' show premiumKilitliProvider;
+import '../providers/preferences_provider.dart'
+    show balanceHiddenProvider, premiumKilitliProvider;
 import '../providers/temettu_tahmini_provider.dart';
 import '../services/seni_ilgilendiren_gunler.dart' show temettuGunleri;
 import '../services/takvim_ics.dart';
 import '../services/temettu_tahmini.dart';
 import '../theme/sandik.dart';
+import '../utils/money_format.dart' show BazPara;
 import '../utils/tr_format.dart';
 import '../widgets/premium_kilit_karti.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -58,18 +60,25 @@ class TemettuTahminiScreen extends ConsumerWidget {
         // Defter değişince tahmin yeniden hesaplanırken eski içerik kalır;
         // iskelet yalnız ilk yüklemede (Ar-Ge 12 Kas #6).
         child: tahmin.when(
-        skipLoadingOnReload: true,
-        loading: () => const SandikSkeletonList(rows: 4),
-        error: (e, _) => SandikErrorView(
-            error: e, onRetry: () => ref.invalidate(temettuTahminiProvider)),
-        data: (t) => t.bos
-            ? SandikBosDurum(metin: l.ttBos, alt: l.ttBosAlt)
-            : _Govde(t: t),
-      ),
+          skipLoadingOnReload: true,
+          loading: () => const SandikSkeletonList(rows: 4),
+          error: (e, _) => SandikErrorView(
+              error: e, onRetry: () => ref.invalidate(temettuTahminiProvider)),
+          data: (t) => t.bos
+              ? SandikBosDurum(metin: l.ttBos, alt: l.ttBosAlt)
+              : _Govde(t: t, gizli: ref.watch(balanceHiddenProvider)),
+        ),
       ),
     );
   }
 }
+
+/// Ekrandaki her TL tutarı buradan geçer (bakiye gizli düzeltmesi,
+/// 2026-11-13): ekran ilk yazıldığında "Bakiyeyi gizle"yi hiç okumuyordu;
+/// büyük toplam, ay tutarları ve satır tutarları gizliyken de açıktı.
+/// Yüzdeler açık kalır (oran tek başına portföy büyüklüğünü ele vermez).
+String _tutar(double v, bool gizli) =>
+    gizli ? const BazPara.lira().gizliTutar : fmtTRY(v);
 
 /// Kilitli kartın kişisel satırı (2026-11-12). En çok üç kod yazılır,
 /// fazlası "+2" olur: satır tek bakışta okunur, uzun portföyde kartı
@@ -83,9 +92,14 @@ String temettuKancaCumlesi(AppLocalizations l, TemettuKancasi k) {
 }
 
 class _Govde extends StatefulWidget {
-  const _Govde({required this.t});
+  const _Govde({required this.t, required this.gizli});
 
   final TemettuTahmini t;
+
+  /// "Bakiyeyi gizle" — ekrandaki tüm tutarlar maskelenir ([_tutar]),
+  /// yüzdeler açık kalır (varlık sayfasındaki verim satırıyla aynı kural:
+  /// oran tek başına portföy büyüklüğünü ele vermez).
+  final bool gizli;
 
   @override
   State<_Govde> createState() => _GovdeState();
@@ -134,7 +148,8 @@ class _GovdeState extends State<_Govde> {
                   style: context.t.bodyMedium?.copyWith(color: c.text58)),
               const SizedBox(height: SandikSpace.xs),
               Text(
-                  fmtTRY(ay == null ? (net ?? t.brutTry) : t.aylik[ay - 1]),
+                  _tutar(ay == null ? (net ?? t.brutTry) : t.aylik[ay - 1],
+                      widget.gizli),
                   style: context.t.numLarge
                       .copyWith(fontWeight: FontWeight.w600, color: c.gold)),
               const SizedBox(height: SandikSpace.xxs),
@@ -145,11 +160,16 @@ class _GovdeState extends State<_Govde> {
                     ? l.ttAyNot
                     : net == null
                         ? l.ttBrutNot
-                        : l.ttNetNot(fmtTRY(t.brutTry)),
+                        : l.ttNetNot(_tutar(t.brutTry, widget.gizli)),
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
+              // Ayda ortalama + maliyetine göre verim, geçen yılla kıyas
+              // (2026-11-13). Yıllık toplama ait cümleler: ay seçiliyken
+              // büyük sayı o ayın brütü olduğu için çizilmez.
+              if (ay == null) ..._ozetSatirlari(context),
               const SizedBox(height: SandikSpace.md),
-              _AyCubuklari(aylik: t.aylik, secili: ay, onSec: _sec),
+              _AyCubuklari(
+                  aylik: t.aylik, secili: ay, onSec: _sec, gizli: widget.gizli),
             ],
           ),
         ),
@@ -161,7 +181,10 @@ class _GovdeState extends State<_Govde> {
             children: [
               for (var i = 0; i < satirlar.length; i++) ...[
                 if (i > 0) Divider(height: 1, color: c.hairline),
-                _Satir(key: ValueKey(satirlar[i].sembol), s: satirlar[i]),
+                _Satir(
+                    key: ValueKey(satirlar[i].sembol),
+                    s: satirlar[i],
+                    gizli: widget.gizli),
               ],
             ],
           ),
@@ -170,6 +193,50 @@ class _GovdeState extends State<_Govde> {
         Text(l.ttKural, style: context.t.bodySmall?.copyWith(color: c.text58)),
       ],
     );
+  }
+}
+
+extension on _GovdeState {
+  /// Büyük sayının altındaki iki kişisel satır. Hesap modelde
+  /// (`TemettuTahmini.aylikOrtalama`, `maliyeteGoreVerim`, `gecenYilAlinan`,
+  /// `tahminFarkiYuzde`); burada yalnız biçim ve maske. Ekran okuyucu
+  /// "·" ile kısaltılmış satırı değil tam cümleyi okur.
+  List<Widget> _ozetSatirlari(BuildContext context) {
+    final l = context.l10n;
+    final t = widget.t;
+    String tl(double v) => _tutar(v, widget.gizli);
+    final stil = context.t.bodySmall?.copyWith(color: context.c.text90);
+    final aylik = tl(t.aylikOrtalama);
+    final verim = t.maliyeteGoreVerim;
+    final verimMetni = verim == null ? null : fmtPct(verim, digits: 1);
+    final alinan = t.gecenYilAlinan;
+    final fark = t.tahminFarkiYuzde;
+    final farkMetni = fark == null ? null : fmtPctIsaretli(fark, digits: 0);
+    Widget satir(String metin, String okunus) => Padding(
+          padding: const EdgeInsets.only(top: SandikSpace.xs),
+          child: Semantics(
+            label: okunus,
+            excludeSemantics: true,
+            child: Text(metin, style: stil),
+          ),
+        );
+    return [
+      satir(
+        verimMetni == null ? l.ttOzetAylik(aylik) : l.ttOzet(aylik, verimMetni),
+        verimMetni == null
+            ? l.ttOzetAylikSemantik(aylik)
+            : l.ttOzetSemantik(aylik, verimMetni),
+      ),
+      if (alinan != null)
+        satir(
+          farkMetni == null
+              ? l.ttKiyasTutar(tl(alinan))
+              : l.ttKiyas(tl(alinan), farkMetni),
+          farkMetni == null
+              ? l.ttKiyasTutarSemantik(tl(alinan))
+              : l.ttKiyasSemantik(tl(alinan), farkMetni),
+        ),
+    ];
   }
 }
 
@@ -187,11 +254,18 @@ class _GovdeState extends State<_Govde> {
 /// hareketi azalt açıkken süre sıfır, son kare anında.
 class _AyCubuklari extends StatelessWidget {
   const _AyCubuklari(
-      {required this.aylik, required this.secili, required this.onSec});
+      {required this.aylik,
+      required this.secili,
+      required this.onSec,
+      required this.gizli});
 
   final List<double> aylik;
   final int? secili;
   final ValueChanged<int> onSec;
+
+  /// Bakiye gizli: ekran okuyucunun okuduğu ay tutarı da maskelenir.
+  /// Çubuk boyu kalır — en büyük aya göre oran, tutar söylemez.
+  final bool gizli;
 
   static const _yukseklik = 72.0;
 
@@ -213,7 +287,7 @@ class _AyCubuklari extends StatelessWidget {
               child: Semantics(
                 label: l.ttAySemantik(
                     DateFormat.MMMM(dil).format(DateTime(2000, i + 1)),
-                    fmtTRY(aylik[i])),
+                    _tutar(aylik[i], gizli)),
                 button: aylik[i] > 0,
                 selected: secili == i + 1,
                 onTap: aylik[i] > 0 ? () => onSec(i + 1) : null,
@@ -257,9 +331,8 @@ class _AyCubuklari extends StatelessWidget {
                               // tek ipucu olmasın.
                               style: context.t.labelSmall?.copyWith(
                                   color: secili == i + 1 ? c.text90 : c.text58,
-                                  fontWeight: secili == i + 1
-                                      ? FontWeight.w600
-                                      : null),
+                                  fontWeight:
+                                      secili == i + 1 ? FontWeight.w600 : null),
                             ),
                           ),
                         ],
@@ -276,9 +349,14 @@ class _AyCubuklari extends StatelessWidget {
 }
 
 class _Satir extends StatelessWidget {
-  const _Satir({super.key, required this.s});
+  const _Satir({super.key, required this.s, required this.gizli});
 
   final TahminSatiri s;
+
+  /// Bakiye gizli: lotla çarpılmış tutar maskelenir. Pay başı tutar açık
+  /// kalır (varlık sayfasının temettü kartıyla aynı kural): lot satırda
+  /// yazmadığı için pay başı tutar portföy büyüklüğünü ele vermez.
+  final bool gizli;
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +384,7 @@ class _Satir extends StatelessWidget {
             ),
           ),
           const SizedBox(width: SandikSpace.smd),
-          Text(fmtTRY(s.netTry ?? s.brutTry),
+          Text(_tutar(s.netTry ?? s.brutTry, gizli),
               style: context.t.numSmall
                   .copyWith(fontWeight: FontWeight.w600, color: c.text90)),
           // Beklenen temettü günü takvime (2026-11-11). Gün, ana sayfanın

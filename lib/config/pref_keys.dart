@@ -38,6 +38,12 @@ class PrefKeys {
   /// (2026-10-29). Cihaz tercihi — jest cihaza ait.
   static const yatayGrafikIpucu = 'pref_yatay_grafik_ipucu_goruldu';
 
+  /// Performans'taki "Aylık getiri" kartı açık mı (2026-11-13). Tablo yıl
+  /// başına iki satır hücre, uzun defterde ekranın yarısını kaplıyor; kart
+  /// başlığından katlanır, seçim açılışlar arasında kalır. Cihaz tercihi:
+  /// ekran yeri meselesi, hesaba değil. Varsayılan açık (anahtar yoksa).
+  static const aylikGetiriAcik = 'pref_aylik_getiri_acik';
+
   /// Bugün kartındaki "Hedefin yok · Hedef belirle" önerisinin durumu
   /// (`HedefOnerisiDurumu.kod`; ✕ ve 3 gösterimde 30 gün sönme, 5 Kas
   /// 2026). Kişiye özel: hedef hesabın, öneri de.

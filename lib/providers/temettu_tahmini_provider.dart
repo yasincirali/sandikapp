@@ -34,23 +34,32 @@ final temettuTahminiProvider =
   if (uid == null) {
     return TemettuTahmini(satirlar: const [], aylik: List.filled(12, 0));
   }
-  final pozisyonlar = aggregatePositions(
-      aktifLotlar(lotlar.where((a) => a.userId == uid)).toList());
+  final defter = lotlar.where((a) => a.userId == uid).toList();
+  final pozisyonlar = aggregatePositions(aktifLotlar(defter).toList());
+  final simdi = DateTime.now();
   final girdiler = await Future.wait([
     for (final p in pozisyonlar)
       if (FiyatKaynagi.temettuSembolu(p.representative) case final sembol?)
-        TemettuGecmisiService.instance.olaylariCek(sembol).then((olaylar) =>
-            TahminGirdisi(
-              ad: p.representative.name,
-              sembol: sembol,
-              lot: p.totalQuantity,
-              olaylar: olaylar,
-            )),
+        TemettuGecmisiService.instance
+            .olaylariCek(sembol)
+            .then((olaylar) => TahminGirdisi(
+                  ad: p.representative.name,
+                  sembol: sembol,
+                  lot: p.totalQuantity,
+                  olaylar: olaylar,
+                  // Ayda ortalama + maliyetine göre verim + geçen yılla kıyas
+                  // (2026-11-13): maliyet ve kayıt varlık sayfasındaki verimle
+                  // aynı kaynaktan (bugünkü mülkiyet, kaydedilmiş net).
+                  maliyet: p.totalCost,
+                  kaydedilenNet: TemettuGecmisi.kaydedilenToplam(
+                      defter, p.representative,
+                      simdi: simdi),
+                )),
   ]);
   return temettuTahmini(
     girdiler,
     stopaj: RemoteConfigService.instance.temettuStopajOrani,
-    simdi: DateTime.now(),
+    simdi: simdi,
   );
 });
 

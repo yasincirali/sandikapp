@@ -76,8 +76,7 @@ void main() {
         _lot('2', qty: 5, price: 140, fx: 34, commission: 1.5),
       ]);
       final r = kurAyrismasi(a, guncelKur: 41.37)!;
-      expect(r.fiyatEtkisi + r.kurEtkisi,
-          closeTo(_kartKari(a, 41.37), 1e-6));
+      expect(r.fiyatEtkisi + r.kurEtkisi, closeTo(_kartKari(a, 41.37), 1e-6));
     });
 
     test('kısmi satıştan sonra açık kalan miktarla', () {
@@ -118,10 +117,10 @@ void main() {
       expect(kurAyrismasi(a, guncelKur: 0), isNull);
     });
     test('alış kuru bilinmiyor (varsayılan 1,0 ya da 0)', () {
-      expect(kurAyrismasi(_pozisyon([_lot('1', fx: 1.0)]), guncelKur: 40),
-          isNull);
-      expect(kurAyrismasi(_pozisyon([_lot('1', fx: 0)]), guncelKur: 40),
-          isNull);
+      expect(
+          kurAyrismasi(_pozisyon([_lot('1', fx: 1.0)]), guncelKur: 40), isNull);
+      expect(
+          kurAyrismasi(_pozisyon([_lot('1', fx: 0)]), guncelKur: 40), isNull);
     });
     test('fiyat ya da alış fiyatı yok', () {
       expect(kurAyrismasi(_pozisyon([_lot('1', current: 0)]), guncelKur: 40),
@@ -130,8 +129,7 @@ void main() {
           isNull);
     });
     test('iki etki de ₺0 → satır yok', () {
-      expect(
-          kurAyrismasi(_pozisyon([_lot('1', current: 100)]), guncelKur: 30),
+      expect(kurAyrismasi(_pozisyon([_lot('1', current: 100)]), guncelKur: 30),
           isNull);
     });
     test('pozisyonKuru: yalnız toTRY\'nin çevirdiği birimler', () {
@@ -145,8 +143,65 @@ void main() {
     });
   });
 
+  group('kaynak sayılar ve alış kuru eksik kapısı (2026-11-13)', () {
+    test('sayfanın sayıları modelden: X0, X, döviz kâr/değer, fark, toplam',
+        () {
+      final a = _pozisyon([_lot('1', commission: 5)]);
+      final r = kurAyrismasi(a, guncelKur: 40)!;
+      expect(r.alisKuru, 30);
+      expect(r.guncelKur, 40);
+      expect(r.dovizKar, closeTo(10 * 20 - 5, 1e-9));
+      expect(r.dovizDeger, closeTo(1200, 1e-9));
+      expect(r.kurFarki, 10);
+      expect(r.sembol, r'$');
+      expect(r.dovizKar * r.alisKuru, closeTo(r.fiyatEtkisi, 1e-9));
+      expect(r.dovizDeger * r.kurFarki, closeTo(r.kurEtkisi, 1e-9));
+      expect(r.toplam, closeTo(_kartKari(a, 40), 1e-6));
+    });
+
+    test('yalnız alış kuru eksikse true', () {
+      expect(
+          kurAyrismasiAlisKuruEksik(_pozisyon([_lot('1', fx: 1.0)]),
+              guncelKur: 40),
+          isTrue);
+      expect(
+          kurAyrismasiAlisKuruEksik(_pozisyon([_lot('1', fx: 0)]),
+              guncelKur: 40),
+          isTrue);
+      // Kur kayıtlı → ayrışma çıkar, eksik satırı değil.
+      expect(kurAyrismasiAlisKuruEksik(_pozisyon([_lot('1')]), guncelKur: 40),
+          isFalse);
+      // TL varlık, bilinmeyen bugünkü kur, fiyatsız pozisyon: söylenmez.
+      expect(
+          kurAyrismasiAlisKuruEksik(
+              _pozisyon([_lot('1', currency: 'TRY', fx: 1)]),
+              guncelKur: 40),
+          isFalse);
+      expect(
+          kurAyrismasiAlisKuruEksik(_pozisyon([_lot('1', fx: 1.0)]),
+              guncelKur: null),
+          isFalse);
+      expect(
+          kurAyrismasiAlisKuruEksik(_pozisyon([_lot('1', fx: 1.0, current: 0)]),
+              guncelKur: 40),
+          isFalse);
+    });
+  });
+
   group('KurAyrismasiSatiri', () {
-    const ayrisma = (fiyatEtkisi: 6000.0, kurEtkisi: -1200.0);
+    // Tutarlı bir örnek: 10 × (120 − 100) = $200 kâr × 30 = 6.000;
+    // $1.200 × (29 − 30) = −1.200; toplam 4.800.
+    const ayrisma = (
+      fiyatEtkisi: 6000.0,
+      kurEtkisi: -1200.0,
+      alisKuru: 30.0,
+      guncelKur: 29.0,
+      dovizKar: 200.0,
+      dovizDeger: 1200.0,
+      sembol: r'$',
+      kurFarki: -1.0,
+      toplam: 4800.0,
+    );
 
     Future<void> pump(WidgetTester tester,
         {required bool gorunur,
@@ -174,8 +229,8 @@ void main() {
       await pump(tester, gorunur: true);
       final metin = find.textContaining('Fiyattan', findRichText: true);
       expect(metin, findsOneWidget);
-      final yazi = tester.widget<RichText>(find.descendant(
-          of: find.byType(KurAyrismasiSatiri), matching: find.byType(RichText)).last);
+      final yazi = tester.widget<RichText>(
+          find.textContaining('Fiyattan', findRichText: true));
       final duz = yazi.text.toPlainText();
       expect(duz, contains('+₺6.000'));
       expect(duz, contains('Kurdan −₺1.200'));
@@ -201,14 +256,65 @@ void main() {
 
     testWidgets('bakiye gizli: tutar maskeli, işaret ve kelime kalır',
         (tester) async {
-      await pump(tester,
-          gorunur: true, baz: const BazPara.lira().gizlenmis());
-      final yazi = tester.widget<RichText>(find.descendant(
-          of: find.byType(KurAyrismasiSatiri), matching: find.byType(RichText)).last);
+      await pump(tester, gorunur: true, baz: const BazPara.lira().gizlenmis());
+      final yazi = tester.widget<RichText>(
+          find.textContaining('Fiyattan', findRichText: true));
       final duz = yazi.text.toPlainText();
       expect(duz, isNot(contains('6.000')));
       expect(duz, contains('Fiyattan +₺••••'));
       expect(duz, contains('Kurdan −₺••••'));
+    });
+    testWidgets('dokununca sayfa: gerçek sayılarla kaynak', (tester) async {
+      await pump(tester, gorunur: true);
+      expect(tester.getSize(find.byType(SandikTappable)).height,
+          greaterThanOrEqualTo(SandikTouch.min));
+      await tester.tap(find.byType(KurAyrismasiSatiri));
+      await tester.pumpAndSettle();
+      expect(find.byType(KurAyrismasiSayfasi), findsOneWidget);
+      expect(find.text('Kâr nereden geldi'), findsOneWidget);
+      expect(find.text('₺30,00 → ₺29,00'), findsOneWidget);
+      expect(find.text(r'Döviz bazında kâr $200 × alış kuru ₺30,00'),
+          findsOneWidget);
+      expect(find.text(r'Bugünkü döviz değeri $1.200 × kur farkı −₺1,00'),
+          findsOneWidget);
+      expect(find.text('+₺4.800'), findsOneWidget);
+    });
+
+    testWidgets('bakiye gizli: sayfada tutarlar maskeli', (tester) async {
+      await pump(tester, gorunur: true, baz: const BazPara.lira().gizlenmis());
+      await tester.tap(find.byType(KurAyrismasiSatiri));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('4.800'), findsNothing);
+      expect(find.textContaining('6.000'), findsNothing);
+      expect(find.textContaining(r'$••••'), findsNWidgets(2));
+    });
+  });
+
+  group('KurAyrismasiEksikSatiri', () {
+    Future<void> pump(WidgetTester tester, {required bool kilitli}) =>
+        tester.pumpWidget(ProviderScope(
+          overrides: [
+            premiumOzellikleriGorunurProvider.overrideWithValue(true),
+            premiumKilitliProvider.overrideWithValue(kilitli),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(
+              brightness: Brightness.dark,
+              extensions: const [SandikPalette.dark],
+            ),
+            home: const Scaffold(body: KurAyrismasiEksikSatiri()),
+          ),
+        ));
+
+    testWidgets('Premium: alış kuru eksik satırı görünür', (tester) async {
+      await pump(tester, kilitli: false);
+      expect(find.textContaining('Alış kuru kayıtlı değil'), findsOneWidget);
+    });
+
+    testWidgets('ücretsiz: hiçbir şey (davranış değişmedi)', (tester) async {
+      await pump(tester, kilitli: true);
+      expect(find.textContaining('Alış kuru kayıtlı değil'), findsNothing);
+      expect(find.byType(KilitSatiri), findsNothing);
     });
   });
 }

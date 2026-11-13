@@ -20,6 +20,9 @@ import {
   seciliSaklamaSiniri,
   sonKapaliAy,
   sonKapaliHafta,
+  sonrakiAn,
+  sonrakiUtcGunBasi,
+  yenidenDeneAni,
   YorumPaketi,
 } from '../functions/_shared/portfoy_yorum.ts';
 
@@ -299,4 +302,27 @@ Deno.test('destek/direnç: kırılma/tutunma senaryosu ve alım bölgesi dili re
     }, ddPaketi());
     assert(!s.gecti, `geçmemeliydi: ${m}`);
   }
+});
+
+// 2026-11-13: `gunluk_hak` 429'unun `yeniden_dene` alanı. Hak son 24 saatle
+// sayılır; "yarın" değil, pencerenin gerçekten açıldığı an söylenir.
+Deno.test('yeniden_dene: kayan pencerede hakkın açıldığı an', () => {
+  const g = (s: string) => `2026-11-13T${s}:00.000Z`;
+  // 3 hak, 3 deneme: en eskisi düşünce açılır.
+  assertEquals(yenidenDeneAni([g('10:00'), g('08:00'), g('09:00')], 3, 86400), '2026-11-14T08:00:00.000Z');
+  // 4 deneme (eşzamanlı yarış), 3 hak: iki eski düşmeli → ikinci en eski.
+  assertEquals(yenidenDeneAni([g('08:00'), g('09:00'), g('10:00'), g('11:00')], 3, 86400), '2026-11-14T09:00:00.000Z');
+  // Hak dolmamış ya da okunamayan zaman → alan yazılmaz.
+  assertEquals(yenidenDeneAni([g('08:00')], 3, 86400), null);
+  assertEquals(yenidenDeneAni(['bozuk', g('08:00')], 2, 86400), null);
+});
+
+Deno.test('yeniden_dene: takvim sayacı ile kayan pencerenin sonrakisi', () => {
+  assertEquals(sonrakiUtcGunBasi(new Date('2026-11-13T22:30:00Z')), '2026-11-14T00:00:00.000Z');
+  // 30 Kasım → 1 Aralık (ay devri).
+  assertEquals(sonrakiUtcGunBasi(new Date('2026-11-30T05:00:00Z')), '2026-12-01T00:00:00.000Z');
+  const gece = '2026-11-14T00:00:00.000Z';
+  assertEquals(sonrakiAn(gece, '2026-11-14T08:00:00.000Z'), '2026-11-14T08:00:00.000Z');
+  assertEquals(sonrakiAn(gece, null), gece);
+  assertEquals(sonrakiAn(null, null), null);
 });

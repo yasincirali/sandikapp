@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/elde_tutma.dart';
+import 'package:portfoy_takip/providers/aylik_getiri_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
@@ -21,7 +22,9 @@ import 'helpers/kaynak.dart';
 /// kısa, kapanmış, maliyeti bilinmeyen ya da değeri bilinmeyen pozisyonda
 /// satır yok; (3) tamamen satılıp yeniden alınan pozisyonda süre yeni
 /// alıştan; (4) satır Premium görünmüyorsa yok, kilitliyse kilit satırı;
-/// (5) 3.1× ve 320 pt'de taşma yok, ekran okuyucu tek cümle.
+/// (5) 3.1× ve 320 pt'de taşma yok, ekran okuyucu tek cümle;
+/// (6) TÜFE satırı (2026-11-13): aynı pencerenin yıllık TÜFE'si ve reel
+/// getiri; endeks eksik/bayat/kısa pencerede yok, kilitliyken yok.
 Asset _lot(
   String id,
   AssetKind kind,
@@ -171,6 +174,104 @@ void main() {
     });
   });
 
+  group('eldeTutmaTufesi (saf)', () {
+    // Aralık 2023 = 100, her ay ×1,03 → yıllık 1,03^12 − 1 ≈ %42,58.
+    Map<DateTime, double> endeks({DateTime? son}) {
+      final e = <DateTime, double>{};
+      var v = 100.0;
+      final bitis = son ?? DateTime(2026, 10);
+      for (var a = DateTime(2023, 12);
+          !a.isAfter(bitis);
+          a = DateTime(a.year, a.month + 1)) {
+        e[a] = v;
+        v *= 1.03;
+      }
+      return e;
+    }
+
+    final yillikTufe = (math.pow(1.03, 12) - 1) * 100;
+    final bas = DateTime(2025, 3, 15); // ay ortası: taban Şubat sonu
+
+    test('pozitif reel: TÜFE yıllıklanır, reel = (1+r)/(1+t) − 1', () {
+      final r = eldeTutmaTufesi(
+          baslangic: bas, yillikPct: 50, endeks: endeks(), simdi: simdi)!;
+      // Şubat 2025 → Ekim 2026 (son açıklanan ay) = 20 ay; yıllık 12/20.
+      expect(r.yillikTufe, closeTo(yillikTufe, 1e-9));
+      expect(r.reel, closeTo((1.5 / (1 + yillikTufe / 100) - 1) * 100, 1e-9));
+      expect(r.reel, greaterThan(0));
+    });
+
+    test('negatif reel', () {
+      final r = eldeTutmaTufesi(
+          baslangic: bas, yillikPct: 31.24, endeks: endeks(), simdi: simdi)!;
+      expect(r.reel, lessThan(0));
+      expect(r.reel,
+          closeTo((1.3124 / (1 + yillikTufe / 100) - 1) * 100, 1e-9));
+    });
+
+    test('pencerede bir ayın endeksi eksik → null (kısaltma yok)', () {
+      final ortada = endeks()..remove(DateTime(2025, 8));
+      expect(
+          eldeTutmaTufesi(
+              baslangic: bas, yillikPct: 30, endeks: ortada, simdi: simdi),
+          isNull);
+      // Taban ayı (alıştan önceki ay) eksikse de yok.
+      final taban = endeks()..remove(DateTime(2025, 2));
+      expect(
+          eldeTutmaTufesi(
+              baslangic: bas, yillikPct: 30, endeks: taban, simdi: simdi),
+          isNull);
+    });
+
+    test('bayat endeks, boş endeks ya da başlangıçsız özet → null', () {
+      expect(
+          eldeTutmaTufesi(
+              baslangic: bas,
+              yillikPct: 30,
+              endeks: endeks(son: DateTime(2026, 7)),
+              simdi: simdi),
+          isNull);
+      expect(
+          eldeTutmaTufesi(
+              baslangic: bas, yillikPct: 30, endeks: const {}, simdi: simdi),
+          isNull);
+      expect(
+          eldeTutmaTufesi(
+              baslangic: null, yillikPct: 30, endeks: endeks(), simdi: simdi),
+          isNull);
+    });
+
+    test('kısa pencere: TÜFE penceresi 12 aydan kısaysa null, 12 ay yeter',
+        () {
+      // Kasım 2025 alış → taban Ekim 2025 → Ekim 2026 = 12 ay.
+      expect(
+          eldeTutmaTufesi(
+                  baslangic: DateTime(2025, 11, 1),
+                  yillikPct: 30,
+                  endeks: endeks(),
+                  simdi: simdi)!
+              .yillikTufe,
+          closeTo(yillikTufe, 1e-9));
+      // Aralık 2025 alış → 11 ay: yıllıklandırma yanıltır.
+      expect(
+          eldeTutmaTufesi(
+              baslangic: DateTime(2025, 12, 10),
+              yillikPct: 30,
+              endeks: endeks(),
+              simdi: simdi),
+          isNull);
+    });
+
+    test('eldeTutma başlangıcı ilk alış günüyle taşır', () {
+      final e = eldeTutma(
+        lotlar: [_lot('b', AssetKind.buy, DateTime(2024, 8, 7, 15))],
+        guncelDegerTRY: 1800,
+        simdi: simdi,
+      )!;
+      expect(e.baslangic, DateTime(2024, 8, 7));
+    });
+  });
+
   group('EldeTutmaSatiri (arayüz)', () {
     const ozet = EldeTutma(yil: 2, ay: 3, yillikPct: 31.24);
 
@@ -181,6 +282,7 @@ void main() {
       double olcek = 1,
       double genislik = 400,
       EldeTutma e = ozet,
+      Map<DateTime, double> endeks = const {},
     }) async {
       tester.view.physicalSize = Size(genislik, 800);
       tester.view.devicePixelRatio = 1;
@@ -189,6 +291,7 @@ void main() {
         overrides: [
           premiumOzellikleriGorunurProvider.overrideWithValue(gorunur),
           premiumKilitliProvider.overrideWithValue(kilitli),
+          tufeEndeksiProvider.overrideWith((ref) async => endeks),
         ],
         child: MaterialApp(
           theme: ThemeData(
@@ -208,7 +311,30 @@ void main() {
           ),
         ),
       ));
+      await tester.pump();
     }
+
+    // Sağlayıcı gerçek saati okur: endeks bugüne göre kurulur (son ay
+    // geçen ay = son açıklanan). Aylık ×1,0272 → yıllık %38,0.
+    final bugun = DateTime.now();
+    Map<DateTime, double> tufeEndeksi() {
+      final e = <DateTime, double>{};
+      var v = 100.0;
+      final son = DateTime(bugun.year, bugun.month - 1);
+      for (var a = DateTime(bugun.year - 4, bugun.month);
+          !a.isAfter(son);
+          a = DateTime(a.year, a.month + 1)) {
+        e[a] = v;
+        v *= 1.0272;
+      }
+      return e;
+    }
+
+    final tufeli = EldeTutma(
+        yil: 2,
+        ay: 3,
+        yillikPct: 31.24,
+        baslangic: DateTime(bugun.year - 2, bugun.month - 3, 15));
 
     testWidgets('Premium: süre, işaretli yıllık oran, tek cümle etiket',
         (tester) async {
@@ -257,6 +383,45 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+
+    testWidgets('TÜFE satırı: yıllık TÜFE, işaretli reel, tek cümle etiket',
+        (tester) async {
+      await pump(tester, gorunur: true, e: tufeli, endeks: tufeEndeksi());
+      expect(find.text('Aynı sürede TÜFE yıllık %38,0 · reel −%4,9'),
+          findsOneWidget);
+      expect(
+          find.bySemanticsLabel(
+              'Aynı sürede enflasyon yıllık yüzde 38, reel getiri yüzde 4,9 kayıp.'),
+          findsOneWidget);
+      // Renk tonu yok: ikincil metin rengi.
+      final t = tester.widget<Text>(find.textContaining('Aynı sürede'));
+      expect(t.style?.color, SandikPalette.dark.text58);
+    });
+
+    testWidgets('kilitliyken TÜFE satırı yok', (tester) async {
+      await pump(tester,
+          gorunur: true, kilitli: true, e: tufeli, endeks: tufeEndeksi());
+      expect(find.textContaining('TÜFE'), findsNothing);
+      expect(find.byType(KilitSatiri), findsOneWidget);
+    });
+
+    testWidgets('endeks yokken TÜFE satırı yok, üst satır kalır',
+        (tester) async {
+      await pump(tester, gorunur: true, e: tufeli);
+      expect(find.textContaining('TÜFE'), findsNothing);
+      expect(find.textContaining('tutuyorsun'), findsOneWidget);
+    });
+
+    testWidgets('3.1× ve 320 pt: TÜFE satırıyla taşma yok', (tester) async {
+      await pump(tester,
+          gorunur: true,
+          e: tufeli,
+          endeks: tufeEndeksi(),
+          olcek: 3.1,
+          genislik: 320);
+      expect(find.textContaining('TÜFE'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
 
     test('varlık ekranı satırı pozisyon satırının altında çizer', () {
       final k = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');

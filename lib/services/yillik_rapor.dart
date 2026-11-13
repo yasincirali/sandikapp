@@ -124,13 +124,13 @@ class YillikRapor {
   /// Satış fiyatı kayıtlı olmadığı için rapora giremeyen satış satırı sayısı.
   final int fiyatsizSatis;
 
-  bool get bos => satislar.isEmpty && temettuler.isEmpty && alimKomisyonuTry == 0;
+  bool get bos =>
+      satislar.isEmpty && temettuler.isEmpty && alimKomisyonuTry == 0;
 
   double get gerceklesenKarTry => satislar.fold(0.0, (t, s) => t + s.karTry);
 
-  double get yurtDisiKarTry => satislar
-      .where((s) => s.yurtDisi)
-      .fold(0.0, (t, s) => t + s.karTry);
+  double get yurtDisiKarTry =>
+      satislar.where((s) => s.yurtDisi).fold(0.0, (t, s) => t + s.karTry);
 
   bool get yurtDisiVar =>
       satislar.any((s) => s.yurtDisi) || temettuler.any((t) => t.yurtDisi);
@@ -187,6 +187,32 @@ List<int> raporYillari(Iterable<Asset> lotlar, String userId) {
   }.toList()
     ..sort((a, b) => b.compareTo(a));
   return yillar;
+}
+
+/// Kilitli yıllık rapor ekranının kişisel cümlesi için sayım: kaydı olan
+/// en yeni yılın satış ve temettü ADEDİ. Yalnız adet: tutar ücretsiz
+/// kullanıcıya gösterilmez (rapor bütünüyle Premium; `sattiklarinKilitli`
+/// ile aynı desen, yasin 2026-11-13). Satış fiyatı eksik satış da sayılır
+/// (kayıtlı ama raporda "fiyatsız"); yalnız alım komisyonu olan yıl
+/// cümleye değer katmadığı için atlanır. Hiç satış/temettü yoksa `null`
+/// → ekran bugünkü genel cümleye düşer.
+({int yil, int satis, int temettu})? yillikKayitSayimi(
+    Iterable<Asset> lotlar, String userId) {
+  final satis = <int, int>{};
+  final temettu = <int, int>{};
+  for (final a in lotlar) {
+    if (a.userId != userId || !a.isActive) continue;
+    final y = a.addedDate.year;
+    if (a.isSell) {
+      satis[y] = (satis[y] ?? 0) + 1;
+    } else if (a.isDividend) {
+      temettu[y] = (temettu[y] ?? 0) + 1;
+    }
+  }
+  final yillar = {...satis.keys, ...temettu.keys};
+  if (yillar.isEmpty) return null;
+  final yil = yillar.reduce((a, b) => a > b ? a : b);
+  return (yil: yil, satis: satis[yil] ?? 0, temettu: temettu[yil] ?? 0);
 }
 
 /// [userId]'nin [yil] raporu. [bistStopajOrani]: Remote Config

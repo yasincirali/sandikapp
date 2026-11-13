@@ -40,6 +40,14 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
     final ileri =
         ref.watch(yatirimciSeviyesiProvider) == YatirimciSeviyesi.ileri;
     final birimGizli = widget.asset.type == AssetType.mevduat;
+    // Kur ayrışmasının ortak kapısı: bugünkü kur (portföyün `toTRY`'siyle
+    // aynı) ve bilinen maliyet. `null` → ne ayrışma ne "alış kurunu ekle".
+    final kurKapisi = pState == null || alarmMaliyeti(_canli.lots) == null
+        ? null
+        : pozisyonKuru(_canli.asset.currency,
+            usdTry: pState.usdTry,
+            eurTry: pState.eurTry,
+            gbpTry: pState.gbpTry);
 
     return [
       // ── 2. Pozisyonun ──
@@ -70,13 +78,14 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
         // iki etkinin toplamı o kâra eşit. Hesaplanamıyorsa satır yok;
         // maliyeti bilinmeyen lotta da ("—" yazan ortalama maliyetle aynı
         // kural, `alarmMaliyeti`) fiyat etkisi uydurma olurdu.
-        kurAyrismasi: pState == null || alarmMaliyeti(_canli.lots) == null
+        kurAyrismasi: kurKapisi == null
             ? null
-            : kurAyrismasi(_canli.asset,
-                guncelKur: pozisyonKuru(_canli.asset.currency,
-                    usdTry: pState.usdTry,
-                    eurTry: pState.eurTry,
-                    gbpTry: pState.gbpTry)),
+            : kurAyrismasi(_canli.asset, guncelKur: kurKapisi),
+        // Ayrışma yalnız alış kuru eksik olduğu için çıkmıyorsa (2026-11-13)
+        // satır sessizce kaybolmaz; Premium'a nedenini söyleyen tek satır.
+        // Aynı kapı (`kurKapisi`): satırın zaten çıkmayacağı yerde söylenmez.
+        kurAlisKuruEksik: kurKapisi != null &&
+            kurAyrismasiAlisKuruEksik(_canli.asset, guncelKur: kurKapisi),
       ),
       // Eski yığındaki yeri: pozisyonun hemen altı. #113 (eurobond) ile #116
       // (bu düzen) aynı gün ayrı dallarda yazıldı; katmanlı gövdeye
@@ -270,7 +279,12 @@ class _KatmanliPozisyonKarti extends StatefulWidget {
     this.ortalamaMaliyetMetni,
     this.enflasyon,
     this.kurAyrismasi,
+    this.kurAlisKuruEksik = false,
   });
+
+  /// Ayrışma yalnız alış kuru kayıtlı olmadığı için yok (bkz.
+  /// [kurAyrismasiAlisKuruEksik]); Premium'a nedenini söyleyen satır.
+  final bool kurAlisKuruEksik;
 
   /// Döviz cinsi pozisyonda "Fiyattan · Kurdan" (Premium); `null` → satır
   /// yok (TL varlık ya da kur/alış kuru bilinmiyor, bkz. [kurAyrismasi]).
@@ -371,7 +385,9 @@ class _KatmanliPozisyonKartiState extends State<_KatmanliPozisyonKarti> {
             ),
           // Enflasyonun hemen altı: ikisi de "kâr gerçekte nereden" sorusu.
           if (widget.kurAyrismasi case final ka?)
-            KurAyrismasiSatiri(ayrisma: ka, baz: widget.baz),
+            KurAyrismasiSatiri(ayrisma: ka, baz: widget.baz)
+          else if (widget.kurAlisKuruEksik)
+            const KurAyrismasiEksikSatiri(),
           _AcKapaSatiri(
             baslik: l.s4Details,
             acik: _acik,
