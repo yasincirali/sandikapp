@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsFlag;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -11,6 +12,8 @@ import 'package:portfoy_takip/providers/yuzde_alarmi_provider.dart';
 import 'package:portfoy_takip/screens/price_alerts_screen.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'helpers/yazi_olcegi.dart';
 
 /// Alarmlarım: bekleyenler üstte, çalmışlar katlı "Çalanlar (N)" grubunda,
 /// "Çalanları temizle" yalnız çalmışları siler (Ar-Ge 29 Eki 16:45 #2).
@@ -67,8 +70,8 @@ PriceAlert _f(String id, double hedef, {DateTime? tetik}) => PriceAlert(
       createdAt: DateTime(2026, 10, 1),
     );
 
-Future<void> _pump(WidgetTester tester) async {
-  tester.view.physicalSize = const Size(375 * 3, 1400 * 3);
+Future<void> _pump(WidgetTester tester, {double genislik = 375}) async {
+  tester.view.physicalSize = Size(genislik * 3, 1400 * 3);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
@@ -102,7 +105,6 @@ void main() {
   testWidgets('çalmış yoksa başlık yok, liste eskisi gibi', (tester) async {
     _fiyat = [_f('a', 4300)];
     await _pump(tester);
-    expect(find.text('Bekleyenler'), findsNothing);
     expect(find.byKey(const ValueKey('calanlarBasligi')), findsNothing);
     expect(find.byKey(const ValueKey('a')), findsOneWidget);
   });
@@ -127,7 +129,8 @@ void main() {
       ),
     ];
     await _pump(tester);
-    expect(find.text('Bekleyenler'), findsOneWidget);
+    // "Bekleyenler" etiketi yok (14 Kas): bölüm başlığı varlığın adı.
+    expect(find.text('Bekleyenler'), findsNothing);
     expect(find.text('Çalanlar (2)'), findsOneWidget);
     // Bugün çalmış yüzde alarmı yarın yine nöbette: bekleyenlerde.
     expect(find.byKey(const ValueKey('yuzde_y')), findsOneWidget);
@@ -165,9 +168,15 @@ void main() {
     ];
     await _pump(tester);
     expect(find.text('Çalanlar (2)'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('calanlarBasligi')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('calanlariTemizle')));
+    // "Temizle" başlığın sağında, grup kapalıyken de; nötr renk, 44 pt.
+    final temizle = find.byKey(const ValueKey('calanlariTemizle'));
+    expect(temizle, findsOneWidget);
+    expect(tester.getSize(temizle).height, greaterThanOrEqualTo(44));
+    expect(tester.getSize(temizle).width, greaterThanOrEqualTo(44));
+    final stil = tester.widget<TextButton>(temizle).style!;
+    expect(stil.foregroundColor!.resolve(const {}), SandikPalette.dark.text58);
+    expect(find.byIcon(Icons.delete_sweep_rounded), findsNothing);
+    await tester.tap(temizle);
     await tester.pumpAndSettle();
     expect(find.textContaining('Çalmış 2 alarm silinsin mi?'), findsOneWidget);
     await tester.tap(find.text('Sil').last);
@@ -175,5 +184,62 @@ void main() {
     expect(_silinen, unorderedEquals(['b', 'g']));
     expect(find.byKey(const ValueKey('calanlarBasligi')), findsNothing);
     expect(find.byKey(const ValueKey('a')), findsOneWidget);
+  });
+
+  // Hiyerarşi (Ar-Ge 14 Kas 02:03 #2): "Bekleyenler" yok, varlık adı tek
+  // bölüm başlığı (ekran okuyucuda başlık), çalmış satır tek cümle.
+  List<GostergeAlarmi> calmisGosterge() => [
+        GostergeAlarmi(
+          id: 'g',
+          userId: 'u1',
+          symbol: 'ALTIN_GRAM',
+          label: 'Gram altın',
+          gosterge: GostergeKodu.ema50,
+          yon: SeviyeYon.yukari,
+          triggeredAt: DateTime(2026, 10, 22, 14, 5),
+          tetikFiyat: 4210,
+          createdAt: DateTime(2026, 10, 21),
+        ),
+      ];
+
+  testWidgets('varlık başlığı ekran okuyucuda başlık; çalmış gösterge tek cümle',
+      (tester) async {
+    final h = tester.ensureSemantics();
+    _fiyat = [_f('a', 4300)];
+    _gosterge = calmisGosterge();
+    await _pump(tester);
+    expect(find.text('Bekleyenler'), findsNothing);
+    final baslik = find.descendant(
+        of: find.byKey(const ValueKey('grup_ALTIN_GRAM')),
+        matching: find.text('Gram altın'));
+    // ignore: deprecated_member_use
+    expect(tester.getSemantics(baslik).hasFlag(SemanticsFlag.isHeader), isTrue);
+    await tester.tap(find.byKey(const ValueKey('calanlarBasligi')));
+    await tester.pumpAndSettle();
+    expect(
+        find.text('Gram altın EMA50 yukarı kesildi · ₺4.210,00 · '
+            '22 Eki 2026 14:05'),
+        findsOneWidget);
+    expect(find.textContaining('Çalıştı'), findsNothing);
+    h.dispose();
+  });
+
+  group('taşma', () {
+    yaziOlcegiEkseni(() {
+      testWidgets('320 pt, başlıklar ve açık Çalanlar', (tester) async {
+        yaziOlceginiUygula(tester);
+        _fiyat = [
+          _f('a', 4300),
+          _f('b', 4100, tetik: DateTime(2026, 10, 20, 9, 30)),
+        ];
+        _gosterge = calmisGosterge();
+        await _pump(tester, genislik: 320);
+        await tester.tap(find.byKey(const ValueKey('calanlarBasligi')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final temizle = find.byKey(const ValueKey('calanlariTemizle'));
+        expect(tester.getSize(temizle).height, greaterThanOrEqualTo(44));
+      });
+    });
   });
 }

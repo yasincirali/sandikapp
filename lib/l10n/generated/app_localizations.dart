@@ -5231,7 +5231,7 @@ abstract class AppLocalizations {
   /// No description provided for @alertTriggered.
   ///
   /// In tr, this message translates to:
-  /// **'{price} · çalıştı'**
+  /// **'{price} · çaldı'**
   String alertTriggered(String price);
 
   /// No description provided for @deleteAlertBelow.
@@ -16497,7 +16497,7 @@ abstract class AppLocalizations {
   /// No description provided for @yuzdeAlarmBugunCaldi.
   ///
   /// In tr, this message translates to:
-  /// **'Bugün çalıştı · {pct} · yarın yeniden kurulur'**
+  /// **'Bugün çaldı · {pct} · yarın yeniden kurulur'**
   String yuzdeAlarmBugunCaldi(String pct);
 
   /// No description provided for @notifTypeAlarm.
@@ -16553,6 +16553,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Gösterge'**
   String get alarmModGosterge;
+
+  /// No description provided for @alarmDuzenlemekIcinPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Düzenlemek için Premium'**
+  String get alarmDuzenlemekIcinPremium;
 
   /// No description provided for @alarmPremiumGerekli.
   ///
@@ -16656,18 +16662,6 @@ abstract class AppLocalizations {
   /// **'Çizgi alarmı · kesince'**
   String get cizimAlarmEtiketIkisi;
 
-  /// No description provided for @seviyeAlarmCalisti.
-  ///
-  /// In tr, this message translates to:
-  /// **'Çalıştı · {fiyat} · tek seferlikti'**
-  String seviyeAlarmCalisti(String fiyat);
-
-  /// No description provided for @seviyeAlarmCalistiSade.
-  ///
-  /// In tr, this message translates to:
-  /// **'Çalıştı · tek seferlikti'**
-  String get seviyeAlarmCalistiSade;
-
   /// No description provided for @tegAlarmKur.
   ///
   /// In tr, this message translates to:
@@ -16769,12 +16763,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çizgi şu an {fiyat} · {tarih} tarihine kadar'**
   String cizimAlarmSeviyesiBitisli(String fiyat, String tarih);
-
-  /// No description provided for @alarmBekleyenler.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bekleyenler'**
-  String get alarmBekleyenler;
 
   /// No description provided for @bolumAcik.
   ///
@@ -17082,16 +17070,64 @@ abstract class AppLocalizations {
   /// **'Altına inince · {fiyat}'**
   String alarmKosulAlt(String fiyat);
 
-  /// No description provided for @alarmCalistiFiyat.
+  /// No description provided for @alarmCaldiCikti.
   ///
   /// In tr, this message translates to:
-  /// **'Çalıştı · {fiyat}'**
-  String alarmCalistiFiyat(String fiyat);
+  /// **'{fiyat}\'{ek} çıktı'**
+  String alarmCaldiCikti(String fiyat, String ek);
+
+  /// No description provided for @alarmCaldiIndi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{fiyat}\'{ek} indi'**
+  String alarmCaldiIndi(String fiyat, String ek);
+
+  /// No description provided for @seviyeAlarmCaldiYukari.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gosterge} yukarı kesildi'**
+  String seviyeAlarmCaldiYukari(String gosterge);
+
+  /// No description provided for @seviyeAlarmCaldiAsagi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gosterge} aşağı kesildi'**
+  String seviyeAlarmCaldiAsagi(String gosterge);
+
+  /// No description provided for @seviyeAlarmCaldiIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gosterge} kesildi'**
+  String seviyeAlarmCaldiIkisi(String gosterge);
+
+  /// No description provided for @cizimAlarmCaldiUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'çizginin üstüne çıktı'**
+  String get cizimAlarmCaldiUst;
+
+  /// No description provided for @cizimAlarmCaldiAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'çizginin altına indi'**
+  String get cizimAlarmCaldiAlt;
+
+  /// No description provided for @cizimAlarmCaldiIkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'çizgiyi kesti'**
+  String get cizimAlarmCaldiIkisi;
+
+  /// No description provided for @alarmSinyalSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyal bildirimleri · {n} varlık'**
+  String alarmSinyalSatiri(int n);
 
   /// No description provided for @alarmGrupSimdi.
   ///
   /// In tr, this message translates to:
-  /// **'şimdi {fiyat}'**
+  /// **'Şu an {fiyat}'**
   String alarmGrupSimdi(String fiyat);
 
   /// No description provided for @alarmOneriBaslik.
@@ -17274,12 +17310,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan.'**
   String get allChangeFromPrice;
-
-  /// Çalmış tek seferlik alarmın çalma anı
-  ///
-  /// In tr, this message translates to:
-  /// **'Çaldı: {zaman}'**
-  String alarmCaldiZaman(String zaman);
 
   /// Alarm bildiriminden açılan varlık sayfasının bandı
   ///

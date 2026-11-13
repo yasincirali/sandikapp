@@ -245,7 +245,7 @@ void main() {
       ];
       await pump(tester);
       // Çalanlar grubunda yalnız tek atış alarm var; grup kapalı.
-      expect(find.text('Bekleyenler'), findsOneWidget);
+      expect(find.byKey(const ValueKey('grup_USDTRY=X')), findsOneWidget);
       expect(find.byKey(const ValueKey('calanlarBasligi')), findsOneWidget);
       expect(find.textContaining('(1)'), findsOneWidget);
       expect(find.byKey(const ValueKey('t')), findsOneWidget);

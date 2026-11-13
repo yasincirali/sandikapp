@@ -432,7 +432,9 @@ void main() {
       final k = ekranKaynagiSync('lib/screens/price_alerts_screen.dart');
       expect(k, contains(
           'NotificationService.instance.openCizgi(sembol, cizimId: cizimId)'));
-      expect(k, contains('onTap: cz == null ? null : () => _cizgiyiAc(cz.symbol, cz.cizimId)'));
+      // Kilitli (Premium'u biten) satırda dokunuş paywall'a gider; kilitsiz
+      // çizgi satırı yine çizgiyi açar.
+      expect(k, contains(': () => _cizgiyiAc(cz.symbol, cz.cizimId)'));
       expect(k, contains('? () => _cizgiyiAc(alarm.symbol, cizim)'));
     });
   });

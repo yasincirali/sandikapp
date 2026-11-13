@@ -10292,6 +10292,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alarmModGosterge => 'Indicator';
 
   @override
+  String get alarmDuzenlemekIcinPremium => 'Premium to edit';
+
+  @override
   String get alarmPremiumGerekli => 'Requires Premium';
 
   @override
@@ -10356,14 +10359,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cizimAlarmEtiketIkisi => 'Line alert · when crossed';
-
-  @override
-  String seviyeAlarmCalisti(String fiyat) {
-    return 'Fired · $fiyat · one-time';
-  }
-
-  @override
-  String get seviyeAlarmCalistiSade => 'Fired · one-time';
 
   @override
   String get tegAlarmKur => 'Set an alert on this line';
@@ -10448,9 +10443,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String cizimAlarmSeviyesiBitisli(String fiyat, String tarih) {
     return 'Line now at $fiyat · until $tarih';
   }
-
-  @override
-  String get alarmBekleyenler => 'Waiting';
 
   @override
   String get bolumAcik => 'expanded';
@@ -10647,13 +10639,53 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String alarmCalistiFiyat(String fiyat) {
-    return 'Triggered · $fiyat';
+  String alarmCaldiCikti(String fiyat, String ek) {
+    return 'rose to $fiyat';
+  }
+
+  @override
+  String alarmCaldiIndi(String fiyat, String ek) {
+    return 'fell to $fiyat';
+  }
+
+  @override
+  String seviyeAlarmCaldiYukari(String gosterge) {
+    return 'crossed above $gosterge';
+  }
+
+  @override
+  String seviyeAlarmCaldiAsagi(String gosterge) {
+    return 'crossed below $gosterge';
+  }
+
+  @override
+  String seviyeAlarmCaldiIkisi(String gosterge) {
+    return 'crossed $gosterge';
+  }
+
+  @override
+  String get cizimAlarmCaldiUst => 'rose above the line';
+
+  @override
+  String get cizimAlarmCaldiAlt => 'fell below the line';
+
+  @override
+  String get cizimAlarmCaldiIkisi => 'crossed the line';
+
+  @override
+  String alarmSinyalSatiri(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Signal notifications · $n assets',
+      one: 'Signal notifications · 1 asset',
+    );
+    return '$_temp0';
   }
 
   @override
   String alarmGrupSimdi(String fiyat) {
-    return 'now $fiyat';
+    return 'Now $fiyat';
   }
 
   @override
@@ -10773,11 +10805,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get allChangeFromPrice =>
       'You did not add or withdraw money in this period; the whole change came from prices.';
-
-  @override
-  String alarmCaldiZaman(String zaman) {
-    return 'Fired: $zaman';
-  }
 
   @override
   String alarmCaldiBandiUst(String fiyat) {

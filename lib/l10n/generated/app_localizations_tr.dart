@@ -3096,7 +3096,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String alertTriggered(String price) {
-    return '$price · çalıştı';
+    return '$price · çaldı';
   }
 
   @override
@@ -10118,7 +10118,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String yuzdeAlarmBugunCaldi(String pct) {
-    return 'Bugün çalıştı · $pct · yarın yeniden kurulur';
+    return 'Bugün çaldı · $pct · yarın yeniden kurulur';
   }
 
   @override
@@ -10151,6 +10151,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get alarmModGosterge => 'Gösterge';
+
+  @override
+  String get alarmDuzenlemekIcinPremium => 'Düzenlemek için Premium';
 
   @override
   String get alarmPremiumGerekli => 'Premium gerekir';
@@ -10219,14 +10222,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cizimAlarmEtiketIkisi => 'Çizgi alarmı · kesince';
 
   @override
-  String seviyeAlarmCalisti(String fiyat) {
-    return 'Çalıştı · $fiyat · tek seferlikti';
-  }
-
-  @override
-  String get seviyeAlarmCalistiSade => 'Çalıştı · tek seferlikti';
-
-  @override
   String get tegAlarmKur => 'Bu çizgiye alarm kur';
 
   @override
@@ -10291,9 +10286,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String cizimAlarmSeviyesiBitisli(String fiyat, String tarih) {
     return 'Çizgi şu an $fiyat · $tarih tarihine kadar';
   }
-
-  @override
-  String get alarmBekleyenler => 'Bekleyenler';
 
   @override
   String get bolumAcik => 'açık';
@@ -10490,13 +10482,47 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String alarmCalistiFiyat(String fiyat) {
-    return 'Çalıştı · $fiyat';
+  String alarmCaldiCikti(String fiyat, String ek) {
+    return '$fiyat\'$ek çıktı';
+  }
+
+  @override
+  String alarmCaldiIndi(String fiyat, String ek) {
+    return '$fiyat\'$ek indi';
+  }
+
+  @override
+  String seviyeAlarmCaldiYukari(String gosterge) {
+    return '$gosterge yukarı kesildi';
+  }
+
+  @override
+  String seviyeAlarmCaldiAsagi(String gosterge) {
+    return '$gosterge aşağı kesildi';
+  }
+
+  @override
+  String seviyeAlarmCaldiIkisi(String gosterge) {
+    return '$gosterge kesildi';
+  }
+
+  @override
+  String get cizimAlarmCaldiUst => 'çizginin üstüne çıktı';
+
+  @override
+  String get cizimAlarmCaldiAlt => 'çizginin altına indi';
+
+  @override
+  String get cizimAlarmCaldiIkisi => 'çizgiyi kesti';
+
+  @override
+  String alarmSinyalSatiri(int n) {
+    return 'Sinyal bildirimleri · $n varlık';
   }
 
   @override
   String alarmGrupSimdi(String fiyat) {
-    return 'şimdi $fiyat';
+    return 'Şu an $fiyat';
   }
 
   @override
@@ -10616,11 +10642,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get allChangeFromPrice =>
       'Bu dönemde para yatırmadın ya da çekmedin; değişimin tamamı fiyattan.';
-
-  @override
-  String alarmCaldiZaman(String zaman) {
-    return 'Çaldı: $zaman';
-  }
 
   @override
   String alarmCaldiBandiUst(String fiyat) {
