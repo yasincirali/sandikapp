@@ -10673,6 +10673,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cizimAlarmCaldiIkisi => 'crossed the line';
 
   @override
+  String alarmSinyalSatiri(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Signal notifications · $n assets',
+      one: 'Signal notifications · 1 asset',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String alarmGrupSimdi(String fiyat) {
     return 'Now $fiyat';
   }

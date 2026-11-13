@@ -5640,6 +5640,7 @@
   "cizimAlarmCaldiUst": "rose above the line",
   "cizimAlarmCaldiAlt": "fell below the line",
   "cizimAlarmCaldiIkisi": "crossed the line",
+  "alarmSinyalSatiri": "{n, plural, =1{Signal notifications · 1 asset} other{Signal notifications · {n} assets}}",
   "alarmGrupSimdi": "Now {fiyat}",
   "alarmOneriBaslik": "Quick start",
   "alarmOneriAciklama": "We'll tell you if it moves 2% in a day",

@@ -6422,6 +6422,8 @@
   "cizimAlarmCaldiUst": "çizginin üstüne çıktı",
   "cizimAlarmCaldiAlt": "çizginin altına indi",
   "cizimAlarmCaldiIkisi": "çizgiyi kesti",
+  "alarmSinyalSatiri": "Sinyal bildirimleri · {n} varlık",
+  "@alarmSinyalSatiri": {"placeholders": {"n": {"type": "int"}}},
   "alarmGrupSimdi": "Şu an {fiyat}",
   "@alarmGrupSimdi": {"placeholders": {"fiyat": {"type": "String"}}},
   "alarmOneriBaslik": "Hızlı başla",

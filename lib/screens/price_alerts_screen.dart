@@ -16,6 +16,8 @@ import '../providers/preferences_provider.dart'
     show premiumKilitliProvider, priceAlertLimitProvider;
 import '../providers/price_alert_provider.dart';
 import '../providers/seviye_alarmi_provider.dart';
+import '../providers/sinyal_varligi_provider.dart'
+    show sinyalBildirimliVarlikSayisiProvider;
 import '../providers/watchlist_provider.dart';
 import '../providers/yuzde_alarmi_provider.dart';
 import '../services/alarm_onbellegi.dart';
@@ -34,6 +36,7 @@ import '../utils/friendly_error.dart';
 import '../widgets/kapanan_satir.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import 'paywall_screen.dart' show PaywallScreen;
+import 'signal_settings_screen.dart' show SignalSettingsScreen;
 import '../widgets/sandik_baglam_menusu.dart';
 import '../widgets/sandik_cam.dart';
 import '../widgets/tek_dokunus_alarm.dart'
@@ -302,6 +305,10 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               if (yeniCalma) ...calanlar,
               for (final g in _grupla(bekleyen)) _grup(context, g, adaylar),
               if (!yeniCalma) ...calanlar,
+              // "Neyi izliyorum" tek yerde (Ar-Ge 14 Kas 02:03 #3): Premium
+              // sinyal bildirimleri listenin sonunda tek satır. Süzülmüş
+              // (tek sembol) listede yok: satır bütün varlıkları sayar.
+              if (widget.sembol == null) const _SinyalSatiri(),
             ];
             // İzin reddedilmişse listedeki hiçbir alarm haber veremez
             // (Ar-Ge 16:45 #1, 2026-10-21). Liste kaydırılırken satır üstte
@@ -1316,6 +1323,68 @@ class _AdlandirDugmesi extends StatelessWidget {
         icon: Icon(Icons.edit_outlined, color: context.c.text36),
         tooltip: context.l10n.cizgiAlarmiAdlandir,
       );
+}
+
+// ── Sinyal bildirimleri satırı (Ar-Ge 14 Kas 02:03 #3) ──────────────────────
+
+/// "Sinyal bildirimleri · N varlık ›" — Premium'un ileri sinyal
+/// bildirimleri Alarmlarım'da hiç geçmiyordu; kişi "bana neyle haber
+/// geliyor" sorusunu iki ayrı ekranda cevaplıyordu. Dokununca sinyal
+/// ayarları açılır. Premium erişimi yoksa, bildirimler kapalıysa ya da
+/// sinyal üretilen varlık yoksa hiç çizilmez
+/// ([sinyalBildirimliVarlikSayisiProvider] 0 döner): ücretsizde satış
+/// satırı DEĞİL, Premium'un çalıştığının görünür kanıtı.
+class _SinyalSatiri extends ConsumerWidget {
+  const _SinyalSatiri();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final n = ref.watch(sinyalBildirimliVarlikSayisiProvider);
+    if (n <= 0) return const SizedBox.shrink();
+    final c = context.c;
+    return SandikCard(
+      key: const ValueKey('sinyalSatiri'),
+      padding: EdgeInsets.zero,
+      child: Semantics(
+        button: true,
+        child: SandikTappable(
+          onTap: () => pushGuarded<void>(
+            context,
+            adaptiveRoute<void>(
+              settings: const RouteSettings(name: 'signal_settings'),
+              builder: (_) => const SignalSettingsScreen(),
+            ),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SandikTouch.min),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.md2, vertical: SandikSpace.smd),
+              child: Row(
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(Icons.insights_rounded,
+                        size: 20, color: c.text58),
+                  ),
+                  const SizedBox(width: SandikSpace.smd),
+                  Expanded(
+                    child: Text(
+                      context.l10n.alarmSinyalSatiri(n),
+                      style: context.t.titleMedium?.copyWith(color: c.text90),
+                    ),
+                  ),
+                  ExcludeSemantics(
+                    child: Icon(Icons.chevron_right_rounded,
+                        size: 20, color: c.text36),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ── Ücretsiz plan alarm sayacı (müşteri raporu 5 Kas 09:15, yasin "evet") ─

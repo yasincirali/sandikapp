@@ -17118,6 +17118,12 @@ abstract class AppLocalizations {
   /// **'çizgiyi kesti'**
   String get cizimAlarmCaldiIkisi;
 
+  /// No description provided for @alarmSinyalSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyal bildirimleri · {n} varlık'**
+  String alarmSinyalSatiri(int n);
+
   /// No description provided for @alarmGrupSimdi.
   ///
   /// In tr, this message translates to:

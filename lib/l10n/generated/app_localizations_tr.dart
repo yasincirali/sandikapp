@@ -10516,6 +10516,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cizimAlarmCaldiIkisi => 'çizgiyi kesti';
 
   @override
+  String alarmSinyalSatiri(int n) {
+    return 'Sinyal bildirimleri · $n varlık';
+  }
+
+  @override
   String alarmGrupSimdi(String fiyat) {
     return 'Şu an $fiyat';
   }
