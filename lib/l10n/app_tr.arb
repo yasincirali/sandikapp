@@ -6289,6 +6289,7 @@
   },
   "alarmTileOneShot": "Tek seferlik alarmdı, kapatıldı. Yeniden kurmak için varlığı aç.",
   "alarmModGosterge": "Gösterge",
+  "alarmDuzenlemekIcinPremium": "Düzenlemek için Premium",
   "alarmPremiumGerekli": "Premium gerekir",
   "gostergeBbUst": "Bollinger üst",
   "gostergeBbAlt": "Bollinger alt",

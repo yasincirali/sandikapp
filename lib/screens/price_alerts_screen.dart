@@ -12,7 +12,8 @@ import '../models/price_alert.dart';
 import '../models/seviye_alarmi.dart';
 import '../models/yuzde_alarmi.dart';
 import '../providers/portfolio_provider.dart';
-import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
+import '../providers/preferences_provider.dart'
+    show premiumKilitliProvider, priceAlertLimitProvider;
 import '../providers/price_alert_provider.dart';
 import '../providers/seviye_alarmi_provider.dart';
 import '../providers/watchlist_provider.dart';
@@ -794,16 +795,31 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   }
 
   /// Gösterge ya da çizgi alarmının satırı (0170).
+  ///
+  /// **Premium'u biten kullanıcı** (Ar-Ge 14 Kas 02:03 #1): sunucu bu
+  /// alarmları abonelik durumuna bakmadan çalmaya devam eder
+  /// (`_shared/seviye_alarmi.ts`), ama yazma RLS'te
+  /// `premium_icerik_gorebilir()` ister (0170). Eskiden satır kilitsiz
+  /// görünüyordu: çizgi alarmının kalemi ve grafikte taşıma UPDATE'te,
+  /// silip "Geri al" INSERT'te reddediliyor, kişi genel bir hata görüyordu.
+  /// Artık kilitliyken ([premiumKilitliProvider]: paywall açık ve Premium
+  /// erişimi yok; paywall kapalıyken false, bugünkü davranış birebir)
+  /// bekleyen satır kalır ve çalmaya devam eder (kurduğu şey elinden
+  /// alınmaz), alt satırı nötr renkte "Düzenlemek için Premium" der,
+  /// dokunuş ve bağlam menüsündeki "Alarmı düzenle" doğrudan paywall'u
+  /// açar. Silme serbest (0170'te silme her zaman sahibine açık); "Geri al"
+  /// yok, çünkü yeniden kurmak bir yazmadır ve reddedilirdi.
   Widget _seviyeSatiri(BuildContext context, GostergeAlarmi? g,
       CizimAlarmi? cz, double fiyat, bool ilk, {String? varlik}) {
     final l10n = context.l10n;
+    final kilitli = ref.watch(premiumKilitliProvider);
     final String etiket;
     final SeviyeYon yon;
     final bool calisti;
     final double? tetik;
     final String anahtar;
     final Future<void> Function() sil;
-    final Future<void> Function()? geriAl;
+    Future<void> Function()? geriAl;
     final altlar = <String>[];
     double? mesafe;
     if (g != null) {
@@ -857,6 +873,11 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       geriAl = calisti ? null : () => n.create(c);
     }
     final sembol = g?.symbol ?? cz!.symbol;
+    final premiumIster = kilitli && !calisti;
+    if (premiumIster) {
+      altlar.add(l10n.alarmDuzenlemekIcinPremium);
+      geriAl = null;
+    }
     if (calisti) {
       altlar.add(tetik == null
           ? l10n.seviyeAlarmCalistiSade
@@ -871,6 +892,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       menuBasligi: g?.label ?? cz!.label,
       sil: sil,
       geriAl: geriAl,
+      duzenle: premiumIster ? (_) async => _premiumaYonlendir() : null,
       satir: (_) => _AlarmSatiri(
         yon: switch (yon) {
           SeviyeYon.yukari => _Yon.yukari,
@@ -881,10 +903,19 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         baslik: _onEk(varlik, etiket),
         altlar: altlar,
         mesafe: mesafe,
-        grafikte: cz != null,
-        onTap: cz == null ? null : () => _cizgiyiAc(cz.symbol, cz.cizimId),
-        tapHint: cz == null ? null : l10n.cizgiyiGrafikteAc,
-        onAdlandir: cz == null
+        grafikte: cz != null && !premiumIster,
+        onTap: premiumIster
+            ? _premiumaYonlendir
+            : cz == null
+                ? null
+                : () => _cizgiyiAc(cz.symbol, cz.cizimId),
+        tapHint: premiumIster
+            ? l10n.alarmiDuzenle
+            : cz == null
+                ? null
+                : l10n.cizgiyiGrafikteAc,
+        // Kilitliyken kalem yok: yeniden adlandırma UPDATE'tir, reddedilir.
+        onAdlandir: cz == null || kilitli
             ? null
             : () => _adlandir(
                 cz.label,
@@ -894,6 +925,15 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       ),
     );
   }
+  /// Kilitli gösterge/çizgi alarmında düzenleme isteği: hata yerine
+  /// doğrudan paywall (kaynak analitikte ayrı görünür).
+  void _premiumaYonlendir() {
+    SandikHaptic.selection.perform();
+    CrashReporter.arkaPlan(
+        PaywallScreen.show(context, source: 'alarm_gosterge_duzenle'),
+        reason: 'alarmlarim.premiumDuzenle');
+  }
+
   /// Satırdan çizgiye: push ve çanla aynı varış.
   void _cizgiyiAc(String sembol, String cizimId) {
     SandikHaptic.selection.perform();

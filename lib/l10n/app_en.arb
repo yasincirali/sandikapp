@@ -5538,6 +5538,7 @@
   "alarmTileBody": "{price} · target {target}",
   "alarmTileOneShot": "This was a one-time alarm and is now off. Open the asset to set it again.",
   "alarmModGosterge": "Indicator",
+  "alarmDuzenlemekIcinPremium": "Premium to edit",
   "alarmPremiumGerekli": "Requires Premium",
   "gostergeBbUst": "Bollinger upper",
   "gostergeBbAlt": "Bollinger lower",
