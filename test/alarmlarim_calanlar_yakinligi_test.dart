@@ -171,8 +171,6 @@ void main() {
 
     expect(_ust(tester, _baslik),
         lessThan(_ust(tester, find.byKey(const ValueKey('grup_ALTIN_GRAM')))));
-    expect(_ust(tester, _baslik),
-        lessThan(_ust(tester, find.text('Bekleyenler'))));
     expect(
         find.descendant(of: _kart, matching: find.byKey(const ValueKey('c'))),
         findsOneWidget);
@@ -186,8 +184,6 @@ void main() {
         _ust(tester, _baslik),
         greaterThan(
             _ust(tester, find.byKey(const ValueKey('grup_ALTIN_GRAM')))));
-    expect(_ust(tester, find.text('Bekleyenler')),
-        lessThan(_ust(tester, _baslik)));
   });
 
   testWidgets('elle kapatma oturumda korunur, grup yerinden oynamaz',

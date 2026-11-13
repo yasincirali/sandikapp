@@ -286,36 +286,20 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                   sayi: calan.length,
                   acik: calanlarAcik,
                   onTap: () => setState(() => _calanlarElle = !calanlarAcik),
+                  onTemizle: () => _calanlariTemizle(calan),
                 ),
                 SandikAcilir(
                   acik: calanlarAcik,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _calanKarti(context, calan, adaylar),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          key: const ValueKey('calanlariTemizle'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: c.loss,
-                            minimumSize: const Size(0, SandikTouch.min),
-                          ),
-                          onPressed: () => _calanlariTemizle(calan),
-                          icon: const Icon(Icons.delete_sweep_rounded),
-                          label: Text(context.l10n.alarmCalanlariTemizle),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: _calanKarti(context, calan, adaylar),
                 ),
               ],
             ];
+            // "Bekleyenler" etiketi kalktı (Ar-Ge 14 Kas 02:03 #2): 11 pt
+            // soluk etiket altındaki 15 pt varlık başlıklarından küçüktü,
+            // hiyerarşi tersti; bilgi de taşımıyordu (katlı "Çalanlar (N)"
+            // iki grubu zaten ayırıyor). Bölüm başlığı artık varlığın adı.
             final ogeler = <Widget>[
               if (yeniCalma) ...calanlar,
-              if (calan.isNotEmpty && bekleyen.isNotEmpty)
-                SandikSectionHeader(title: context.l10n.alarmBekleyenler),
               for (final g in _grupla(bekleyen)) _grup(context, g, adaylar),
               if (!yeniCalma) ...calanlar,
             ];
@@ -443,9 +427,31 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   static String _onEk(String? varlik, String baslik) =>
       varlik == null || varlik.isEmpty ? baslik : '$varlik · $baslik';
 
+  /// Çalmış alarmın tek cümlesi: "[varlik] [olay] · [an]". Varlık adı
+  /// cümlenin öznesi (noktasız); ad yoksa olay büyük harfle başlar. Çalma
+  /// anı bilinmiyorsa yazılmaz.
+  static String _caldiCumlesi(String? varlik, String olay, DateTime? an) {
+    final cumle = varlik == null || varlik.isEmpty
+        ? (olay.isEmpty
+            ? olay
+            : '${olay[0] == 'i' ? 'İ' : olay[0].toUpperCase()}${olay.substring(1)}')
+        : '$varlik $olay';
+    // `fmtTarih` (kısa ay, saat boşlukla): `fmtTarihSaat`in kendi " · "
+    // ayırıcısı cümlede ikinci bir nokta olurdu ("… · 13 Kas 2026 · 20:05").
+    return an == null
+        ? cumle
+        : '$cumle · ${fmtTarih(an, saat: true, kisa: true)}';
+  }
+
   /// Bir varlığın grubu: başlıkta ad ve güncel fiyat, altında tek kartta
   /// satırlar (iOS gruplu liste kalıbı). Fiyat bir kez başlıkta yazar;
   /// satırlar yalnız hedefe mesafeyi söyler.
+  ///
+  /// Başlık 14 Kas'tan beri ortak [SandikSectionHeader] (Ar-Ge 14 Kas 02:03
+  /// #2): listenin TEK bölüm başlığı varlığın adı, sağında "Şu an ₺…".
+  /// Eskiden kendi `titleMedium` satırıydı ve üstündeki "Bekleyenler"
+  /// etiketiyle iki kat başlık oluşuyordu. Ekran okuyucuda `header: true`
+  /// (iOS Hatırlatıcılar'daki liste başlığı gibi başlıklar arası atlanır).
   Widget _grup(BuildContext context, List<_Satir> satirlar,
       Map<String, AlarmAdayi> adaylar) {
     final c = context.c;
@@ -465,39 +471,30 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
                 SandikSpace.xs, SandikSpace.xs, SandikSpace.xs, SandikSpace.xs2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Expanded(
-                  child: Text(
-                    ad,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.t.titleMedium?.copyWith(color: c.text90),
-                  ),
-                ),
-                if (fiyat != null) ...[
-                  const SizedBox(width: SandikSpace.sm),
-                  // Sağa yaslı; büyük yazıda adla yarı yarıya paylaşır,
-                  // taşmaz (kısalır).
-                  Flexible(
-                    child: Align(
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: Text(
-                        context.l10n.alarmGrupSimdi(fiyat),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.t.bodyMedium?.copyWith(
-                            color: c.text58,
-                            fontFeatures: const [
-                              FontFeature.tabularFigures()
-                            ]),
+            child: SandikSectionHeader(
+              title: ad,
+              // Sağa yaslı; büyük yazıda adla yarı yarıya paylaşır, taşmaz
+              // (kısalır).
+              trailing: fiyat == null
+                  ? null
+                  : Flexible(
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.only(left: SandikSpace.sm),
+                        child: Text(
+                          context.l10n.alarmGrupSimdi(fiyat),
+                          key: ValueKey('grupFiyat_$sembol'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: context.t.bodySmall?.copyWith(
+                              color: c.text58,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ]),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ],
             ),
           ),
         ),
@@ -526,8 +523,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   /// fiyat hedefe mesafeyi anlamlı kılar. Çalmış alarmda mesafe yok; her
   /// varlığa ayrı başlık, ayrı kart iki çalmış alarmı bekleyenler kadar yer
   /// kaplatıyordu. Güncel fiyatı "Yeniden kur" sayfası zaten yazıyor. Varlık
-  /// adı satır başlığına geçer ("Dolar · Çalıştı · ₺41,00"); sıra çalma
-  /// anına göre, en yeni üstte (liste öyle sıralı geliyor).
+  /// adı satır cümlesinin başına geçer ("Dolar ₺41,00'e çıktı · 3 Kas
+  /// 14:20", [_caldiCumlesi]); sıra çalma anına göre, en yeni üstte (liste
+  /// öyle sıralı geliyor).
   Widget _calanKarti(BuildContext context, List<_Satir> calan,
       Map<String, AlarmAdayi> adaylar) {
     return SandikCard(
@@ -749,22 +747,27 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       satir: (sil) => _AlarmSatiri(
         yon: alarm.isAbove ? _Yon.yukari : _Yon.asagi,
         sonuk: tetiklendi,
-        baslik: _onEk(
-            varlik,
-            tetiklendi
-                ? l10n.alarmCalistiFiyat(hedef)
-                : alarm.isAbove
+        // Çalmış tek seferlik alarm tek cümle (Ar-Ge 14 Kas 02:03 #2):
+        // "ASELS ₺180,00'e çıktı · 13 Kas 20:05". Eskiden iki satır aynı
+        // şeyi iki fiille söylüyordu ("ASELS · Çalıştı · ₺180,00" +
+        // "Çaldı: 13 Kas 20:05"). Çalma anı kalır (müşteri raporu 5 Kas
+        // 09:15): bildirimi kaçıran "Yeniden kur" kararını buna göre verir.
+        baslik: tetiklendi
+            ? _caldiCumlesi(
+                varlik,
+                alarm.isAbove
+                    ? l10n.alarmCaldiCikti(hedef, bicimliFiyatYonelmeEki(hedef))
+                    : l10n.alarmCaldiIndi(hedef, bicimliFiyatYonelmeEki(hedef)),
+                alarm.triggeredAt)
+            : _onEk(
+                varlik,
+                alarm.isAbove
                     ? l10n.alarmKosulUst(hedef)
                     : l10n.alarmKosulAlt(hedef)),
         altlar: [
           if (isim != null) '«$isim»',
           if (alarm.tekrar && !tetiklendi) l10n.alarmHerGeciste,
           if (sonCalis != null) l10n.alarmSonCaldi(fmtTarihSaat(sonCalis)),
-          // Çalmış tek seferlik alarmda ne zaman çaldığı (müşteri raporu
-          // 5 Kas 09:15): bildirimi kaçıran "Yeniden kur" kararını buna
-          // göre verir; tekrarlının "Son çaldı" satırıyla aynı kalıp.
-          if (tetiklendi && alarm.triggeredAt != null)
-            l10n.alarmCaldiZaman(fmtTarihSaat(alarm.triggeredAt!)),
         ],
         mesafe: mesafe,
         grafikte: cizim != null,
@@ -878,13 +881,31 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       altlar.add(l10n.alarmDuzenlemekIcinPremium);
       geriAl = null;
     }
+    // Çalmış gösterge/çizgi alarmı da tek cümle (fiyat alarmıyla aynı
+    // kalıp, 14 Kas): "THY EMA50 aşağı kesildi · ₺290,00 · 13 Kas 20:05".
+    // Tetik fiyatı bilinmiyorsa yazılmaz (uydurma sayı yok).
+    String? caldiBaslik;
     if (calisti) {
-      altlar.add(tetik == null
-          ? l10n.seviyeAlarmCalistiSade
-          : l10n.seviyeAlarmCalisti(
-              fmtFiyat(tetik, symbol: alarmFiyatSimgesi(sembol) ?? '')));
-      final an = g?.triggeredAt ?? cz?.triggeredAt;
-      if (an != null) altlar.add(l10n.alarmCaldiZaman(fmtTarihSaat(an)));
+      final olay = g != null
+          ? switch (g.yon) {
+              SeviyeYon.yukari =>
+                l10n.seviyeAlarmCaldiYukari(gostergeAdi(l10n, g.gosterge)),
+              SeviyeYon.asagi =>
+                l10n.seviyeAlarmCaldiAsagi(gostergeAdi(l10n, g.gosterge)),
+              SeviyeYon.herIkisi =>
+                l10n.seviyeAlarmCaldiIkisi(gostergeAdi(l10n, g.gosterge)),
+            }
+          : switch (cz!.yon) {
+              SeviyeYon.yukari => l10n.cizimAlarmCaldiUst,
+              SeviyeYon.asagi => l10n.cizimAlarmCaldiAlt,
+              SeviyeYon.herIkisi => l10n.cizimAlarmCaldiIkisi,
+            };
+      caldiBaslik = _caldiCumlesi(
+          varlik,
+          tetik == null
+              ? olay
+              : '$olay · ${fmtFiyat(tetik, symbol: alarmFiyatSimgesi(sembol) ?? '')}',
+          g?.triggeredAt ?? cz?.triggeredAt);
     }
     return _kabuk(
       anahtar: anahtar,
@@ -900,7 +921,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           SeviyeYon.herIkisi => _Yon.ikisi,
         },
         sonuk: calisti,
-        baslik: _onEk(varlik, etiket),
+        baslik: caldiBaslik ?? _onEk(varlik, etiket),
         altlar: altlar,
         mesafe: mesafe,
         grafikte: cz != null && !premiumIster,
@@ -1368,6 +1389,12 @@ class _AlarmSayaci extends ConsumerWidget {
 /// (≥44 pt); açık/kapalı durumu ok yönüyle ve erişilebilirlikte `expanded`
 /// ile söylenir, yalnız hareketle değil.
 ///
+/// Sağında nötr "Temizle" (Ar-Ge 14 Kas 02:03 #2): eskiden grubun altında
+/// kırmızı ikonlu "Çalanları temizle" vardı; ikincil bir eylem listenin en
+/// yüksek sesli öğesiydi. Kırmızı yalnız onay penceresinde (yıkıcı onay).
+/// Düğme grup kapalıyken de görünür: kişi çalanları açmadan temizleyebilir,
+/// onay penceresi sayıyı söyler.
+///
 /// iOS'ta Flutter `expanded`'ı VoiceOver'a taşımıyor (3.47, motor
 /// `SemanticsObject.mm`'de karşılığı yok); durum orada değer olarak
 /// ("açık"/"kapalı") okunur. Android'de TalkBack `expanded`'ı zaten
@@ -1377,52 +1404,85 @@ class _CalanlarBasligi extends StatelessWidget {
     required this.sayi,
     required this.acik,
     required this.onTap,
+    required this.onTemizle,
   });
 
   final int sayi;
   final bool acik;
   final VoidCallback onTap;
+  final VoidCallback onTemizle;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final l10n = context.l10n;
     final elma = switch (Theme.of(context).platform) {
       TargetPlatform.iOS || TargetPlatform.macOS => true,
       _ => false,
     };
-    return Semantics(
+    // Büyük yazıda (1,5× üstü) "Temizle" başlığın altına iner: 3,1× ve
+    // 320 pt'de düğme başlığı ok simgesinin genişliğinin altına sıkıştırıp
+    // taşırıyordu ("Yeniden kur" ile aynı karar, 2026-11-07).
+    final buyukYazi = MediaQuery.textScalerOf(context).scale(1) > 1.5;
+    final temizle = Semantics(
+      // Görünen "Temizle", ekran okuyucuda neyin temizlendiğini söyler.
+      label: l10n.alarmCalanlariTemizle,
+      excludeSemantics: true,
       button: true,
-      expanded: acik,
-      value: !elma
-          ? null
-          : (acik ? context.l10n.bolumAcik : context.l10n.bolumKapali),
-      child: SandikTappable(
-        key: const ValueKey('calanlarBasligi'),
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: SandikTouch.min),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.l10n.alarmCalanlar(sayi),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: c.text58,
-                  ),
+      child: TextButton(
+        key: const ValueKey('calanlariTemizle'),
+        style: TextButton.styleFrom(
+          foregroundColor: c.text58,
+          minimumSize: const Size(SandikTouch.min, SandikTouch.min),
+        ),
+        onPressed: onTemizle,
+        child: Text(l10n.clearVerb),
+      ),
+    );
+    final baslik = Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            button: true,
+            expanded: acik,
+            value: !elma ? null : (acik ? l10n.bolumAcik : l10n.bolumKapali),
+            child: SandikTappable(
+              key: const ValueKey('calanlarBasligi'),
+              onTap: onTap,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: SandikTouch.min),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        l10n.alarmCalanlar(sayi),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: c.text58,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: SandikSpace.xs),
+                    SandikAcilirOk(
+                      acik: acik,
+                      child: Icon(Icons.expand_more_rounded,
+                          size: 20, color: c.text58),
+                    ),
+                  ],
                 ),
               ),
-              SandikAcilirOk(
-                acik: acik,
-                child:
-                    Icon(Icons.expand_more_rounded, size: 20, color: c.text58),
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+        if (!buyukYazi) temizle,
+      ],
+    );
+    if (!buyukYazi) return baslik;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [baslik, temizle],
     );
   }
 }

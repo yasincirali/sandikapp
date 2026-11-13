@@ -245,7 +245,7 @@ void main() {
     expect(find.byKey(const ValueKey('grup_ALTIN_GRAM')), findsOneWidget);
     expect(find.text('Gram altın'), findsOneWidget,
         reason: 'Varlık adı bir kez, başlıkta.');
-    expect(find.textContaining('şimdi'), findsOneWidget);
+    expect(find.textContaining('Şu an'), findsOneWidget);
     expect(find.text('%3,2 kaldı'), findsOneWidget);
     expect(find.text('%2,0 kaldı'), findsOneWidget);
     // Çöp kutusu satırda yok; ▲▼ metin karakteri yok.
@@ -258,7 +258,7 @@ void main() {
     _fiyat = [_f('a', 5160)];
     await _pump(tester);
     expect(find.byKey(const ValueKey('alarmMesafe')), findsNothing);
-    expect(find.textContaining('şimdi'), findsNothing);
+    expect(find.textContaining('Şu an'), findsNothing);
   });
 
   testWidgets('kaydırarak sil: hemen silinir, Geri al yeniden kurar',

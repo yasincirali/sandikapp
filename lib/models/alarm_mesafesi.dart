@@ -1,3 +1,5 @@
+import 'hedef_tarihi.dart' show sayiYonelmeEki;
+
 /// Alarmlarım satırındaki "%3,2 kaldı" (müşteri raporu 31 Eki 21:15, yasin
 /// "yap").
 ///
@@ -35,3 +37,21 @@ double? alarmMesafesi({
 /// Mesafe kaç haneyle yazılsın: %1'in altında iki hane ("%0,45"), üstünde
 /// bir ("%3,2"). Yakın alarmda "%0,0 kaldı" yazmasın.
 int alarmMesafesiHanesi(double mesafe) => mesafe < 1 ? 2 : 1;
+
+/// Biçimli fiyatın ("₺180,00", "₺41,62", "$1.240,50") Türkçe yönelme eki:
+/// "₺180,00'e çıktı", "₺41,62'ye indi" (Ar-Ge 14 Kas 02:03 #2, çalmış satır
+/// tek cümle).
+///
+/// Ek son OKUNAN kelimeye uyar: kuruş sıfırsa ("180,00" → "yüz seksen")
+/// tam kısım, değilse kuruş kısmı ("41,62" → "… altmış iki") belirler.
+/// Kural [sayiYonelmeEki]'nin kendisi (yıl ve yüzde ekiyle aynı); burada
+/// yalnız biçimli metinden okunan sayı seçilir. Rakam yoksa ek boş.
+String bicimliFiyatYonelmeEki(String bicimli) {
+  final temiz = bicimli.replaceAll(RegExp(r'[^0-9,]'), '');
+  final parca = temiz.split(',');
+  final kurus = parca.length > 1 ? int.tryParse(parca.last) : null;
+  if (kurus != null && kurus != 0) return sayiYonelmeEki(kurus);
+  final tam = int.tryParse(parca.first);
+  if (tam == null) return '';
+  return sayiYonelmeEki(tam);
+}

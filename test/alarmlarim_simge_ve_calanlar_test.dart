@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:portfoy_takip/models/alarm_mesafesi.dart'
+    show bicimliFiyatYonelmeEki;
 import 'package:portfoy_takip/models/price_alert.dart';
 import 'package:portfoy_takip/models/seviye_alarmi.dart';
 import 'package:portfoy_takip/models/yuzde_alarmi.dart';
@@ -85,6 +87,16 @@ void main() {
     _fiyat = const [];
   });
 
+  test('çalmış cümlede fiyatın yönelme eki son okunan kelimeye uyar', () {
+    expect(bicimliFiyatYonelmeEki('₺180,00'), 'e'); // yüz seksen
+    expect(bicimliFiyatYonelmeEki('₺41,62'), 'ye'); // … altmış iki
+    expect(bicimliFiyatYonelmeEki('₺41,60'), 'a'); // … altmış
+    expect(bicimliFiyatYonelmeEki('₺4.150,00'), 'ye'); // … yüz elli
+    expect(bicimliFiyatYonelmeEki(r'$1.200,00'), 'e'); // … iki yüz
+    expect(bicimliFiyatYonelmeEki('₺6,00'), 'ya'); // altı
+    expect(bicimliFiyatYonelmeEki('—'), '');
+  });
+
   test('alarm fiyatı varlığın kendi simgesiyle', () {
     expect(alarmFiyatMetni(240, 'AAPL'), contains(r'$'));
     expect(alarmFiyatMetni(240, 'AAPL'), isNot(contains('₺')));
@@ -121,9 +133,13 @@ void main() {
     // Çalanlarda varlık grubu başlığı yok; bekleyen altının grubu kalır.
     expect(find.byKey(const ValueKey('grup_USDTRY=X')), findsNothing);
     expect(find.byKey(const ValueKey('grup_ALTIN_GRAM')), findsOneWidget);
-    expect(find.textContaining('Dolar · Çalıştı'), findsOneWidget);
-    expect(find.text('Çaldı: ${fmtTarihSaat(an1)}'), findsOneWidget);
-    expect(find.text('Çaldı: ${fmtTarihSaat(an2)}'), findsOneWidget);
+    // Çalmış satır tek cümle (14 Kas): varlık, hedef + yönelme eki, an.
+    expect(find.text("Dolar ₺41,00'e çıktı · 3 Kas 2026 14:20"),
+        findsOneWidget);
+    expect(find.text("Gram altın ₺4.000,00'e çıktı · 4 Kas 2026 10:05"),
+        findsOneWidget);
+    expect(find.textContaining('Çalıştı'), findsNothing);
+    expect(find.textContaining('Çaldı:'), findsNothing);
   });
 
   List<PriceAlert> nAlarm(int n) => [
