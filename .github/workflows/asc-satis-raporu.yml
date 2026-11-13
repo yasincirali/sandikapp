@@ -1,8 +1,10 @@
-# App Store haftalık satış özeti (yalnız adet; tool/asc_satis_raporu.py).
+# Mağaza haftalık özeti: App Store satış adedi (tool/asc_satis_raporu.py) +
+# Play kurulum ve çökme/ANR oranı (tool/play_istatistik.py; yasin 2026-11-13,
+# Play herkese açıldı). İki iş ayrı: biri kırılırsa öteki yine basılır.
 #
 # Neden: yasin 2026-11-13, "satış istatistikleri" için ayrı Sales rollü anahtar
 # açtı (ASC_SATIS_*). Salt okunur. Repo herkese açık → logda gelir/tutar yok.
-name: ASC satış özeti
+name: Mağaza özeti (App Store + Play)
 
 on:
   workflow_dispatch:
@@ -29,3 +31,20 @@ jobs:
           ASC_SATIS_KEY_CONTENT: ${{ secrets.ASC_SATIS_KEY_CONTENT }}
           ASC_VENDOR_NUMBER: "94523105"
         run: python tool/asc_satis_raporu.py
+
+  play:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pyjwt cryptography
+      - run: python -m unittest tool/play_istatistik_test.py
+      - name: Özet
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          # Toplu rapor kovası (pubsite_prod_…); yoksa kurulum bölümü atlanır.
+          PLAY_GCS_BUCKET: ${{ secrets.PLAY_GCS_BUCKET }}
+        run: python tool/play_istatistik.py
