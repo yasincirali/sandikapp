@@ -15143,12 +15143,6 @@ abstract class AppLocalizations {
   /// **'Örnek bildirimi gönder'**
   String get sgnOrnekBildirim;
 
-  /// No description provided for @sgnOrnekBildirimGonderildi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Örnek bildirim gönderildi'**
-  String get sgnOrnekBildirimGonderildi;
-
   /// No description provided for @sgnIzinKapaliAyarlar.
   ///
   /// In tr, this message translates to:

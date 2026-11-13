@@ -9357,9 +9357,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sgnOrnekBildirim => 'Send a sample notification';
 
   @override
-  String get sgnOrnekBildirimGonderildi => 'Sample notification sent';
-
-  @override
   String get sgnIzinKapaliAyarlar => 'Notifications are off · Open Settings';
 
   @override

@@ -5286,7 +5286,6 @@
   "sgnPremiumGostergeSatiri": "EMA, Stochastic, Trend Strength, Williams %R, CCI and unlimited alerts in Premium",
   "sgnAyarAciklamaUcretsiz": "Pick which indicators produce signals for each asset type. RSI, MACD and Bollinger are free, with one alert a day.",
   "sgnOrnekBildirim": "Send a sample notification",
-  "sgnOrnekBildirimGonderildi": "Sample notification sent",
   "sgnIzinKapaliAyarlar": "Notifications are off · Open Settings",
   "sgnIzinSorulmadi": "Notifications are off · Allow",
   "sgnParametreAciklama": "For {tur}. The value you set is used on screen and in alerts.",

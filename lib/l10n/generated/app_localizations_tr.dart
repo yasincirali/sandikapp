@@ -9231,9 +9231,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sgnOrnekBildirim => 'Örnek bildirimi gönder';
 
   @override
-  String get sgnOrnekBildirimGonderildi => 'Örnek bildirim gönderildi';
-
-  @override
   String get sgnIzinKapaliAyarlar => 'Bildirim izni kapalı · Ayarlar\'da aç';
 
   @override

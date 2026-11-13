@@ -47,7 +47,7 @@ void main() {
     expect(o.body, g.body);
   });
 
-  testWidgets('izin var: örnek gönderilir, onay görünür', (tester) async {
+  testWidgets('izin var: örnek gönderilir, başarı snack yok', (tester) async {
     var cagri = 0;
     SignalSettingsScreen.ornekBildirimTest = () async => cagri++;
     await pump(tester, BildirimIzinDurumu.verildi);
@@ -55,7 +55,8 @@ void main() {
     await tester.tap(find.text('Örnek bildirimi gönder'));
     await tester.pumpAndSettle();
     expect(cagri, 1);
-    expect(find.text('Örnek bildirim gönderildi'), findsOneWidget);
+    // Onay dokunsal; snack yok (snack_basari_kurali).
+    expect(find.byType(SnackBar), findsNothing);
     // Satır dokunma hedefi ≥ 44 pt.
     final kutu = tester.getSize(find
         .ancestor(

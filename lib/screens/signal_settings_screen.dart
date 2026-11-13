@@ -1425,16 +1425,14 @@ class _OrnekBildirimSatiriState extends State<_OrnekBildirimSatiri>
   }
 
   Future<void> _dokun() async {
-    final l = context.l10n;
     switch (_durum) {
       case BildirimIzinDurumu.verildi:
         try {
           await (SignalSettingsScreen.ornekBildirimTest ??
               NotificationService.instance.ornekSinyalBildirimiGoster)();
-          if (mounted) {
-            sandikSnack(context, l.sgnOrnekBildirimGonderildi,
-                kind: SandikSnackKind.success);
-          }
+          // Başarı snack'ı yok (snack_basari_kurali): sonuç ekranda, bildirimin
+          // kendisi; onay dokunsal geri bildirimle verilir.
+          if (mounted) SandikHaptic.basari.perform();
         } catch (e, st) {
           CrashReporter.report(e, st, reason: 'sinyal_ornek_bildirim');
           if (mounted) sandikSnackError(context, friendlyError(e));

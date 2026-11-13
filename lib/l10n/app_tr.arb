@@ -5973,7 +5973,6 @@
   "sgnPremiumGostergeSatiri": "EMA, Stokastik, Trend Gücü, Williams %R, CCI ve sınırsız bildirim Premium'da",
   "sgnAyarAciklamaUcretsiz": "Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini seç. RSI, MACD ve Bollinger ücretsiz; bildirimi günde 1 kez gelir.",
   "sgnOrnekBildirim": "Örnek bildirimi gönder",
-  "sgnOrnekBildirimGonderildi": "Örnek bildirim gönderildi",
   "sgnIzinKapaliAyarlar": "Bildirim izni kapalı · Ayarlar'da aç",
   "sgnIzinSorulmadi": "Bildirim izni kapalı · İzin ver",
   "sgnParametreAciklama": "{tur} için. Değiştirdiğin değer ekranda ve bildirimlerde kullanılır.",
