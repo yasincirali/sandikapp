@@ -36,6 +36,13 @@ import 'sandik_async_button.dart';
 import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import '../utils/tr_format.dart';
 
+/// Hedef sayfasının "bugün"ü. Kart (`BugunKarti.saat`) ile aynı anı görsün
+/// diye testte sabitlenir: aylık gereken tutar kalan ay sayısına bağlı, gerçek
+/// saatle hesaplanınca test takvim günü değişince kırılıyordu (2026-11-13,
+/// `hedef_tarihi_kart_test` "gerisinde" vakası).
+@visibleForTesting
+DateTime Function() hedefSayfasiSaati = DateTime.now;
+
 /// Hazır hedef merdiveni (TRY). Basamaklar yukarı doğru genişler: 100
 /// binlik portföye 250 bin anlamlı bir hedef, 10 milyonluğa 25 milyon.
 const hedefMerdiveni = <int>[
@@ -427,7 +434,7 @@ class _TarihBolumu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final bugun = DateTime.now();
+    final bugun = hedefSayfasiSaati();
     final secenek = hedefTarihSecenegi(tarih, bugun);
     final dil = Localizations.localeOf(context).languageCode == 'en'
         ? 'en_US'
