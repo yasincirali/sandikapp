@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show immutable, visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset.dart';
+import '../models/elde_tutma.dart';
 import '../services/aylik_getiri_tablosu.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
@@ -116,3 +117,29 @@ Future<Map<DateTime, double>> _tufeEndeksi() async {
     return const {};
   }
 }
+
+/// TÜFE endeksi, Performans dışındaki yüzeyler için (2026-11-13: varlık
+/// ekranının elde tutma satırı). Kaynak [aylikGetiriProvider]'ın yıl
+/// satırlarıyla AYNI `_tufeEndeksi` (InflationService, 12 saatlik önbellek):
+/// yeni ağ kaynağı yok, Performans endeksi zaten çektiyse istek de yok.
+/// Hata Crashlytics'e gider ve boş endeks döner: TÜFE yan bilgidir, satır
+/// çizilmez ama ekran düşmez.
+final tufeEndeksiProvider =
+    FutureProvider.autoDispose<Map<DateTime, double>>((ref) => _tufeEndeksi());
+
+/// Elde tutma satırının "Aynı sürede TÜFE yıllık … · reel …" parçası.
+/// Hesap `eldeTutmaTufesi`'nde (saf, model katmanı); bu provider yalnız
+/// endeksi bağlar ki widget `build()`'inde hesap olmasın. Senkron: endeks
+/// gelene kadar `null` (satır yok), fiyat tik'inde özet değişince yeniden
+/// hesaplanır ama endeks yeniden yüklenmez (yükleme anı titremesi yok).
+final eldeTutmaTufeProvider = Provider.autoDispose
+    .family<EldeTutmaTufe?, EldeTutma>((ref, ozet) {
+  final endeks = ref.watch(tufeEndeksiProvider).valueOrNull;
+  if (endeks == null) return null;
+  return eldeTutmaTufesi(
+    baslangic: ozet.baslangic,
+    yillikPct: ozet.yillikPct,
+    endeks: endeks,
+    simdi: DateTime.now(),
+  );
+});

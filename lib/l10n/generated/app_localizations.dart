@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr')
+    Locale('tr'),
   ];
 
   /// No description provided for @appName.
@@ -1891,6 +1891,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{sure}dır tutuyorsun · yıllık ortalaman Premium\'da'**
   String eldeTutmaKilitli(String sure);
+
+  /// Elde tutma satırının altı (Premium): aynı pencerenin yıllık TÜFE'si ve yıllık reel getiri (işaretli yüzde).
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı sürede TÜFE yıllık {tufe} · reel {reel}'**
+  String eldeTutmaTufeSatiri(String tufe, String reel);
+
+  /// Ekran okuyucu: reel getiri artıda. Sayılar işaretsiz, yön kelimeyle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı sürede enflasyon yıllık yüzde {tufe}, reel getiri yüzde {reel} kazanç.'**
+  String eldeTutmaTufeA11yKazanc(String tufe, String reel);
+
+  /// Ekran okuyucu: reel getiri ekside. Sayılar işaretsiz, yön kelimeyle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı sürede enflasyon yıllık yüzde {tufe}, reel getiri yüzde {reel} kayıp.'**
+  String eldeTutmaTufeA11yKayip(String tufe, String reel);
+
+  /// Ekran okuyucu: reel getiri sıfıra yuvarlanıyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı sürede enflasyon yıllık yüzde {tufe}, reel getiri başa baş.'**
+  String eldeTutmaTufeA11yBasaBas(String tufe);
 
   /// No description provided for @fxSplitPrice.
   ///
@@ -6835,7 +6859,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis);
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  );
 
   /// No description provided for @whatsNewTitle.
   ///
@@ -9404,7 +9432,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi);
+    String date,
+    String end,
+    String change,
+    String cpi,
+  );
 
   /// No description provided for @savingsRose.
   ///
@@ -10743,7 +10775,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-      String amount, String times, String pct, String share);
+    String amount,
+    String times,
+    String pct,
+    String share,
+  );
 
   /// No description provided for @tekOnayGizlilikBaglanti.
   ///
@@ -16948,7 +16984,10 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
   String kilometreTasiSiradakiIlerlemeEtiket(
-      String baslik, int yuzde, String kalan);
+    String baslik,
+    int yuzde,
+    String kalan,
+  );
 
   /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
   ///
@@ -17465,7 +17504,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
   String yaSemantik(
-      String baslik, String dusuk, String yuksek, String bugun, String cumle);
+    String baslik,
+    String dusuk,
+    String yuksek,
+    String bugun,
+    String cumle,
+  );
 
   /// No description provided for @noChangeBridgeToday.
   ///
@@ -17946,7 +17990,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'En iyi ay {iyiAy} {iyiDeger}, en zor {zorAy} {zorDeger}.'**
   String aylikGetiriOzetUclar(
-      String iyiAy, String iyiDeger, String zorAy, String zorDeger);
+    String iyiAy,
+    String iyiDeger,
+    String zorAy,
+    String zorDeger,
+  );
 
   /// Aylık getiri kartı: yalnız en iyi ay (aylar eşit)
   ///
@@ -17977,7 +18025,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{yil}: {getiri}. TÜFE yüzde {tufe}, reel getiri {reel}.'**
   String aylikGetiriYilReelOkunan(
-      String yil, String getiri, String tufe, String reel);
+    String yil,
+    String getiri,
+    String tufe,
+    String reel,
+  );
 
   /// Aylık getiri dipnot ayrıntısı: enflasyon kaynağı
   ///
@@ -18235,8 +18287,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

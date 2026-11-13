@@ -129,6 +129,34 @@ class InflationService {
     return (son / ilk - 1) * 100;
   }
 
+  /// [tabanAy] sonundan [sonAy] sonuna TÜFE değişimi (yüzde), ARADAKİ HER
+  /// AYIN endeksi biliniyorsa. Biri eksikse (ya da uçlardan biri) `null`.
+  ///
+  /// ## Neden [changePct] yetmiyor (2026-11-13)
+  /// [changePct] yalnız iki ucu okur; aradaki bir ayın satırı eksikse
+  /// (çekim turu kaçırdı, seri baz değiştirdi) yine sayı döndürür ve o sayı
+  /// TÜİK'in hiç ölçmediği bir aralığı "biliyormuş gibi" söyler. Aylık
+  /// getiri tablosunun yıl satırı ve elde tutma satırının TÜFE'si zinciri
+  /// boşluksuz ister: delik varsa satır yazılmaz, sıfır enflasyon sayılmaz.
+  /// Sonuç yine tek bölmeyle ([changePct] notu: aylık oranları çarpmak her
+  /// ay yuvarlama ekler); denetim yalnız aradaki ayların varlığıdır.
+  static double? zincirliDegisimPct(
+    Map<DateTime, double> endeks,
+    DateTime tabanAy,
+    DateTime sonAy,
+  ) {
+    final taban = ayBasi(tabanAy);
+    final son = ayBasi(sonAy);
+    if (!son.isAfter(taban)) return null;
+    for (var a = DateTime(taban.year, taban.month + 1);
+        !a.isAfter(son);
+        a = DateTime(a.year, a.month + 1)) {
+      final v = endeks[a];
+      if (v == null || v <= 0) return null;
+    }
+    return changePct(endeks, taban, son);
+  }
+
   /// Nominal getirinin enflasyonu kaç PUAN geçtiği.
   ///
   /// Kullanıcıya gösterilen sayı budur: "TÜFE'yi 6,4 puan geçti".
