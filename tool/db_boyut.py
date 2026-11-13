@@ -82,6 +82,24 @@ FN_SORGULAR = [
     for kol in ("source", "source_name")
 ]
 
+# Log Ingestion (Free 1 GB/ay; 2026-11-13 0,94 GB, yasin "bu kayıtları
+# azaltalım"): hangi kaynak ve hangi REST yolu log üretiyor, son 24 saat.
+# Aynı `logs` ucu; yalnız kaynak adı / tablo-RPC adı ve sayı seçilir (gövde,
+# başlık, IP, kullanıcı yok). Edge Function sayımı 7 günde ~3 bin/gün,
+# REST ~19 bin/gün çıktı: asıl yük uygulamanın kendi istekleri, hangi
+# ekranın ritmini seyrekleştireceğimizi bu tablo söyler.
+_REST_AD = "extract(event_message, 'rest/v1/((?:rpc/)?[A-Za-z0-9_]+)')"
+KAYNAK_SORGULAR = [
+    f"select {kol} as yol, count() as n from logs group by yol order by n desc"
+    for kol in ("source", "source_name")
+]
+REST_SORGULAR = [
+    f"select {_REST_AD} as yol, count() as n from logs "
+    f"where {kol} = 'edge_logs' and position(event_message, '/rest/v1/') > 0 "
+    f"group by yol order by n desc limit 15"
+    for kol in ("source", "source_name")
+]
+
 SORGU = """
 select json_build_object(
   'db', pg_database_size(current_database()),
@@ -131,6 +149,11 @@ def api_sayilari(token: str) -> dict | None:
 def fonksiyon_cagrilari(token: str) -> dict | None:
     """Son 24 saatin Edge Function çağrıları: `{"toplam": n, "yollar": {ad: n}}`.
     Uç yanıt vermezse None (rapor "elle" der, iş düşmez)."""
+    return log_say(token, FN_SORGULAR)
+
+
+def log_say(token: str, sorgular: list[str]) -> dict | None:
+    """`logs` ucunda son 24 saat; ilk çözülen sorgunun `fn_coz` sonucu."""
     import datetime
     import urllib.parse
     bitis = datetime.datetime.now(datetime.timezone.utc)
@@ -140,7 +163,7 @@ def fonksiyon_cagrilari(token: str) -> dict | None:
     # toplam. İkisi de düşerse nedeni (HTTP kodu + API'nin kısa mesajı;
     # token içermez) günlüğe yazılır ki "elle bak" satırı sessiz kalmasın
     # (2026-10-26 ilk koşu: neden görünmeden None döndü).
-    for sql in FN_SORGULAR:
+    for sql in sorgular:
         sorgu = urllib.parse.urlencode({
             "sql": sql,
             "iso_timestamp_start": zaman(baslangic),
@@ -291,6 +314,12 @@ def kota_satirlari(s: dict) -> tuple[list[str], int]:
         satir += ["", "| Fonksiyon (son 24 saat) | Çağrı |", "|---|---:|"]
         for ad, n in sorted(fn["yollar"].items(), key=lambda x: -x[1])[:12]:
             satir.append(f"| `{ad}` | {sayi(n)} |")
+    for anahtar, baslik in (("kaynak", "Log kaynağı"), ("rest", "REST yolu")):
+        t = s.get(anahtar)
+        if t and t["yollar"]:
+            satir += ["", f"| {baslik} (son 24 saat) | Satır |", "|---|---:|"]
+            for ad, n in sorted(t["yollar"].items(), key=lambda x: -x[1])[:15]:
+                satir.append(f"| `{ad}` | {sayi(n)} |")
     return satir, kod
 
 
@@ -302,6 +331,8 @@ def main() -> int:
     s = sorgula(token)
     s["api"] = api_sayilari(token)
     s["fn"] = fonksiyon_cagrilari(token)
+    s["kaynak"] = log_say(token, KAYNAK_SORGULAR)
+    s["rest"] = log_say(token, REST_SORGULAR)
     metin, kod = rapor(s)
     print(metin)
     ozet = os.environ.get("GITHUB_STEP_SUMMARY")
