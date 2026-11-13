@@ -14,6 +14,9 @@ part of '../asset_detail_screen.dart';
 /// Kilit yalnız burada (`_ozelGostergeKilitli`): yasin 2026-10-10 — *"pine
 /// kodu girip kendi göstergesini çalıştırmak ücretli olmalı"*; Mum ve EMA
 /// ücretsiz. Sunucu eşi 0141 (`premium_icerik_gorebilir()` yazma kapısı).
+/// 2026-11-13'ten beri kilit grafikte çizmeyi ve KAYDETMEYİ kapatır; çip
+/// sayfayı yine açar (tadımlık: şablon + önizleme), paywall düzenleyicinin
+/// kaydet düğmesinde (`OzelGostergeEditorScreen.kilitli`).
 ///
 /// ## Hangi çubuklar
 /// Varlığın gerçek mumu varsa (hisse, döviz, altın, emtia Yahoo; kripto
@@ -171,24 +174,25 @@ extension _OzelGostergeler on _AssetDetailScreenState {
               sikistirma: () => _seansSik),
         ];
 
-  /// Araç çubuğundaki `ƒx` çipi. Kilitliyse paywall; değilse göstergeler
-  /// sayfası (grafiğin o anki çubuklarıyla — düzenleyici önizlemesi için).
-  GrafikOzelCipi _ozelGostergeCipi(int acikSayi) {
+  /// Araç çubuğundaki `ƒx` çipi → göstergeler sayfası (grafiğin o anki
+  /// çubuklarıyla — düzenleyici önizlemesi için). [cizilenSayi] çizilen
+  /// göstergeler: açık ama çizilemeyen sayılmaz, nedeni sayfada satırında.
+  ///
+  /// Kilitliyken de sayfa açılır (tadımlık, 2026-11-13): şablonlar ve
+  /// önizleme serbest, yalnız kaydetmek paywall'a gider
+  /// (`OzelGostergeEditorScreen.kilitli`). Eskiden çip doğrudan paywall'du;
+  /// kullanıcı neye para verdiğini görmüyordu.
+  GrafikOzelCipi _ozelGostergeCipi(int cizilenSayi) {
     final kilitli = _ozelGostergeKilitli;
     return GrafikOzelCipi(
-      acikSayi: acikSayi,
+      acikSayi: cizilenSayi,
       kilitli: kilitli,
-      onTap: () {
-        if (kilitli) {
-          PaywallScreen.show(context, source: 'grafik_ozel_gosterge');
-          return;
-        }
-        showOzelGostergeSayfasi(
-          context,
-          onizleme: _ozelVeri,
-          varlikAdi: _kimlik.kisaEtiket,
-        );
-      },
+      onTap: () => showOzelGostergeSayfasi(
+        context,
+        onizleme: _ozelVeri,
+        varlikAdi: _kimlik.kisaEtiket,
+        kilitli: kilitli,
+      ),
     );
   }
 }

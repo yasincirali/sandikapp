@@ -28,8 +28,8 @@ import 'helpers/kaynak.dart';
 ///
 /// Kilitlenenler:
 ///  · Çip dik grafikle aynı kapıda: Premium özellikleri görünmüyorsa yok.
-///  · Kilitliyse paywall yolu (göstergeler sayfası açılmaz); açıksa aynı
-///    göstergeler sayfası. Dokunma alanı ≥44 pt, etiketli.
+///  · Kilitliyse göstergeler sayfası tadımlık kipte (kaydet paywall'a);
+///    açıksa aynı göstergeler sayfası. Dokunma alanı ≥44 pt, etiketli.
 ///  · Açık gösterge yatay mumlarda çalışır: çip sayıyı, lejant adı yazar;
 ///    ayrı panelli gösterge "dik ekranda" diye söylenir.
 ///  · Üstte göstergeler sayfası varken dik dönmek o sayfayı kapatmaz.
@@ -148,7 +148,7 @@ void main() {
     await bitir(tester);
   });
 
-  testWidgets('kilitli: kilit simgesi, dokunuş paywall yolu, sayfa açılmaz',
+  testWidgets('kilitli: kilit simgesi, dokunuş tadımlık sayfayı açar',
       (tester) async {
     await ac(tester, gorunur: true, kilitli: true);
     await cipeKaydir(tester);
@@ -156,11 +156,13 @@ void main() {
     expect(tester.widget<GrafikCipi>(cip).kilitli, isTrue);
     await tester.tap(cip);
     await tester.pumpAndSettle();
-    expect(find.byType(OzelGostergeListesi), findsNothing);
-    // Paywall dik grafikle aynı kaynakla açılır (testte RC kapalı:
-    // `PaywallScreen.show` sessizce döner; kaynak metinden kilitlenir).
+    // 2026-11-13 tadımlık: sayfa kilitli kipte açılır (şablon + önizleme);
+    // paywall düzenleyicinin kaydet düğmesinde.
+    final liste =
+        tester.widget<OzelGostergeListesi>(find.byType(OzelGostergeListesi));
+    expect(liste.kilitli, isTrue);
     expect(
-        ekranKaynagiSync('lib/screens/tam_ekran_grafik_screen.dart').contains(
+        ekranKaynagiSync('lib/screens/ozel_gosterge_screen.dart').contains(
             "PaywallScreen.show(context, source: 'grafik_ozel_gosterge')"),
         isTrue);
     await bitir(tester);

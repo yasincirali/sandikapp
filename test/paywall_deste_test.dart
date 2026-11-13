@@ -123,7 +123,8 @@ void main() {
         'lib/widgets/kismi_aktarim_sayfasi.dart',
         'lib/widgets/ortak_paylasim_sayfasi.dart',
         // Kendi göstergeni yaz (0141) ve ortak sınır uyarısı (takip, alarm).
-        'lib/screens/asset_detail/ozel_gostergeler.dart',
+        // ƒx kaydet düğmesi (tadımlık, 2026-11-13; eskiden çipte).
+        'lib/screens/ozel_gosterge_screen.dart',
         'lib/widgets/sinir_uyarisi.dart',
         // Maliyetine göre temettü verimi (2026-11-07).
         'lib/widgets/temettu_gecmisi_karti.dart',

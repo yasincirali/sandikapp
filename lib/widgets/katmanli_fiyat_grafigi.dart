@@ -10,7 +10,6 @@ import '../providers/ozel_gosterge_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/premium_provider.dart';
 import '../screens/ozel_gosterge_screen.dart';
-import '../screens/paywall_screen.dart';
 import '../screens/tam_ekran_grafik_screen.dart';
 import '../services/gosterge_betigi/betik.dart';
 import '../services/history_service.dart' show FiyatKaynagi;
@@ -295,15 +294,12 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
                 : GrafikOzelCipi(
                     acikSayi: sonuclar.length,
                     kilitli: kilitli,
-                    onTap: () {
-                      if (kilitli) {
-                        PaywallScreen.show(context,
-                            source: 'grafik_ozel_gosterge');
-                        return;
-                      }
-                      showOzelGostergeSayfasi(context,
-                          onizleme: _ozelVeri, varlikAdi: widget.sembolEtiketi);
-                    },
+                    // Kilitliyken de sayfa açılır; kaydetmek paywall'a
+                    // gider (tadımlık, dik grafikle aynı).
+                    onTap: () => showOzelGostergeSayfasi(context,
+                        onizleme: _ozelVeri,
+                        varlikAdi: widget.sembolEtiketi,
+                        kilitli: kilitli),
                   ),
             aralik: aralik,
             gecerliAraliklar: gecerli,

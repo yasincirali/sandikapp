@@ -8,6 +8,7 @@ import '../models/ozel_gosterge.dart';
 import '../providers/ozel_gosterge_provider.dart';
 import '../services/gosterge_betigi/betik.dart';
 import '../services/gosterge_betigi/katalog.dart';
+import '../services/ozel_gosterge_calistirici.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
@@ -17,6 +18,7 @@ import '../widgets/sandik_acilir.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_error_view.dart';
+import 'paywall_screen.dart' show PaywallScreen;
 
 /// Kendi göstergeni yaz — liste (alt sayfa) ve düzenleyici (tam ekran).
 ///
@@ -30,12 +32,21 @@ import '../widgets/sandik_error_view.dart';
 /// Düzenleyici, açıldığı grafiğin O ANKİ çubuklarını ([BetikVerisi]) alır ve
 /// betiği her değişiklikte onların üstünde çalıştırır: kullanıcı kaydetmeden
 /// sonucu görür; hata satır numarasıyla yazılır.
+///
+/// ## Tadımlık (ücretsiz kullanıcı, 2026-11-13)
+/// [kilitli] iken sayfa yine açılır: şablonlar, kod yazma/yapıştırma ve
+/// varlığın çubuklarında önizleme serbest; KAYDETMEK kilitli ve paywall'u
+/// açar (`grafik_ozel_gosterge` → `PaywallKarti.ozelGosterge`). Kayıtlı
+/// liste okunmaz (sağlayıcı izlenmez), hiçbir şey yerelde ya da sunucuda
+/// saklanmaz; grafik göstergeyi zaten yalnız kilit açıkken çizer. Sunucu
+/// yazma kapısı 0141 aynen durur (istemci kilidi tek savunma değil).
 
 /// Göstergeler sayfası. [onizleme] grafiğin çubukları (düzenleyiciye geçer).
 Future<void> showOzelGostergeSayfasi(
   BuildContext context, {
   BetikVerisi? onizleme,
   String? varlikAdi,
+  bool kilitli = false,
 }) =>
     showSandikSheet<void>(
       context: context,
@@ -44,15 +55,19 @@ Future<void> showOzelGostergeSayfasi(
         borderRadius:
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
       ),
-      builder: (_) =>
-          OzelGostergeListesi(onizleme: onizleme, varlikAdi: varlikAdi),
+      builder: (_) => OzelGostergeListesi(
+          onizleme: onizleme, varlikAdi: varlikAdi, kilitli: kilitli),
     );
 
 class OzelGostergeListesi extends ConsumerWidget {
-  const OzelGostergeListesi({super.key, this.onizleme, this.varlikAdi});
+  const OzelGostergeListesi(
+      {super.key, this.onizleme, this.varlikAdi, this.kilitli = false});
 
   final BetikVerisi? onizleme;
   final String? varlikAdi;
+
+  /// Ücretsiz kullanıcı: kayıtlı liste yok, düzenleyicide kaydet kilitli.
+  final bool kilitli;
 
   void _ac(BuildContext context, {OzelGosterge? g, BetikSablonu? sablon}) {
     pushGuarded(
@@ -65,6 +80,7 @@ class OzelGostergeListesi extends ConsumerWidget {
           sablon: sablon,
           onizleme: onizleme,
           varlikAdi: varlikAdi,
+          kilitli: kilitli,
         ),
       ),
     );
@@ -73,15 +89,27 @@ class OzelGostergeListesi extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final durum = ref.watch(ozelGostergelerProvider);
+    // Kilitliyken sağlayıcı izlenmez: kayıtlı göstergeler okunmaz, liste
+    // bölümü hiç çizilmez (tadımlık yalnız şablon + önizleme).
+    final durum = kilitli
+        ? const AsyncValue<List<OzelGosterge>>.data([])
+        : ref.watch(ozelGostergelerProvider);
     final ingilizce = context.l10n.localeName.startsWith('en');
     final liste = durum.valueOrNull ?? const <OzelGosterge>[];
     final doldu = liste.length >= OzelGosterge.azamiSayi;
+    // Açık ama bu grafikte çizilemeyenler, nedeniyle. Grafiğin az önce
+    // aynı veriyle yaptığı çalıştırmanın önbelleğinden okunur (betik yeniden
+    // koşmaz); çip de aynı rapordan sayar, ikisi ayrışmaz.
+    final veri = onizleme;
+    final atlanan = veri == null || kilitli
+        ? const <String, OzelAtlamaNedeni>{}
+        : ozelGostergeleriCalistirRapor(grafiktekiGostergeler(liste), veri)
+            .atlanan;
     return SafeArea(
       top: false,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+        constraints:
+            BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
               SandikSpace.md, SandikSpace.screenH(context), SandikSpace.lg),
@@ -107,6 +135,8 @@ class OzelGostergeListesi extends ConsumerWidget {
                   padding: EdgeInsets.all(SandikSpace.lg),
                   child: Center(child: CustomLoadingIndicator()),
                 )
+              else if (kilitli)
+                const SizedBox.shrink()
               else if (liste.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
@@ -118,6 +148,7 @@ class OzelGostergeListesi extends ConsumerWidget {
                 for (final g in liste)
                   _GostergeSatiri(
                     gosterge: g,
+                    atlama: g.grafikte ? atlanan[g.id] : null,
                     onTap: () => _ac(context, g: g),
                   ),
               const SizedBox(height: SandikSpace.md),
@@ -129,14 +160,13 @@ class OzelGostergeListesi extends ConsumerWidget {
               if (doldu) ...[
                 const SizedBox(height: SandikSpace.xs),
                 Text(l.ozgSinir(OzelGosterge.azamiSayi),
-                    style: context.t.bodySmall
-                        ?.copyWith(color: context.c.text58)),
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text58)),
               ],
               const SizedBox(height: SandikSpace.lg),
               Text(l.ozgSablondan,
                   style: context.t.labelSmall?.copyWith(
-                      color: context.c.text58,
-                      fontWeight: FontWeight.w700)),
+                      color: context.c.text58, fontWeight: FontWeight.w700)),
               const SizedBox(height: SandikSpace.sm),
               Wrap(
                 spacing: SandikSpace.sm,
@@ -159,10 +189,15 @@ class OzelGostergeListesi extends ConsumerWidget {
 }
 
 class _GostergeSatiri extends ConsumerWidget {
-  const _GostergeSatiri({required this.gosterge, required this.onTap});
+  const _GostergeSatiri(
+      {required this.gosterge, required this.onTap, this.atlama});
 
   final OzelGosterge gosterge;
   final VoidCallback onTap;
+
+  /// Açık ama bu grafikte çizilemediyse nedeni; satırın altında tek nötr
+  /// satır (kırmızı değil: kod hatalı değil, veri ya da aralık uymuyor).
+  final OzelAtlamaNedeni? atlama;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -178,9 +213,18 @@ class _GostergeSatiri extends ConsumerWidget {
         : derli.fiyatUstunde
             ? l.ozgFiyatUstunde
             : l.ozgAyriPanel;
-    return SandikTappable(
+    final atlamaMetni = switch (atlama) {
+      null => null,
+      OzelAtlamaNedeni.hacimYok => l.ozgCizilemediHacim,
+      OzelAtlamaNedeni.ohlcYok => l.ozgCizilemediOhlc,
+      OzelAtlamaNedeni.agir => l.ozgCizilemediAgir,
+      OzelAtlamaNedeni.genel => l.ozgCizilemedi,
+    };
+    final satir = SandikTappable(
       onTap: onTap,
-      semanticLabel: '${gosterge.ad}, $altYazi',
+      semanticLabel: atlamaMetni == null
+          ? '${gosterge.ad}, $altYazi'
+          : '${gosterge.ad}, $altYazi, $atlamaMetni',
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: SandikTouch.min + 12),
         child: Row(
@@ -232,6 +276,37 @@ class _GostergeSatiri extends ConsumerWidget {
         ),
       ),
     );
+    if (atlamaMetni == null) return satir;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        satir,
+        // Satırın metin sütunuyla hizalı (ikon 20 + boşluk md); bilgi ikonu
+        // + cümle: durum yalnız renkle verilmez. Ekran okuyucu bunu satırın
+        // etiketinde zaten duyar.
+        ExcludeSemantics(
+          child: Padding(
+            padding: const EdgeInsets.only(
+                left: 20 + SandikSpace.md, bottom: SandikSpace.sm),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    size: 16, color: context.c.text58),
+                const SizedBox(width: SandikSpace.xs),
+                Expanded(
+                  child: Text(atlamaMetni,
+                      key: ValueKey('ozgAtlama-${gosterge.id}'),
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -243,12 +318,17 @@ class OzelGostergeEditorScreen extends ConsumerStatefulWidget {
     this.sablon,
     this.onizleme,
     this.varlikAdi,
+    this.kilitli = false,
   });
 
   final OzelGosterge? gosterge;
   final BetikSablonu? sablon;
   final BetikVerisi? onizleme;
   final String? varlikAdi;
+
+  /// Ücretsiz kullanıcı (tadımlık): yazma ve önizleme serbest, kaydet
+  /// paywall'u açar; sağlayıcıya hiç yazılmaz.
+  final bool kilitli;
 
   /// Boş başlangıç: en basit çalışan betik, ne yazılacağını gösterir.
   static const baslangicKodu = '// close = kapanış. Ör: 20 çubukluk ortalama\n'
@@ -328,6 +408,12 @@ class _OzelGostergeEditorScreenState
   }
 
   Future<void> _kaydet() async {
+    if (widget.kilitli) {
+      // Kaydetmek ücretli (yasin 2026-10-10); ad/kod denetiminden ÖNCE:
+      // ücretsiz kullanıcıya "ad yaz" deyip sonra paywall açmak boşa iş.
+      await PaywallScreen.show(context, source: 'grafik_ozel_gosterge');
+      return;
+    }
     if (!OzelGosterge.adGecerli(_ad.text)) {
       setState(() => _adHatasi = true);
       return;
@@ -410,8 +496,8 @@ class _OzelGostergeEditorScreenState
             if (widget.gosterge != null)
               IconButton(
                 tooltip: l.ozgSil,
-                icon: Icon(Icons.delete_outline_rounded,
-                    color: context.c.text58),
+                icon:
+                    Icon(Icons.delete_outline_rounded, color: context.c.text58),
                 onPressed: _sil,
               ),
           ],
@@ -504,8 +590,8 @@ class _OzelGostergeEditorScreenState
                   ),
                   const SizedBox(height: SandikSpace.md),
                   SandikTappable(
-                    onTap: () => setState(
-                        () => _fonksiyonlarAcik = !_fonksiyonlarAcik),
+                    onTap: () =>
+                        setState(() => _fonksiyonlarAcik = !_fonksiyonlarAcik),
                     child: ConstrainedBox(
                       constraints:
                           const BoxConstraints(minHeight: SandikTouch.min),
@@ -533,8 +619,8 @@ class _OzelGostergeEditorScreenState
                       children: [
                         for (final f in kBetikFonksiyonlari)
                           Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: SandikSpace.sm),
+                            padding:
+                                const EdgeInsets.only(bottom: SandikSpace.sm),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -548,8 +634,8 @@ class _OzelGostergeEditorScreenState
                                       ],
                                     )),
                                 Text(en ? f.en : f.tr,
-                                    style: context.t.bodySmall?.copyWith(
-                                        color: context.c.text58)),
+                                    style: context.t.bodySmall
+                                        ?.copyWith(color: context.c.text58)),
                               ],
                             ),
                           ),
@@ -582,7 +668,18 @@ class _OzelGostergeEditorScreenState
                 child: SandikAsyncButton(
                   basari: _basari,
                   onPressed: hata == null ? _kaydet : null,
-                  child: Text(l.save),
+                  // Kilit ikonu + metin: neyin ücretli olduğu düğmede
+                  // söylenir, basınca sürpriz paywall değil.
+                  child: widget.kilitli
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.lock_outline_rounded, size: 18),
+                            const SizedBox(width: SandikSpace.sm),
+                            Flexible(child: Text(l.ozgKaydetKilitli)),
+                          ],
+                        )
+                      : Text(l.save),
                 ),
               ),
             ),
