@@ -15,6 +15,7 @@ import android.widget.BaseAdapter
 import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
+import androidx.core.view.WindowCompat
 
 /**
  * Tek varlık widget'ının seçim ekranı — iOS'taki App Intents "Varlık seç"
@@ -151,6 +152,14 @@ class SandikVarlikSecimActivity : Activity() {
         // zemin decor'dan görünür. `Window.setStatusBarColor` /
         // `setNavigationBarColor` Android 15'te kullanımdan kalktığı için
         // (Play uyarısı, 2026-11-10) kodda çağrılmaz.
+
+        // Kenardan kenara her sürümde (Android 15+ zaten böyle): çubuklar
+        // temadan şeffaf, içeriğin payını kökteki `fitsSystemWindows` verir.
+        // 3 düğmeli gezinmede sistem yarı saydam perde çizmesin.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
 
         // Açık zeminde KOYU ikon, koyu zeminde açık ikon.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

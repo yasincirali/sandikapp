@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -22,6 +23,13 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { !flutterReady }
+        // Kenardan kenara (yasin 2026-11-13, "yapalım"; Play uyarısı 2026-11-10):
+        // SDK 35 hedefli uygulamada Android 15+ bunu zaten zorlar, Flutter da
+        // sistem çubuğu payını MediaQuery'ye verir. Bu çağrı Android 14 ve
+        // altını AYNI davranışa getirir (tek görünüm). `super.onCreate`'ten
+        // ÖNCE: pencere bayrakları ilk kareden önce kurulmalı. Çubuk ikon
+        // rengini Flutter tarafı (AnnotatedRegion/SystemChrome) sürdürür.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         firebaseArkaPlanKaydiniSil()
         // FLAG_SECURE bilerek YOK (yasin kararı 2026-10-23; eski denetim E5'te
