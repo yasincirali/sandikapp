@@ -11036,8 +11036,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sattiklarinAltMetin => 'Positions you sold in full, latest first';
 
   @override
-  String get sattiklarinKilitli =>
-      'Closed positions and their realized gains are in Premium';
+  String sattiklarinKilitli(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'You closed $count positions · your realized gain is in Premium',
+      one: 'You closed 1 position · your realized gain is in Premium',
+    );
+    return '$_temp0';
+  }
 
   @override
   String sattiklarinToplam(String tutar, int count) {

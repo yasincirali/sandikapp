@@ -17709,11 +17709,11 @@ abstract class AppLocalizations {
   /// **'Tamamını sattığın pozisyonlar, son kapanan önde'**
   String get sattiklarinAltMetin;
 
-  /// No description provided for @sattiklarinKilitli.
+  /// Ücretsiz kullanıcıda Sattıkların satırı: kapatılan pozisyon sayısı kullanıcının kendi defterinden açık, gerçekleşen kâr kilitli.
   ///
   /// In tr, this message translates to:
-  /// **'Sattıkların ve gerçekleşen kârları Premium\'da'**
-  String get sattiklarinKilitli;
+  /// **'{count, plural, =1{1 pozisyonu kapattın · gerçekleşen kârın Premium\'da} other{{count} pozisyonu kapattın · gerçekleşen kârın Premium\'da}}'**
+  String sattiklarinKilitli(int count);
 
   /// Sattıkların sayfasının başı: maliyeti bilinen kapanmış pozisyonların gerçekleşen kâr/zarar toplamı ve kaç pozisyonun toplandığı.
   ///

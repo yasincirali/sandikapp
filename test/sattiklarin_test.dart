@@ -7,7 +7,8 @@
 // (kaynak `sattiklarin`); (4) satır sayfayı açar, sayfadaki satır kapanış
 // özetini açar; (5) bakiye gizliyse tutar maskeli, yüzde görünür;
 // (6) sayfanın başında gerçekleşen toplam: maliyeti bilinmeyen toplama
-// girmez, dipnotla söylenir, hepsi bilinmiyorsa yalnız dipnot (2026-11-13).
+// girmez, dipnotla söylenir, hepsi bilinmiyorsa yalnız dipnot (2026-11-13);
+// (7) kilitli satır yarı açık: sayı açık, kâr sızmaz.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -304,6 +305,32 @@ void main() {
           greaterThanOrEqualTo(44));
     });
 
+    testWidgets('kilitli satır yarı açık: sayı defterden, kâr sızmaz',
+        (tester) async {
+      await _portfoyuAc(
+          tester,
+          [
+            acik,
+            ..._kapali(),
+            ..._kapali(t: 'GARAN'),
+            ..._kapali(t: 'ASELS', maliyetYok: true),
+          ],
+          kilitli: true);
+      final kilit = find.byType(KilitSatiri);
+      expect(kilit.evaluate().length, greaterThanOrEqualTo(1));
+      final metin = find.descendant(
+          of: find.ancestor(
+              of: find
+                  .text("3 pozisyonu kapattın · gerçekleşen kârın Premium'da"),
+              matching: find.byType(KilitSatiri)),
+          matching: find.byType(Text));
+      expect(metin, findsOneWidget);
+      final yazi = tester.widget<Text>(metin).data!;
+      expect(yazi, isNot(contains('₺')));
+      expect(yazi, isNot(contains('%')));
+      expect(find.textContaining('600'), findsNothing);
+    });
+
     testWidgets('özet satırı: toplam, dipnot; satırda "Maliyet bilinmiyor" yok',
         (tester) async {
       final handle = tester.ensureSemantics();
@@ -365,6 +392,15 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('sattiklarin_ozet')), findsOneWidget);
       expect(find.byKey(const ValueKey('sattiklarin_dipnot')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('3.1× yazı, 320 pt: kilitli yarı açık satır taşmaz',
+        (tester) async {
+      await _portfoyuAc(tester, [acik, ..._kapali()],
+          kilitli: true, olcek: 3.1, genislik: 320);
+      expect(find.text("1 pozisyonu kapattın · gerçekleşen kârın Premium'da"),
+          findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

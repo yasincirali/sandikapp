@@ -29,6 +29,11 @@ import 'para_akisi_karti.dart' show KilitSatiri;
 /// - Kapanmış pozisyon yoksa satır yok: boş bir listeye çağırmayız.
 /// - `premiumKilitliProvider` → [KilitSatiri] (kaynak `sattiklarin` →
 ///   paywall rapor kartı: gerçekleşen kâr yıllık raporun sorusu).
+///   Kilitli satır yarı açıktır (2026-11-13, `elde_tutma_satiri.dart`
+///   deseni): kaç pozisyon kapattığı kullanıcının KENDİ defterinden
+///   ücretsiz okunur, gerçekleşen kâr kilitli kalır ("3 pozisyonu
+///   kapattın · gerçekleşen kârın Premium'da"). Kâr, işareti dahil, bu
+///   metne hiç girmez: kilidin sattığı şey o.
 /// - Açıksa satır listeyi alt sayfada açar ([showSattiklarin]).
 class SattiklarinSatiri extends ConsumerWidget {
   const SattiklarinSatiri({super.key});
@@ -44,7 +49,7 @@ class SattiklarinSatiri extends ConsumerWidget {
     final c = context.c;
     final Widget satir = ref.watch(premiumKilitliProvider)
         ? KilitSatiri(
-            metin: l.sattiklarinKilitli,
+            metin: l.sattiklarinKilitli(liste.length),
             kaynak: 'sattiklarin',
             ozellik: 'sattiklarin',
             kilitEtiketi: l.goalDateLockedLabel,

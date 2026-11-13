@@ -10862,8 +10862,15 @@ class AppLocalizationsTr extends AppLocalizations {
       'Tamamını sattığın pozisyonlar, son kapanan önde';
 
   @override
-  String get sattiklarinKilitli =>
-      'Sattıkların ve gerçekleşen kârları Premium\'da';
+  String sattiklarinKilitli(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pozisyonu kapattın · gerçekleşen kârın Premium\'da',
+      one: '1 pozisyonu kapattın · gerçekleşen kârın Premium\'da',
+    );
+    return '$_temp0';
+  }
 
   @override
   String sattiklarinToplam(String tutar, int count) {

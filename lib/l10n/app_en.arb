@@ -5749,7 +5749,7 @@
   "@sattiklarinSatir": {"placeholders": {"count": {"type": "int"}}},
   "sattiklarinBaslik": "Closed positions",
   "sattiklarinAltMetin": "Positions you sold in full, latest first",
-  "sattiklarinKilitli": "Closed positions and their realized gains are in Premium",
+  "sattiklarinKilitli": "{count, plural, =1{You closed 1 position · your realized gain is in Premium} other{You closed {count} positions · your realized gain is in Premium}}",
   "sattiklarinToplam": "Realized total {tutar} · {count, plural, =1{1 position} other{{count} positions}}",
   "sattiklarinToplamA11y": "{count, plural, =1{Realized gain or loss on 1 closed position with known cost: {tutar}.} other{Total realized gain or loss on {count} closed positions with known cost: {tutar}.}}",
   "sattiklarinToplamGizliA11y": "{count, plural, =1{Realized gain or loss on 1 closed position with known cost is not read out because your balance is hidden.} other{Total realized gain or loss on {count} closed positions with known cost is not read out because your balance is hidden.}}",
