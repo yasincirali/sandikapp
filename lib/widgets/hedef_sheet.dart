@@ -124,6 +124,14 @@ Future<void> showHedefSheet(BuildContext context, WidgetRef ref,
 /// gün.
 typedef _HedefSonucu = ({int hedef, DateTime? tarih, bool tarihDegisti});
 
+/// Sheet'in "bugün"ü (2026-11-13). Kart `BugunKarti.saat` ile sabit
+/// güne bağlanırken sheet cihaz saatini okuyordu: test UTC gece yarısını
+/// geçince kart ile sheet farklı kalan ay sayısıyla hesaplayıp "ayda ₺Z
+/// daha gerek" iki ayrı tutar yazdı (main CI, 13 Kas 00:00 UTC). Test bunu
+/// karttaki saatle aynı güne sabitler; uygulamada cihaz saati.
+@visibleForTesting
+DateTime Function() hedefSheetSaati = DateTime.now;
+
 class _HedefSheet extends ConsumerStatefulWidget {
   const _HedefSheet(
       {required this.mevcut,
@@ -157,7 +165,7 @@ class _HedefSheetState extends ConsumerState<_HedefSheet> {
       });
 
   Future<void> _takvimdenSec() async {
-    final bugun = DateTime.now();
+    final bugun = hedefSheetSaati();
     final yarin = DateTime(bugun.year, bugun.month, bugun.day + 1);
     final t = await pickSandikDate(
       context,
@@ -427,7 +435,7 @@ class _TarihBolumu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final bugun = DateTime.now();
+    final bugun = hedefSheetSaati();
     final secenek = hedefTarihSecenegi(tarih, bugun);
     final dil = Localizations.localeOf(context).languageCode == 'en'
         ? 'en_US'
