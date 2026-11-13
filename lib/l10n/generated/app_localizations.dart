@@ -17715,6 +17715,30 @@ abstract class AppLocalizations {
   /// **'Sattıkların ve gerçekleşen kârları Premium\'da'**
   String get sattiklarinKilitli;
 
+  /// Sattıkların sayfasının başı: maliyeti bilinen kapanmış pozisyonların gerçekleşen kâr/zarar toplamı ve kaç pozisyonun toplandığı.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gerçekleşen toplam {tutar} · {count, plural, =1{1 pozisyon} other{{count} pozisyon}}'**
+  String sattiklarinToplam(String tutar, int count);
+
+  /// No description provided for @sattiklarinToplamA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{Maliyeti bilinen 1 kapanmış pozisyonun gerçekleşen kâr ya da zararı {tutar}.} other{Maliyeti bilinen {count} kapanmış pozisyonun gerçekleşen toplam kâr ya da zararı {tutar}.}}'**
+  String sattiklarinToplamA11y(String tutar, int count);
+
+  /// No description provided for @sattiklarinToplamGizliA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{Maliyeti bilinen 1 kapanmış pozisyonun gerçekleşen kâr ya da zararı, bakiye gizli olduğu için okunmuyor.} other{Maliyeti bilinen {count} kapanmış pozisyonun gerçekleşen toplamı, bakiye gizli olduğu için okunmuyor.}}'**
+  String sattiklarinToplamGizliA11y(int count);
+
+  /// No description provided for @sattiklarinDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 pozisyonun maliyeti bilinmiyor, toplama girmedi} other{{count} pozisyonun maliyeti bilinmiyor, toplama girmedi}}'**
+  String sattiklarinDipnot(int count);
+
   /// No description provided for @sattiklarinTuttun.
   ///
   /// In tr, this message translates to:

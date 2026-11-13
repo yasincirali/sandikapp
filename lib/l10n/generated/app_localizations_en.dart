@@ -11040,6 +11040,54 @@ class AppLocalizationsEn extends AppLocalizations {
       'Closed positions and their realized gains are in Premium';
 
   @override
+  String sattiklarinToplam(String tutar, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count positions',
+      one: '1 position',
+    );
+    return 'Realized total $tutar · $_temp0';
+  }
+
+  @override
+  String sattiklarinToplamA11y(String tutar, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Total realized gain or loss on $count closed positions with known cost: $tutar.',
+      one:
+          'Realized gain or loss on 1 closed position with known cost: $tutar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinToplamGizliA11y(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Total realized gain or loss on $count closed positions with known cost is not read out because your balance is hidden.',
+      one:
+          'Realized gain or loss on 1 closed position with known cost is not read out because your balance is hidden.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinDipnot(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count positions have an unknown cost and are not in the total',
+      one: '1 position has an unknown cost and is not in the total',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String sattiklarinTuttun(String sure) {
     return 'Held for $sure';
   }

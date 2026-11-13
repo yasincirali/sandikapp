@@ -10866,6 +10866,54 @@ class AppLocalizationsTr extends AppLocalizations {
       'Sattıkların ve gerçekleşen kârları Premium\'da';
 
   @override
+  String sattiklarinToplam(String tutar, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pozisyon',
+      one: '1 pozisyon',
+    );
+    return 'Gerçekleşen toplam $tutar · $_temp0';
+  }
+
+  @override
+  String sattiklarinToplamA11y(String tutar, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Maliyeti bilinen $count kapanmış pozisyonun gerçekleşen toplam kâr ya da zararı $tutar.',
+      one:
+          'Maliyeti bilinen 1 kapanmış pozisyonun gerçekleşen kâr ya da zararı $tutar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinToplamGizliA11y(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Maliyeti bilinen $count kapanmış pozisyonun gerçekleşen toplamı, bakiye gizli olduğu için okunmuyor.',
+      one:
+          'Maliyeti bilinen 1 kapanmış pozisyonun gerçekleşen kâr ya da zararı, bakiye gizli olduğu için okunmuyor.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinDipnot(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pozisyonun maliyeti bilinmiyor, toplama girmedi',
+      one: '1 pozisyonun maliyeti bilinmiyor, toplama girmedi',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String sattiklarinTuttun(String sure) {
     return '$sure tuttun';
   }

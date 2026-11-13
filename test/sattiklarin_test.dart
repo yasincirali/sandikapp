@@ -5,7 +5,9 @@
 // özetiyle aynı sayı, maliyet bilinmiyorsa yalnız süre; (3) satır yalnız
 // kapanmış pozisyon varken ve Premium görünürken; kilitliyken KilitSatiri
 // (kaynak `sattiklarin`); (4) satır sayfayı açar, sayfadaki satır kapanış
-// özetini açar; (5) bakiye gizliyse tutar maskeli, yüzde görünür.
+// özetini açar; (5) bakiye gizliyse tutar maskeli, yüzde görünür;
+// (6) sayfanın başında gerçekleşen toplam: maliyeti bilinmeyen toplama
+// girmez, dipnotla söylenir, hepsi bilinmiyorsa yalnız dipnot (2026-11-13).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -100,8 +102,9 @@ Future<void> _portfoyuAc(
   bool kilitli = false,
   bool gizli = false,
   double olcek = 1,
+  double genislik = 390,
 }) async {
-  tester.view.physicalSize = const Size(390 * 3, 1400 * 3);
+  tester.view.physicalSize = Size(genislik * 3, 1400 * 3);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
@@ -217,6 +220,59 @@ void main() {
     });
   });
 
+  group('sattiklarinToplami (hesap)', () {
+    KapanmisPozisyon k(String ad, double? kar) => KapanmisPozisyon(
+          anahtar: ad,
+          satis: _lot('${ad}s', ad, AssetKind.sell, _s1, satis: 1),
+          ozet: KapanisOzeti(
+              ad: ad, yil: 0, ay: 3, gun: 0, karTry: kar, karPct: kar),
+        );
+
+    test('karışık: bilinenler toplanır, bilinmeyen sayılır', () {
+      final t = sattiklarinToplami(
+          [k('A', 300), k('B', null), k('C', -50), k('D', null)]);
+      expect(t.karTry, closeTo(250, 1e-9));
+      expect(t.bilinen, 2);
+      expect(t.bilinmeyen, 2);
+    });
+
+    test('hepsi bilinmiyor: toplam null (₺0 yazılmaz)', () {
+      final t = sattiklarinToplami([k('A', null), k('B', null)]);
+      expect(t.karTry, isNull);
+      expect(t.bilinen, 0);
+      expect(t.bilinmeyen, 2);
+      expect(sattiklarinToplamTutari(t, tutarGizli: false), isNull);
+    });
+
+    test('zararlı toplam: eksi işaretli, artı yok', () {
+      final t = sattiklarinToplami([k('A', 100), k('B', -400)]);
+      expect(t.karTry, closeTo(-300, 1e-9));
+      final metin = sattiklarinToplamTutari(t, tutarGizli: false)!;
+      expect(metin, isNot(startsWith('+')));
+      expect(metin, contains('300'));
+      expect(sattiklarinToplamTutari(t, tutarGizli: true),
+          const BazPara.lira().gizliTutar);
+    });
+
+    test('boş liste: toplam yok, sayılar 0', () {
+      expect(sattiklarinToplami(const []),
+          const SattiklarinToplami(karTry: null, bilinen: 0, bilinmeyen: 0));
+    });
+
+    test('defterden: satırların karTry toplamıyla aynı sayı', () {
+      final liste = kapanmisPozisyonlar([
+        ..._kapali(),
+        _lot('ga', 'GARAN', AssetKind.buy, _a1),
+        _lot('gs', 'GARAN', AssetKind.sell, _s1, satis: 80),
+        ..._kapali(t: 'ASELS', maliyetYok: true),
+      ]);
+      final t = sattiklarinToplami(liste);
+      expect(t.karTry, closeTo(300 - 200, 1e-9));
+      expect(t.bilinen, 2);
+      expect(t.bilinmeyen, 1);
+    });
+  });
+
   group('Portföy › Sattıkların satırı', () {
     final acik = _lot('k', 'KCHOL', AssetKind.buy, _a1);
 
@@ -246,6 +302,70 @@ void main() {
       expect(find.text('Sattıkların (1)'), findsNothing);
       expect(tester.getSize(find.byType(KilitSatiri)).height,
           greaterThanOrEqualTo(44));
+    });
+
+    testWidgets('özet satırı: toplam, dipnot; satırda "Maliyet bilinmiyor" yok',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await _portfoyuAc(tester, [
+        acik,
+        ..._kapali(),
+        _lot('ga', 'GARAN', AssetKind.buy, _a1),
+        _lot('gs', 'GARAN', AssetKind.sell, _s1, satis: 80),
+        ..._kapali(t: 'ASELS', maliyetYok: true),
+      ]);
+      await tester.tap(find.byKey(const ValueKey('sattiklarin_satiri')));
+      await tester.pumpAndSettle();
+      expect(
+          find.text('Gerçekleşen toplam +₺100 · 2 pozisyon'), findsOneWidget);
+      expect(find.text('1 pozisyonun maliyeti bilinmiyor, toplama girmedi'),
+          findsOneWidget);
+      // Satır listede durur, görünür yazısı yok; okuyucu cümlesi söyler.
+      expect(find.byKey(const ValueKey('sattigin_$_uid|hisse|ASELS|TRY')),
+          findsOneWidget);
+      expect(find.text('Maliyet bilinmiyor'), findsNothing);
+      expect(
+          find.bySemanticsLabel(
+              RegExp(r'^ASELS, 3 ay tuttun, Maliyet bilinmiyor$')),
+          findsOneWidget);
+      expect(
+          find.bySemanticsLabel(
+              'Maliyeti bilinen 2 kapanmış pozisyonun gerçekleşen toplam kâr '
+              'ya da zararı +₺100.'),
+          findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('hepsinin maliyeti bilinmiyor: toplam yok, yalnız dipnot',
+        (tester) async {
+      await _portfoyuAc(tester, [
+        acik,
+        ..._kapali(maliyetYok: true),
+        ..._kapali(t: 'GARAN', maliyetYok: true),
+      ]);
+      await tester.tap(find.byKey(const ValueKey('sattiklarin_satiri')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Gerçekleşen toplam'), findsNothing);
+      expect(find.text('2 pozisyonun maliyeti bilinmiyor, toplama girmedi'),
+          findsOneWidget);
+    });
+
+    testWidgets('3.1× yazı, 320 pt: özet, dipnot ve kilit satırı taşmaz',
+        (tester) async {
+      final defter = [
+        acik,
+        ..._kapali(),
+        ..._kapali(t: 'ASELS', maliyetYok: true),
+      ];
+      await _portfoyuAc(tester, defter, olcek: 3.1, genislik: 320);
+      await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('sattiklarin_satiri')), 200,
+          scrollable: find.byType(Scrollable).first);
+      await tester.tap(find.byKey(const ValueKey('sattiklarin_satiri')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('sattiklarin_ozet')), findsOneWidget);
+      expect(find.byKey(const ValueKey('sattiklarin_dipnot')), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('satır → liste sayfası → kapanış özeti', (tester) async {
@@ -284,8 +404,28 @@ void main() {
           find.descendant(
               of: find.byType(SattiklarinSayfasi),
               matching: find.textContaining(const BazPara.lira().gizliTutar)),
-          findsOneWidget);
+          // Özet satırı + pozisyon satırı.
+          findsNWidgets(2));
       expect(find.textContaining('₺300'), findsNothing);
+    });
+
+    testWidgets('bakiye gizli: özet satırı da maskeli, okuyucu "gizli" der',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await _portfoyuAc(tester, [acik, ..._kapali()], gizli: true);
+      await tester.tap(find.byKey(const ValueKey('sattiklarin_satiri')));
+      await tester.pumpAndSettle();
+      final ozet = find.byKey(const ValueKey('sattiklarin_ozet'));
+      expect(
+          find.descendant(
+              of: ozet,
+              matching: find.text(
+                  'Gerçekleşen toplam ${const BazPara.lira().gizliTutar} · 1 pozisyon')),
+          findsOneWidget);
+      expect(
+          find.bySemanticsLabel(RegExp('bakiye gizli olduğu için okunmuyor')),
+          findsOneWidget);
+      handle.dispose();
     });
 
     testWidgets('2× yazı: liste taşmaz, ekran okuyucu tek cümle',
