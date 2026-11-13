@@ -1033,7 +1033,7 @@ Dağıtım sırası:
          "uygulama KAP verisi göstermez (lisans)" diyor. Katman A tam olarak
          KAP verisi gösterir. Bu yüzden kalem katmanı kod olarak hazır ama
          iki anahtarla kapalı; yanıt gelmeden açma.
-      3. **YAPILDI (2026-11-13, 0183, Koşullar 1.13).** Açınca Kullanım Koşulları §7'deki Anthropic parantezi ("varlık
+      3. **YAPILDI (2026-11-13, 0184, Koşullar 1.13).** Açınca Kullanım Koşulları §7'deki Anthropic parantezi ("varlık
          notlarının yapay zekâ ile yazımı") "ve fon raporlarının okunması"
          diye genişletilmeli (kişisel veri gitmez; esaslı değil, yalnız
          Sürüm artar, yeni migration).
