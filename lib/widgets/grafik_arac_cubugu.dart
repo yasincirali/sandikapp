@@ -372,8 +372,10 @@ bool aralikGerekli({
 }) =>
     mum || ma20 || ema50 || ema200 || ozel;
 
-/// `ƒx` çipinin durumu. Kilitliyse [onTap] paywall'u açar (çağıran karar
-/// verir, kaynak `grafik_ozel_gosterge`).
+/// `ƒx` çipinin durumu. [acikSayi] ÇİZİLEN göstergeler (açık ama bu
+/// grafikte çizilemeyen sayılmaz). Kilitliyken de [onTap] göstergeler
+/// sayfasını açar (tadımlık, 2026-11-13); paywall kaydetmede
+/// (kaynak `grafik_ozel_gosterge`).
 class GrafikOzelCipi {
   const GrafikOzelCipi({
     required this.acikSayi,

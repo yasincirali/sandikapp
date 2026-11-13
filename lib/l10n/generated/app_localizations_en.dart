@@ -9287,6 +9287,29 @@ class AppLocalizationsEn extends AppLocalizations {
       'Markers (plotshape) in a separate pane are not shown.';
 
   @override
+  String ozgNotOzet(int sayi) {
+    return '$sayi items are not shown · Details';
+  }
+
+  @override
+  String get ozgCizilemedi => 'Can\'t be drawn on this chart';
+
+  @override
+  String get ozgCizilemediHacim =>
+      'Can\'t be drawn on this chart: no volume data';
+
+  @override
+  String get ozgCizilemediOhlc =>
+      'Can\'t be drawn on this chart: no high and low data';
+
+  @override
+  String get ozgCizilemediAgir =>
+      'Can\'t be drawn on this chart: too heavy, shorten the range';
+
+  @override
+  String get ozgKaydetKilitli => 'Save and keep on chart';
+
+  @override
   String get varlikGuncelleBaslik => 'Update asset';
 
   @override
@@ -9329,6 +9352,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sgnAyarAciklamaUcretsiz =>
       'Pick which indicators produce signals for each asset type. RSI, MACD and Bollinger are free, with one alert a day.';
+
+  @override
+  String get sgnOrnekBildirim => 'Send a sample notification';
+
+  @override
+  String get sgnIzinKapaliAyarlar => 'Notifications are off · Open Settings';
+
+  @override
+  String get sgnIzinSorulmadi => 'Notifications are off · Allow';
 
   @override
   String sgnParametreAciklama(String tur) {

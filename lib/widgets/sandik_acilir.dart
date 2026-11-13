@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import '../theme/sandik.dart';
 
@@ -28,8 +28,7 @@ class SandikAcilir extends StatefulWidget {
   final Widget child;
 
   /// Panel ve ok süresi (hareketi azalt'ta sıfır).
-  static Duration sure(BuildContext context) =>
-      SandikMotion.surfaceOf(context);
+  static Duration sure(BuildContext context) => SandikMotion.surfaceOf(context);
 
   /// Yükseklik eğrisi: ekranda biçim değiştiren eleman → `move`.
   static const Curve egri = SandikMotion.move;
@@ -116,4 +115,82 @@ class SandikAcilirOk extends StatelessWidget {
         curve: SandikAcilir.egri,
         child: child,
       );
+}
+
+/// Kısa not listesi: tek not olduğu gibi, iki ve fazlası tek katlı satır
+/// ("N öğe gösterilmez · Ayrıntı") — dokununca liste açılır.
+///
+/// Neden (2026-11-13): gösterge editöründe Pine betiğinin karşılığı
+/// olmayan kısımları için beş ayrı not vardı; birkaçı birden düşünce kod
+/// alanıyla önizleme arasına satır satır yığılıp önizlemeyi aşağı itiyordu.
+/// Notlar sessizce yutulmaz (kararı korunur), yalnız katlanır. Tek not
+/// eskisi gibi açık durur: katlamak tek satırı iki dokunuşa çevirirdi.
+class SandikKatliNotlar extends StatefulWidget {
+  const SandikKatliNotlar({
+    super.key,
+    required this.notlar,
+    required this.ozet,
+  });
+
+  final List<String> notlar;
+
+  /// İki ve fazla notta görünen katlı satırın metni (sayıyı çağıran yazar).
+  final String ozet;
+
+  @override
+  State<SandikKatliNotlar> createState() => _SandikKatliNotlarState();
+}
+
+class _SandikKatliNotlarState extends State<SandikKatliNotlar> {
+  bool _acik = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final stil = context.t.bodySmall?.copyWith(color: context.c.text58);
+    final notlar = widget.notlar;
+    if (notlar.isEmpty) return const SizedBox.shrink();
+    if (notlar.length == 1) {
+      return Padding(
+        padding: const EdgeInsets.only(top: SandikSpace.xs),
+        child: Text(notlar.single, style: stil),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          expanded: _acik,
+          child: SandikTappable(
+            onTap: () => setState(() => _acik = !_acik),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: SandikTouch.min),
+              child: Row(
+                children: [
+                  Expanded(child: Text(widget.ozet, style: stil)),
+                  SandikAcilirOk(
+                    acik: _acik,
+                    child: Icon(Icons.expand_more_rounded,
+                        color: context.c.text36, size: SandikSpace.lgs),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        SandikAcilir(
+          acik: _acik,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final n in notlar)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: SandikSpace.xs),
+                  child: Text(n, style: stil),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

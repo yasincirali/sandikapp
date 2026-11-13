@@ -93,13 +93,19 @@ const int _kAzamiCagriDerinligi = 24;
 
 /// Kullanıcıya gösterilecek hata — satır/sütun ile.
 class BetikHatasi implements Exception {
-  const BetikHatasi(this.mesaj, this.mesajEn, {this.satir = 0, this.sutun = 0});
+  const BetikHatasi(this.mesaj, this.mesajEn,
+      {this.satir = 0, this.sutun = 0, this.agir = false});
   final String mesaj;
   final String mesajEn;
 
   /// 1'den başlar; 0 = yere bağlı değil.
   final int satir;
   final int sutun;
+
+  /// İşlem bütçesi aşıldı (kod hatalı değil, bu grafik için ağır). Grafik
+  /// listesi bunu "aralığı kısalt" diye ayrı söyler
+  /// (`OzelAtlamaNedeni.agir`).
+  final bool agir;
 
   String metin(bool ingilizce) => ingilizce ? mesajEn : mesaj;
 

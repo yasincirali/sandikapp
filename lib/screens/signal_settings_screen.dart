@@ -6,7 +6,12 @@ import '../providers/preferences_provider.dart';
 import '../providers/sinyal_on_ayar_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
-import '../widgets/bildirim_izni_uyarisi.dart';
+import '../services/bildirim_izni.dart';
+import '../services/crash_reporter.dart';
+import '../services/notification_service.dart';
+import '../utils/friendly_error.dart';
+import '../utils/sandik_snack.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_acilir.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
@@ -21,6 +26,11 @@ import '../l10n/l10n.dart';
 /// görünür — açmak için Premium'a geçmesi gerekir.
 class SignalSettingsScreen extends ConsumerWidget {
   const SignalSettingsScreen({super.key});
+
+  /// Testte örnek bildirimin gerçek eklentiye gitmeden yakalanması için.
+  /// Üretimde null → [NotificationService.ornekSinyalBildirimiGoster].
+  @visibleForTesting
+  static Future<void> Function()? ornekBildirimTest;
 
   /// Ekran başlığı — kilitli ve açık gövde aynı metni kullanır.
   static const _baslik = 'Sinyal Ayarları';
@@ -133,8 +143,14 @@ class SignalSettingsScreen extends ConsumerWidget {
           const DisclaimerWidget(),
           const SizedBox(height: 16),
           // Sinyal push'u izin yoksa hiç gelmez (Ar-Ge 16:45 #1, 2026-10-21).
-          const BildirimIzniUyarisi(
-              padding: EdgeInsets.only(bottom: SandikSpace.md)),
+          // 2026-11-13: `BildirimIzniUyarisi` kartının yerini bu satır aldı —
+          // izin varken "Örnek bildirimi gönder", yokken "Ayarlar'da aç".
+          // İkisi birlikte dururken izin kapalıyken aynı şey iki kez
+          // söyleniyordu. Ücretsiz kullanıcı da görür: üç ücretsiz
+          // göstergenin bildirimi ücretsizde de gider ve örnek hiçbir
+          // göstergeyi adıyla anmaz (kilitli gösterge önerilmez).
+          const _OrnekBildirimSatiri(),
+          const SizedBox(height: SandikSpace.md),
 
           // ── Premium kartı (paywall kapalıysa hiç gösterilmez) ────────────
           // Ücretsizde kilitler satırlarda (Premium gösterge, sıklık,
@@ -1363,6 +1379,122 @@ class _KategoriAcilirState extends State<_KategoriAcilir> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Sinyal Ayarları'nın en üst satırı (2026-11-13): izin durumuna göre
+/// örnek bildirim ya da izne giden yol. Ayarlar'dan dönüş öne dönüş
+/// olayıdır; durum orada yeniden okunur (`BildirimIzniUyarisi` ile aynı).
+///
+/// Sorulmamış izin (`notDetermined`) Ayarlar'a GÖTÜRÜLMEZ, sistem diyaloğu
+/// istenir: iOS'ta hiç sorulmamış uygulamanın Ayarlar sayfasında
+/// Bildirimler satırı yoktur, kullanıcı çıkmaza girerdi.
+class _OrnekBildirimSatiri extends StatefulWidget {
+  const _OrnekBildirimSatiri();
+
+  @override
+  State<_OrnekBildirimSatiri> createState() => _OrnekBildirimSatiriState();
+}
+
+class _OrnekBildirimSatiriState extends State<_OrnekBildirimSatiri>
+    with WidgetsBindingObserver {
+  BildirimIzinDurumu? _durum;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _oku();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _oku();
+  }
+
+  Future<void> _oku() async {
+    final d = await BildirimIzni.durum();
+    if (mounted && d != _durum) setState(() => _durum = d);
+  }
+
+  Future<void> _dokun() async {
+    switch (_durum) {
+      case BildirimIzinDurumu.verildi:
+        try {
+          await (SignalSettingsScreen.ornekBildirimTest ??
+              NotificationService.instance.ornekSinyalBildirimiGoster)();
+          // Başarı snack'ı yok (snack_basari_kurali): sonuç ekranda, bildirimin
+          // kendisi; onay dokunsal geri bildirimle verilir.
+          if (mounted) SandikHaptic.basari.perform();
+        } catch (e, st) {
+          CrashReporter.report(e, st, reason: 'sinyal_ornek_bildirim');
+          if (mounted) sandikSnackError(context, friendlyError(e));
+        }
+      case BildirimIzinDurumu.sorulmadi:
+        await NotificationService.instance
+            .requestPermission(promptContext: 'signal_settings');
+        await _oku();
+      case BildirimIzinDurumu.reddedildi:
+        await BildirimIzni.ayarlariAc();
+      case null:
+        return;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = _durum;
+    // Durum okunana kadar yer tutulmaz: okuma anlıktır, yanlış satırı bir
+    // kare göstermekten iyidir.
+    if (d == null) return const SizedBox.shrink();
+    final l = context.l10n;
+    final izinli = d == BildirimIzinDurumu.verildi;
+    final metin = switch (d) {
+      BildirimIzinDurumu.verildi => l.sgnOrnekBildirim,
+      BildirimIzinDurumu.sorulmadi => l.sgnIzinSorulmadi,
+      BildirimIzinDurumu.reddedildi => l.sgnIzinKapaliAyarlar,
+    };
+    // Renk tek başına anlam taşımaz: ikon (zil / üstü çizili zil) ve
+    // cümle de durumu söyler.
+    final renk = izinli ? context.c.text90 : context.c.amberText;
+    return SandikCard(
+      padding: EdgeInsets.zero,
+      child: SandikAsyncTap(
+        onTap: _dokun,
+        semanticLabel: metin,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: SandikSpace.md, vertical: SandikSpace.sm),
+            child: Row(
+              children: [
+                Icon(
+                    izinli
+                        ? Icons.notifications_active_outlined
+                        : Icons.notifications_off_outlined,
+                    color: renk,
+                    size: SandikSpace.lgs),
+                const SizedBox(width: SandikSpace.smd),
+                Expanded(
+                  child: Text(metin,
+                      style: context.t.bodyMedium?.copyWith(
+                          color: renk, fontWeight: FontWeight.w600)),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    color: context.c.text36, size: SandikSpace.lgs),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

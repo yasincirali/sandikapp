@@ -39,7 +39,6 @@ import '../widgets/tam_ekran/cizim_alarm_dugmesi.dart';
 import '../widgets/tam_ekran/grafik_olcegi.dart';
 import '../widgets/tam_ekran/grafik_paylasimi.dart';
 import 'ozel_gosterge_screen.dart' show showOzelGostergeSayfasi;
-import 'paywall_screen.dart' show PaywallScreen;
 
 /// Yatay tam ekran grafik — telefonu yan çevirince açılır.
 ///
@@ -1066,13 +1065,10 @@ class TamEkranGrafikEkraniState extends ConsumerState<TamEkranGrafikEkrani> {
 
   /// `ƒx` çipine dokunuş — dik grafikle aynı yol
   /// (`asset_detail/ozel_gostergeler.dart`, `KatmanliFiyatGrafigi`).
+  /// Kilitliyken de sayfa açılır; kaydetmek paywall'a gider (tadımlık).
   void _ozelGostergeAc(bool kilitli) {
-    if (kilitli) {
-      PaywallScreen.show(context, source: 'grafik_ozel_gosterge');
-      return;
-    }
     showOzelGostergeSayfasi(context,
-        onizleme: _betikVerisi, varlikAdi: widget.ad);
+        onizleme: _betikVerisi, varlikAdi: widget.ad, kilitli: kilitli);
   }
 
   // ── Görünüm ───────────────────────────────────────────────────────────

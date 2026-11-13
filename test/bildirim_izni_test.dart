@@ -55,8 +55,12 @@ void main() {
       'lib/screens/price_alerts_screen.dart',
       'lib/screens/signal_settings_screen.dart',
     ]) {
-      expect(ekranKaynagiSync(yol), contains('BildirimIzniUyarisi('),
-          reason: yol);
+      // Sinyal ayarlarında kartın yerini örnek bildirim satırı aldı
+      // (2026-11-13); satır aynı `BildirimIzni` kaynağını okur.
+      final iz = yol.contains('signal_settings')
+          ? 'BildirimIzni.durum()'
+          : 'BildirimIzniUyarisi(';
+      expect(ekranKaynagiSync(yol), contains(iz), reason: yol);
     }
     const kanal = 'com.sandik.app/ayarlar';
     expect(File('lib/services/bildirim_izni.dart').readAsStringSync(),

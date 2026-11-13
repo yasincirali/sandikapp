@@ -15053,6 +15053,42 @@ abstract class AppLocalizations {
   /// **'Ayrı paneldeki işaretler (plotshape) gösterilmez.'**
   String get ozgNotPaneldeIsaret;
 
+  /// No description provided for @ozgNotOzet.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} öğe gösterilmez · Ayrıntı'**
+  String ozgNotOzet(int sayi);
+
+  /// No description provided for @ozgCizilemedi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu grafikte çizilemedi'**
+  String get ozgCizilemedi;
+
+  /// No description provided for @ozgCizilemediHacim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu grafikte çizilemedi: hacim verisi yok'**
+  String get ozgCizilemediHacim;
+
+  /// No description provided for @ozgCizilemediOhlc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu grafikte çizilemedi: yüksek ve düşük verisi yok'**
+  String get ozgCizilemediOhlc;
+
+  /// No description provided for @ozgCizilemediAgir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu grafikte çizilemedi: hesap çok ağır, aralığı kısalt'**
+  String get ozgCizilemediAgir;
+
+  /// No description provided for @ozgKaydetKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydet ve grafikte tut'**
+  String get ozgKaydetKilitli;
+
   /// No description provided for @varlikGuncelleBaslik.
   ///
   /// In tr, this message translates to:
@@ -15100,6 +15136,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini seç. RSI, MACD ve Bollinger ücretsiz; bildirimi günde 1 kez gelir.'**
   String get sgnAyarAciklamaUcretsiz;
+
+  /// No description provided for @sgnOrnekBildirim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örnek bildirimi gönder'**
+  String get sgnOrnekBildirim;
+
+  /// No description provided for @sgnIzinKapaliAyarlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirim izni kapalı · Ayarlar\'da aç'**
+  String get sgnIzinKapaliAyarlar;
+
+  /// No description provided for @sgnIzinSorulmadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirim izni kapalı · İzin ver'**
+  String get sgnIzinSorulmadi;
 
   /// No description provided for @sgnParametreAciklama.
   ///

@@ -19,6 +19,9 @@ import 'crash_reporter.dart';
 /// Yalnız `denied` uyarılır: `notDetermined` henüz sorulmamış demektir ve
 /// ilk varlıktan sonraki bağlamlı soru (`push_prompt_after_first_asset`)
 /// onu sorar; burada ikinci bir diyalog açılmaz.
+/// İzin durumu, üç hâl (Sinyal Ayarları örnek bildirim satırı, 2026-11-13).
+enum BildirimIzinDurumu { verildi, reddedildi, sorulmadi }
+
 class BildirimIzni {
   BildirimIzni._();
 
@@ -39,6 +42,41 @@ class BildirimIzni {
       // Firebase yoksa (test, başlatma hatası) bilinmiyor: uyarı çıkmaz.
       // Yanlış "kapalı" demek, susmaktan kötü.
       return false;
+    }
+  }
+
+  /// Testte üç hâlli durumu sabitlemek için. Üretimde null.
+  @visibleForTesting
+  static Future<BildirimIzinDurumu> Function()? testDurumOkuyucu;
+
+  /// Üç hâlli durum: [reddedildi] yalnız `denied`'ı söyler; Sinyal
+  /// Ayarları'ndaki satır ise "verildi → örnek gönder", "sorulmadı → izin
+  /// iste", "reddedildi → Ayarlar" diye üçünü ayırır.
+  ///
+  /// Okunamazsa (Firebase yok, masaüstü/test) `verildi`: [reddedildi] ile
+  /// aynı ilke, yanlış "kapalı" demek susmaktan kötü. Örnek bildirim o
+  /// durumda en kötü görünmez, zarar vermez.
+  static Future<BildirimIzinDurumu> durum() async {
+    final t = testDurumOkuyucu;
+    if (t != null) return t();
+    final eski = testOkuyucu;
+    if (eski != null) {
+      return await eski()
+          ? BildirimIzinDurumu.reddedildi
+          : BildirimIzinDurumu.verildi;
+    }
+    if (kIsWeb || !(Platform.isIOS || Platform.isAndroid)) {
+      return BildirimIzinDurumu.verildi;
+    }
+    try {
+      final s = await FirebaseMessaging.instance.getNotificationSettings();
+      return switch (s.authorizationStatus) {
+        AuthorizationStatus.denied => BildirimIzinDurumu.reddedildi,
+        AuthorizationStatus.notDetermined => BildirimIzinDurumu.sorulmadi,
+        _ => BildirimIzinDurumu.verildi,
+      };
+    } catch (_) {
+      return BildirimIzinDurumu.verildi;
     }
   }
 

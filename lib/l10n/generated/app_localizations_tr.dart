@@ -9162,6 +9162,28 @@ class AppLocalizationsTr extends AppLocalizations {
       'Ayrı paneldeki işaretler (plotshape) gösterilmez.';
 
   @override
+  String ozgNotOzet(int sayi) {
+    return '$sayi öğe gösterilmez · Ayrıntı';
+  }
+
+  @override
+  String get ozgCizilemedi => 'Bu grafikte çizilemedi';
+
+  @override
+  String get ozgCizilemediHacim => 'Bu grafikte çizilemedi: hacim verisi yok';
+
+  @override
+  String get ozgCizilemediOhlc =>
+      'Bu grafikte çizilemedi: yüksek ve düşük verisi yok';
+
+  @override
+  String get ozgCizilemediAgir =>
+      'Bu grafikte çizilemedi: hesap çok ağır, aralığı kısalt';
+
+  @override
+  String get ozgKaydetKilitli => 'Kaydet ve grafikte tut';
+
+  @override
   String get varlikGuncelleBaslik => 'Varlığı güncelle';
 
   @override
@@ -9204,6 +9226,15 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get sgnAyarAciklamaUcretsiz =>
       'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini seç. RSI, MACD ve Bollinger ücretsiz; bildirimi günde 1 kez gelir.';
+
+  @override
+  String get sgnOrnekBildirim => 'Örnek bildirimi gönder';
+
+  @override
+  String get sgnIzinKapaliAyarlar => 'Bildirim izni kapalı · Ayarlar\'da aç';
+
+  @override
+  String get sgnIzinSorulmadi => 'Bildirim izni kapalı · İzin ver';
 
   @override
   String sgnParametreAciklama(String tur) {

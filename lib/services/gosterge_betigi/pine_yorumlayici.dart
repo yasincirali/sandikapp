@@ -188,8 +188,12 @@ class _Yorumlayici {
   void _harca(int k, _Jeton j) {
     _islem += k;
     if (_islem > _kIslemButcesi) {
-      throw _hata('Betik bu grafik için çok ağır; döngüleri ya da uzunlukları küçült.',
-          'Script is too heavy for this chart; shorten loops or lengths.', j);
+      throw BetikHatasi(
+          'Betik bu grafik için çok ağır; döngüleri ya da uzunlukları küçült.',
+          'Script is too heavy for this chart; shorten loops or lengths.',
+          satir: j.satir,
+          sutun: j.sutun,
+          agir: true);
     }
   }
 
@@ -271,7 +275,8 @@ class _Yorumlayici {
               'The right side does not return multiple values.', d.j);
         }
         if (v.length != d.adlar.length) {
-          throw _hata('${v.length} değer dönüyor, ${d.adlar.length} ad yazılmış.',
+          throw _hata(
+              '${v.length} değer dönüyor, ${d.adlar.length} ad yazılmış.',
               '${v.length} values returned, ${d.adlar.length} names given.',
               d.j);
         }

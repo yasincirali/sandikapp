@@ -125,7 +125,6 @@ import '../services/mevduat_hesabi.dart';
 import '../widgets/pozisyon_islemleri.dart';
 import '../widgets/varlik_guncelle.dart';
 import 'comparison_screen.dart';
-import 'paywall_screen.dart';
 import '../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../utils/hareketli_ortalama.dart';
@@ -1735,7 +1734,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             ema50Acik: ema50On,
                             ema200Acik: ema200On,
                             ozel: _ozelGostergeGorunur
-                                ? _ozelGostergeCipi(ozelAcik.length)
+                                ? _ozelGostergeCipi(ozelSonuclar.length)
                                 : null,
                             aralik: mumAr?.aralik,
                             gecerliAraliklar:
