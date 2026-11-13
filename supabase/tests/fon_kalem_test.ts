@@ -26,7 +26,9 @@ import {
   semaKontrolu,
   metinOzeti,
   sigortaAtti,
+  PARCA_EN_COK,
   tabloBolumu,
+  tabloParcalari,
   taramaKesinMi,
   taranacakGunler,
   tefasKontrolu,
@@ -361,9 +363,9 @@ Deno.test('sigorta: ücretli redler birikip geçen azsa dönem durur', () => {
 });
 
 Deno.test('şema: ağırlık reddi değeri nedene yazar', () => {
-  const s = semaKontrolu({ kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: -0.12, agirlik_metni: '-0,12' }] });
+  const s = semaKontrolu({ kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: 140.5, agirlik_metni: '140,50' }] });
   assertEquals(s.ok, false);
-  if (!s.ok) assertEquals(s.neden, 'agirlik:-0.12');
+  if (!s.ok) assertEquals(s.neden, 'agirlik:140.5');
 });
 
 Deno.test('metinOzeti: boşluk farkı aynı özet, sayı farkı farklı özet', async () => {
@@ -394,4 +396,84 @@ Deno.test('tabloBolumu: yalnız portföy tablosu gider, bulunamazsa tüm metin',
   assert(b.includes('GENEL TOPLAM 100,00'));
   assert(!b.includes('TEMETTÜ'));
   assertEquals(tabloBolumu('başlıksız metin'), 'başlıksız metin');
+});
+
+// ── 8 Kasım 2026 turunun red nedenleri ───────────────────────────────────────
+
+Deno.test('şema: eksi ağırlıklı satır kabul edilir (ADP agirlik:-0.6), sınır dışı yine red', () => {
+  const s = semaKontrolu({ kalemler: [...kalemler(), { ad: 'VİOP DEĞERLEME', kod: '', tur: 'diger', agirlik: -0.6, agirlik_metni: '-0,60' }] });
+  assertEquals(s.ok, true);
+  const r = semaKontrolu({ kalemler: [{ ad: 'X', kod: '', tur: 'diger', agirlik: -120, agirlik_metni: '-120,00' }] });
+  assertEquals(r.ok, false);
+  if (!r.ok) assertEquals(r.neden, 'agirlik:-120');
+  // Hisse türünde eksi yine red.
+  const h = semaKontrolu({ kalemler: [{ ad: 'X', kod: '', tur: 'hisse', agirlik: -0.6, agirlik_metni: '-0,60' }] });
+  assertEquals(h.ok, false);
+});
+
+Deno.test('dogrula: eksi satırla %100 tutan belge geçer', () => {
+  const rapor = RAPOR.replace('GENEL TOPLAM', 'Diğer Varlıklar ve Borçlar   -0,60\nGENEL TOPLAM');
+  const ks = kalemler();
+  ks[3] = { ...ks[3], agirlik: 18.89, agirlik_metni: '18,89' };
+  const r2 = rapor.replace('18,29 TL', '18,89 TL');
+  const s = dogrula({
+    ham: { kalemler: [...ks, { ad: 'Diğer Varlıklar ve Borçlar', kod: '', tur: 'diger', agirlik: -0.6, agirlik_metni: '-0,60' }] },
+    pdfMetni: r2, tefas: TEFAS, unvan: UNVAN,
+  });
+  assertEquals(s.gecti, true);
+});
+
+Deno.test('sayiOku: eksi ve parantezli eksi', () => {
+  assertEquals(sayiOku('-0,60'), -0.6);
+  assertEquals(sayiOku('(0,60)'), -0.6);
+  assertEquals(sayiOku('(-0,60)'), null);
+});
+
+Deno.test('kontrol 1: pozitif ağırlık eksi sayının parçasıyla eşleşmez', () => {
+  const metin = 'Borçlar -2,32\nGENEL TOPLAM';
+  assert(metinKontrolu([{ ad: 'X', kod: '', tur: 'diger', agirlik: 2.32, agirlik_metni: '2,32' }], metin)?.startsWith('metinde_yok'));
+  assertEquals(metinKontrolu([{ ad: 'X', kod: '', tur: 'diger', agirlik: -2.32, agirlik_metni: '-2,32' }], metin), null);
+});
+
+Deno.test('kontrol 1: ISIN sayı satırının altındaysa geri pencerede bulunur (AFT/AFO)', () => {
+  // Takasbank düzeni: sayı satırı, ALTINDA ISIN. Model kod olarak ISIN verir.
+  const ks: HamKalem[] = [{ ad: 'YAPI KREDİ BONO', kod: 'TRYAKBK00870', tur: 'borclanma', agirlik: 4.12, agirlik_metni: '4,12' }];
+  const metin = 'Borçlanma\nYKB   YAPI VE KREDİ\nBANKASI\n1.000.000,00   97,5 15/10/26   98,1   981.000,00   12,40   4,12 TL   80100511   4,10\nTRYAKBK00870\n';
+  assertEquals(metinKontrolu(ks, metin), null);
+  // Geri pencere yalnız bir satır kadar: uzaktaki sayı eşleşmez.
+  const uzak = '4,12 ' + 'x'.repeat(600) + ' TRYAKBK00870 5,00';
+  assert(metinKontrolu(ks, uzak)?.startsWith('kodun_yaninda_yok'));
+  // ISIN olmayan kodda geri bakılmaz.
+  const hisse: HamKalem[] = [{ ad: 'X', kod: 'YKBNK', tur: 'hisse', agirlik: 4.12, agirlik_metni: '4,12' }];
+  assert(metinKontrolu(hisse, '4,12 YKBNK 5,00')?.startsWith('kodun_yaninda_yok'));
+});
+
+Deno.test('kontrol 1: pencere sayının ortasından başlasa da kuyruk eşleşmez', () => {
+  const ks: HamKalem[] = [{ ad: 'X', kod: 'TRYAKBK00870', tur: 'borclanma', agirlik: 2.32, agirlik_metni: '2,32' }];
+  // Geri pencere "12,32"nin ortasına düşer; "2,32" sayılmaz.
+  const metin = '2,32 ' + 'x'.repeat(900) + ' 12,32' + ' '.repeat(156) + 'TRYAKBK00870 9,99';
+  assert(metinKontrolu(ks, metin)?.startsWith('kodun_yaninda_yok'));
+});
+
+Deno.test('tabloParcalari: kısa tablo tek parça, uzun tablo satır sınırından dengeli bölünür (BGP)', () => {
+  assertEquals(tabloParcalari(RAPOR), [RAPOR]);
+  const satir = (i: number) => `TRT${i}   HAZİNE   1.000,00   98,5   ${i},10   ${i},20   ${i},30`;
+  const uzun = Array.from({ length: 400 }, (_, i) => satir(i)).join('\n');
+  const p = tabloParcalari(uzun);
+  assertEquals(p.length, 3); // 2.000 sayı / 900 → 3
+  assertEquals(p.join('\n'), uzun);
+  for (const x of p) assert(!x.startsWith('\n') && x.length > 0);
+  // Üst sınır: en çok PARCA_EN_COK parça.
+  assertEquals(tabloParcalari(uzun, 10).length, PARCA_EN_COK);
+});
+
+Deno.test('istekGovdesi: parça bilgisi ve tablo başı yalnız sonraki parçalarda', () => {
+  const tek = istekGovdesi('m', 'BGP', 'claude-sonnet-5-5', { sira: 1, adet: 1, tabloBasi: 'BAŞ' });
+  // deno-lint-ignore no-explicit-any
+  const icerik = (g: any) => g.messages[0].content as string;
+  assertEquals(icerik(tek), 'Fon kodu: BGP\n\n<rapor>\nm\n</rapor>');
+  const ilk = icerik(istekGovdesi('m', 'BGP', 'x', { sira: 1, adet: 2, tabloBasi: 'BAŞ' }));
+  assert(ilk.includes('1/2') && !ilk.includes('<tablo_basi>'));
+  const ikinci = icerik(istekGovdesi('m', 'BGP', 'x', { sira: 2, adet: 2, tabloBasi: 'BAŞ' }));
+  assert(ikinci.includes('2/2') && ikinci.includes('<tablo_basi>\nBAŞ'));
 });

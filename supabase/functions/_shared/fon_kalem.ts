@@ -53,6 +53,20 @@ export const BANT_ALT = 79.5;
 /// düzeninde kod, alt alta kırılmış unvan satırları ve sayılar ~150-400
 /// karakter içinde (BTE Eylül 2026 raporu).
 export const KOD_PENCERESI = 800;
+/// Geri pencere: Takasbank düzeninde ISIN, kalemin sayı satırının ALTINDA
+/// gelir (`… 30,00 TL 80100511 29,80\nTRAASELS91H2`). Model tahvil/bonoda
+/// kod olarak ISIN verdiğinde ağırlık kodun önünde kalıyordu (8 Kasım 2026
+/// turu: AFT `kodun_yaninda_yok:TRYAKBK00870`, AFO `US78463V1070`). Yalnız
+/// bir sayı satırının kuyruğu kadar geriye ve yalnız ISIN biçimli kodda
+/// bakılır ki önceki kalemin sayısı eşleşmesin.
+export const KOD_GERI_PENCERESI = 160;
+const ISIN = /^[A-Z]{2}[A-Z0-9]{9}\d$/;
+/// Uzun raporu parçalama eşiği: tablo bölümündeki ondalıklı sayı adedi.
+/// Kalem başına ~5 sayı ve ~45 çıktı jetonu: 900 sayı ≈ 180 kalem ≈ 8.000
+/// jeton, [istekGovdesi] üst sınırının yarısı. BGP (8 Kasım 2026) tek
+/// çağrıda 16.000 jetonu doldurup `model_max_tokens` ile düştü.
+export const PARCA_SAYI_USTU = 900;
+export const PARCA_EN_COK = 4;
 
 // ── Model isteği ────────────────────────────────────────────────────────────
 
@@ -96,16 +110,34 @@ export const SISTEM_TALIMATI = [
   '  "kiymetli_maden"; yatırım fonu/BYF payı "fon"; geri kalan (VİOP teminatı, opsiyon, diğer) "diger".',
   '- kod: raporda yazdığı gibi AYNEN (hissede borsa kodu, tahvil/bonoda ISIN); kendin ekleme ya da',
   '  çevirme yapma (rapor "NVDA" diyorsa "NVDA US" yazma). Raporda kod yoksa boş dizgi.',
-  '- Ağırlığı 0,00 olan satırları yazma.',
+  '- Ağırlığı 0,00 olan satırları yazma. Eksi ağırlıklı satırları (borç, VİOP değerlemesi, açık',
+  '  pozisyon) eksi işaretiyle, agirlik_metni\'ni raporda yazdığı gibi ver.',
   '- Metinde olmayan hiçbir sayı ya da kalem yazma. Tablo okunamıyorsa boş liste döndür.',
 ].join('\n');
 
-export function istekGovdesi(metin: string, fonKodu: string, model: string): Record<string, unknown> {
+/// [parca] verilirse metin uzun bir tablonun bir parçasıdır; ilk parça
+/// dışındakilere tablonun başı yalnız sütun düzeni için eklenir.
+export function istekGovdesi(
+  metin: string,
+  fonKodu: string,
+  model: string,
+  parca?: { sira: number; adet: number; tabloBasi: string },
+): Record<string, unknown> {
+  let icerik = `Fon kodu: ${fonKodu}\n\n<rapor>\n${metin}\n</rapor>`;
+  if (parca && parca.adet > 1) {
+    const bas = parca.sira > 1
+      ? `<tablo_basi>\n${parca.tabloBasi}\n</tablo_basi>\n` +
+        'tablo_basi yalnız sütun düzenini anlaman için; ondan satır çıkarma.\n'
+      : '';
+    icerik = `Fon kodu: ${fonKodu}\nBu metin uzun tablonun ${parca.sira}/${parca.adet}. parçası. ` +
+      'Yalnız <rapor> içinde ağırlığı geçen satırları çıkar; parçanın başında ya da sonunda yarım ' +
+      `kalan satırı, ağırlığı bu parçada değilse yazma.\n${bas}\n<rapor>\n${metin}\n</rapor>`;
+  }
   return {
     model,
     max_tokens: 16000,
     system: [{ type: 'text', text: SISTEM_TALIMATI, cache_control: { type: 'ephemeral' } }],
-    messages: [{ role: 'user', content: `Fon kodu: ${fonKodu}\n\n<rapor>\n${metin}\n</rapor>` }],
+    messages: [{ role: 'user', content: icerik }],
     output_config: { effort: 'low', format: { type: 'json_schema', schema: KALEM_SEMASI } },
   };
 }
@@ -127,12 +159,49 @@ export function tabloBolumu(metin: string): string {
   return metinYeterliMi(bolum) ? bolum : metin;
 }
 
+/// Uzun tablo bölümünü satır sınırlarından, ondalıklı sayı adedi
+/// [ustSayi]'yı geçmeyecek parçalara böler (en çok [enCok]; o zaman
+/// parçalar eşit büyür). Parçalar paralel çağrılır: hem jeton tavanı hem
+/// fonksiyonun süre sınırı aşılmaz. Sınırda bölünen satır iki parçada
+/// birden yazılırsa toplam kontrolü taşar, hiç yazılmazsa eksik kalır;
+/// ikisinde de belge reddedilir, yanlış veri yazılmaz.
+export function tabloParcalari(bolum: string, ustSayi = PARCA_SAYI_USTU, enCok = PARCA_EN_COK): string[] {
+  const satirlar = bolum.split('\n');
+  const sayilar = satirlar.map((l) => (l.match(/\d[\d.]*,\d+/g) ?? []).length);
+  const toplam = sayilar.reduce((a, b) => a + b, 0);
+  const adet = Math.min(enCok, Math.max(1, Math.ceil(toplam / ustSayi)));
+  if (adet === 1) return [bolum];
+  const hedef = toplam / adet;
+  const out: string[] = [];
+  let birikim: string[] = [];
+  let say = 0;
+  for (let i = 0; i < satirlar.length; i++) {
+    birikim.push(satirlar[i]);
+    say += sayilar[i];
+    if (say >= hedef && out.length < adet - 1) {
+      out.push(birikim.join('\n'));
+      birikim = [];
+      say = 0;
+    }
+  }
+  if (birikim.length > 0) out.push(birikim.join('\n'));
+  return out.filter((p) => p.trim().length > 0);
+}
+
 // ── Sayı ve metin ───────────────────────────────────────────────────────────
 
 /// TR (`1.234,56`) ya da US (`1,234.56`) biçimli sayı. Tanınmazsa null.
 export function sayiOku(ham: string): number | null {
   let s = String(ham ?? '').trim().replace(/^%\s*/, '').replace(/\s*%$/, '');
+  // Muhasebe biçimi eksi: "(0,60)" = -0,60 (eksi ağırlıklı rapor satırı).
+  let eksi = false;
+  const parantez = s.match(/^\((.*)\)$/);
+  if (parantez) {
+    s = parantez[1].trim();
+    eksi = true;
+  }
   if (!/^-?[\d.,]+$/.test(s)) return null;
+  if (eksi && s.startsWith('-')) return null;
   const virgul = s.lastIndexOf(',');
   const nokta = s.lastIndexOf('.');
   if (virgul >= 0 && nokta >= 0) {
@@ -145,7 +214,7 @@ export function sayiOku(ham: string): number | null {
     s = s.replaceAll('.', '');
   }
   const n = Number(s);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) ? (eksi ? -n : n) : null;
 }
 
 /// Boşlukları teke indirir (PDF metninde satır/kolon araları değişken).
@@ -189,7 +258,8 @@ export function semaKontrolu(ham: unknown): { ok: true; kalemler: HamKalem[] } |
   const liste = (ham as { kalemler?: unknown } | null)?.kalemler;
   if (!Array.isArray(liste)) return { ok: false, neden: 'kalemler_dizi_degil' };
   if (liste.length === 0) return { ok: false, neden: 'bos_liste' };
-  if (liste.length > 400) return { ok: false, neden: 'cok_kalem' };
+  // Parçalı okumada (uzun tahvil fonu, her lot ayrı satır) 400 dar kalıyordu.
+  if (liste.length > 1000) return { ok: false, neden: 'cok_kalem' };
   const out: HamKalem[] = [];
   for (const x of liste) {
     if (typeof x !== 'object' || x === null) return { ok: false, neden: 'satir_nesne_degil' };
@@ -205,10 +275,19 @@ export function semaKontrolu(ham: unknown): { ok: true; kalemler: HamKalem[] } |
     // 0,00 ağırlıklı satır (küsurat pozisyon) toplamı değiştirmez; belgenin
     // tamamını düşürmek yerine atlanır (Ekim 2026: 'agirlik' redleri).
     if (agirlik === 0) continue;
-    if (typeof agirlik !== 'number' || !Number.isFinite(agirlik) || agirlik <= 0 || agirlik > 100) {
+    // Eksi ağırlık raporun kendisinde var (borç, VİOP değerlemesi): 8 Kasım
+    // 2026 turunda ADP `agirlik:-0.6` ile düştü. Kalem toplamı %100'e eksi
+    // satırla ulaştığından atlanamaz; kabul edilir, metin kontrolü yine
+    // dizgiyi raporda arar. İstemci eksi kalemi göstermez (FonKalemi.satirdan).
+    // Hisse türlerinde eksi yok: TEFAS ve bant kontrolleri hisse toplamına
+    // dayanır, açık pozisyon bu fonlarda beklenmez.
+    const eksiOlmaz = tur === 'hisse' || tur === 'yabanci_hisse';
+    if (
+      typeof agirlik !== 'number' || !Number.isFinite(agirlik) || agirlik < (eksiOlmaz ? 0 : -100) ||
+      agirlik > 100
+    ) {
       // Değer nedene yazılır: Ekim 2026 turunda 14 fonun 8'i yalnız
-      // 'agirlik' ile düştü ve hangi değerin (0, eksi, >100) düşürdüğü
-      // görünmüyordu. Kural gevşetilmedi; önce sebep okunacak.
+      // 'agirlik' ile düştü ve hangi değerin düşürdüğü görünmüyordu.
       return { ok: false, neden: `agirlik:${String(agirlik).slice(0, 12)}` };
     }
     if (metin.length === 0 || metin.length > 16) return { ok: false, neden: 'agirlik_metni' };
@@ -219,7 +298,8 @@ export function semaKontrolu(ham: unknown): { ok: true; kalemler: HamKalem[] } |
 
 /// 1. Metin: ağırlık dizgisi PDF metninde aynen geçer, sayısal değeri
 /// `agirlik`'a eşittir; kod verilmişse kodun bir geçişinden sonraki
-/// [KOD_PENCERESI] içinde geçer (başka satırın sayısıyla eşleşmesin).
+/// [KOD_PENCERESI] ya da (ISIN ise) önceki [KOD_GERI_PENCERESI] içinde geçer (başka
+/// satırın sayısıyla eşleşmesin).
 export function metinKontrolu(kalemler: HamKalem[], pdfMetni: string): string | null {
   const metin = metniNormalle(pdfMetni);
   for (const k of kalemler) {
@@ -235,7 +315,8 @@ export function metinKontrolu(kalemler: HamKalem[], pdfMetni: string): string | 
       let i = metin.indexOf(kod);
       if (i < 0) return `kod_metinde_yok:${k.kod}`;
       while (i >= 0 && !bulundu) {
-        bulundu = sayiGeciyor(metin, k.agirlik_metni, i + kod.length, i + kod.length + KOD_PENCERESI);
+        bulundu = sayiGeciyor(metin, k.agirlik_metni, i + kod.length, i + kod.length + KOD_PENCERESI) ||
+          (ISIN.test(kod) && sayiGeciyor(metin, k.agirlik_metni, i - KOD_GERI_PENCERESI, i));
         i = metin.indexOf(kod, i + 1);
       }
       if (!bulundu) return `kodun_yaninda_yok:${k.kod}`;
@@ -245,18 +326,24 @@ export function metinKontrolu(kalemler: HamKalem[], pdfMetni: string): string | 
 }
 
 /// [aranan] sayı dizgisi [bas, son) aralığında bir sayının TAMAMI olarak
-/// geçiyor mu ("2,32" "12,32" ya da "2,325" içinde sayılmaz).
+/// geçiyor mu ("2,32" "12,32", "-2,32" ya da "2,325" içinde sayılmaz).
+/// Sınır karakterleri pencerenin değil metnin kendisinden okunur: pencere
+/// bir sayının ortasından başlarsa ("1|12,32") kuyruğu eşleşmesin.
 function sayiGeciyor(metin: string, aranan: string, bas: number, son: number): boolean {
-  const parca = metin.slice(Math.max(0, bas), Math.min(metin.length, son));
+  const b0 = Math.max(0, bas);
+  const parca = metin.slice(b0, Math.min(metin.length, son));
+  const eksiAraniyor = aranan.startsWith('-') || aranan.startsWith('(');
   let i = parca.indexOf(aranan);
   while (i >= 0) {
-    const once = i > 0 ? parca[i - 1] : ' ';
-    const sonra = i + aranan.length < parca.length ? parca[i + aranan.length] : ' ';
+    const m = b0 + i;
+    const once = m > 0 ? metin[m - 1] : ' ';
+    const sonra = metin[m + aranan.length] ?? ' ';
     const sinir = (c: string) => !/[\d.,]/.test(c);
     // Sondaki nokta/virgül cümle noktalaması olabilir: ardından rakam yoksa sınır.
     const sonraTamam = sinir(sonra) ||
-      (/[.,]/.test(sonra) && !/\d/.test(parca[i + aranan.length + 1] ?? ' '));
-    if (sinir(once) && sonraTamam) return true;
+      (/[.,]/.test(sonra) && !/\d/.test(metin[m + aranan.length + 1] ?? ' '));
+    const onceTamam = sinir(once) && (eksiAraniyor || (once !== '-' && once !== '('));
+    if (onceTamam && sonraTamam) return true;
     i = parca.indexOf(aranan, i + 1);
   }
   return false;

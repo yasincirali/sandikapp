@@ -64,6 +64,7 @@ import {
   metinOzeti,
   sigortaAtti,
   tabloBolumu,
+  tabloParcalari,
   oncekiAySonu,
   taramaKesinMi,
   taranacakGunler,
@@ -283,28 +284,62 @@ async function fonuIsle(
     // döner; yapılandırılmış çıktı (`output_config.format`) kullanılır.
     // Sunucu taraflı yedek (`fallbacks: 'default'`): güvenlik sınıflandırıcısı
     // bir kamu belgesini yanlışlıkla reddederse istek uygun modele yönlenir.
-    // deno-lint-ignore no-explicit-any
-    const yanit: any = await anthropic.beta.messages.create({
-      ...istekGovdesi(tabloBolumu(metin), kod, MODEL),
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
+    // Bilinmeyen model fiyatı (yedek modele yönlenme) toplamı bilinmez yapar.
+    let maliyet: number | null = 0;
+    const ayikla = async (girdiMetni: string): Promise<{ ham: unknown; durdu: string | null; parca: number }> => {
+      // Uzun tablo parçalara bölünüp PARALEL çağrılır (8 Kasım 2026: BGP tek
+      // çağrıda jeton tavanını doldurdu). Kısa tabloda tek parça, eski istek.
+      const parcalar = tabloParcalari(girdiMetni);
+      const tabloBasi = girdiMetni.slice(0, 1200);
       // deno-lint-ignore no-explicit-any
-    } as any);
-    const maliyet = maliyetUsd(String(yanit.model ?? MODEL), yanit.usage ?? {}, false);
-    if (yanit.stop_reason === 'refusal' || yanit.stop_reason === 'max_tokens') {
+      const yanitlar: any[] = await Promise.all(parcalar.map((p, i) =>
+        anthropic.beta.messages.create({
+          ...istekGovdesi(p, kod, MODEL, { sira: i + 1, adet: parcalar.length, tabloBasi }),
+          betas: ['server-side-fallback-2026-07-01'],
+          fallbacks: 'default',
+          // deno-lint-ignore no-explicit-any
+        } as any)
+      ));
+      const kalemler: unknown[] = [];
+      let durdu: string | null = null;
+      let bozuk = false;
+      for (const y of yanitlar) {
+        const m = maliyetUsd(String(y.model ?? MODEL), y.usage ?? {}, false);
+        maliyet = m === null || maliyet === null ? null : maliyet + m;
+        if (y.stop_reason === 'refusal' || y.stop_reason === 'max_tokens') durdu ??= y.stop_reason;
+        // deno-lint-ignore no-explicit-any
+        const blok = (y.content ?? []).find((c: any) => c.type === 'text');
+        try {
+          const l = blok ? JSON.parse(blok.text)?.kalemler : null;
+          if (Array.isArray(l)) kalemler.push(...l);
+          else bozuk = true;
+        } catch (_) {
+          bozuk = true;
+        }
+      }
+      return { ham: bozuk ? null : { kalemler }, durdu, parca: parcalar.length };
+    };
+
+    const bolum = tabloBolumu(metin);
+    let a = await ayikla(bolum);
+    // Model boş tablo döndürdüyse ve yalnız kesilmiş bölüm gittiyse bir kez
+    // tüm metinle dene (8 Kasım 2026: ALE `bos_liste`; tablo başlığı ya da
+    // "GENEL TOPLAM" beklenen yerde değilse bölüm kalemsiz kalabiliyor).
+    const bosMu = (h: unknown) => Array.isArray((h as { kalemler?: unknown })?.kalemler) &&
+      ((h as { kalemler: unknown[] }).kalemler.length === 0);
+    let tumMetin = false;
+    if (!a.durdu && bosMu(a.ham) && bolum !== metin) {
+      a = await ayikla(metin);
+      tumMetin = true;
+    }
+    if (a.durdu) {
       await yaz('red', [], {
-        neden: `model_${yanit.stop_reason}`, bildirim: index, maliyet_usd: maliyet, model: MODEL, metin_ozeti: ozet,
+        neden: `model_${a.durdu}`, bildirim: index, maliyet_usd: maliyet, model: MODEL, metin_ozeti: ozet,
+        parca: a.parca,
       });
-      return { kod, sonuc: 'red', neden: `model_${yanit.stop_reason}`, maliyet };
+      return { kod, sonuc: 'red', neden: `model_${a.durdu}`, maliyet };
     }
-    // deno-lint-ignore no-explicit-any
-    const metinBlogu = (yanit.content ?? []).find((c: any) => c.type === 'text');
-    let ham: unknown = null;
-    try {
-      ham = metinBlogu ? JSON.parse(metinBlogu.text) : null;
-    } catch (_) {
-      ham = null;
-    }
+    const ham = a.ham;
 
     const s = dogrula({
       ham,
@@ -319,6 +354,8 @@ async function fonuIsle(
       model: MODEL,
       maliyet_usd: maliyet,
       metin_ozeti: ozet,
+      parca: a.parca,
+      tum_metin: tumMetin,
     };
     if (!s.gecti) {
       await yaz('red', [], { ...ortak, kontrol: s.kontrol, neden: s.neden });
