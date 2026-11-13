@@ -102,6 +102,9 @@ tasks.matching { it.name.contains("Release") && it.name.startsWith("package") }
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation("androidx.core:core-splashscreen:1.0.1")
+    // `enableEdgeToEdge()` (MainActivity, 2026-11-13): Flutter'ın gömdüğü
+    // sürüme bırakmak yerine sabit; uzantı fonksiyonu 1.8'den beri bu pakette.
+    implementation("androidx.activity:activity:1.9.3")
     // Ekran görüntüsünden metin (bayrak `ekran_goruntusu_maliyet`, 2026-10-13).
     // Play hizmetlerindeki model: APK'ya ~4 MB/mimari eklemez (gömülü
     // `com.google.mlkit:text-recognition` ekler). Model kurulumda iner
