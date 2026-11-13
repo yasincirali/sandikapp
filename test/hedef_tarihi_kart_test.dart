@@ -11,6 +11,7 @@ import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/widgets/bugun_karti.dart';
+import 'package:portfoy_takip/widgets/hedef_sheet.dart' show hedefSheetSaati;
 import 'package:portfoy_takip/widgets/sigan_metin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -80,6 +81,7 @@ void main() {
     HistoryService.seriCekici = (s, r, i) async => const [];
     IntradaySeriesCache.instance.clear();
     BugunKarti.saat = () => _simdi;
+    hedefSheetSaati = () => _simdi;
     BugunYukleyici.reelTest = null;
   });
   tearDown(() {
@@ -87,6 +89,7 @@ void main() {
     BugunKarti.anliklariTemizle();
     IntradaySeriesCache.instance.clear();
     BugunKarti.saat = DateTime.now;
+    hedefSheetSaati = DateTime.now;
   });
 
   Future<void> kur(

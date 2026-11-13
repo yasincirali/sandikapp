@@ -225,10 +225,9 @@ yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dö
 
 **Tek sunucu: Frankfurt (yasin 2026-11-06, "Tokyo'yu kapatalım").** Canlı proje
 Frankfurt (`ynwymnpdiwudrlxfrmuo`); migration ve fonksiyon yalnız oraya gider
-(`supabase-deploy.yml` varsayılan hedef `frankfurt`). Tokyo (`ybdbzouzhzwthjgwlbmk`)
-18 Ekim geçişinden beri donmuş, duraklatılıp silinecek; yeni işte Tokyo'yu hesaba
-katma. 2026-09-28'deki "iki sunucu birebir" kuralı (hedef `ikisi`, günlük
-`sema-esitlik.yml`, `tool/sema_esitlik.py` kapısı) bununla bitti; eski dokümanlarda
+(`supabase-deploy.yml` hedef `frankfurt`). Tokyo (`ybdbzouzhzwthjgwlbmk`) 18 Ekim
+geçişinden sonra donduruldu, 2026-11-13'te **silindi**; yeni işte Tokyo'yu hesaba katma. 2026-09-28'deki "iki sunucu birebir" kuralı (hedef `ikisi`, günlük
+`sema-esitlik.yml`, `tool/sema_esitlik.py` kapısı; ikisi de silindi) bununla bitti; eski dokümanlarda
 "iki sunucu" geçen dağıtım adımları artık "Frankfurt" demektir. Panelden/SQL
 Editor'dan şema değiştirme kuralı sürer — gerekiyorsa migration'a yaz.
 Frankfurt Free planda otomatik yedek yok: yerel yedek `tool/yedek/frankfurt_yedek.py`
