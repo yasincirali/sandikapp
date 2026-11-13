@@ -1,4 +1,5 @@
--- 0183 — Yasal metin: Fon X-Ray rapor okuma (Koşullar 1.13)
+-- 0184 — Yasal metin: Fon X-Ray rapor okuma (Koşullar 1.13)
+-- (Numara 0183 idi; aynı anda birleşen 0183_live_activity_seans_disi canlıya önce yazıldı, 2026-11-13 yeniden numaralandı.)
 --
 -- ## Neden
 -- yasin (2026-11-13): "Fon X-Ray ... aç". Katman A (fonların aylık
@@ -303,19 +304,19 @@ begin
   if not exists (select 1 from pg_class
                   where oid = 'public.yasal_metinler'::regclass
                     and relrowsecurity and relforcerowsecurity) then
-    raise exception '0183: yasal_metinler RLS (enable + force) kapali';
+    raise exception '0184: yasal_metinler RLS (enable + force) kapali';
   end if;
   if has_table_privilege('authenticated', 'public.yasal_metinler', 'INSERT') then
-    raise exception '0183: yasal_metinler istemciden yazilabilir';
+    raise exception '0184: yasal_metinler istemciden yazilabilir';
   end if;
   if not exists (select 1 from public.yasal_metinler
                   where tur = 'kosullar' and surum = '1.13' and dil = 'tr') then
-    raise exception '0183: kosullar 1.13 metni eksik';
+    raise exception '0184: kosullar 1.13 metni eksik';
   end if;
   if exists (select 1 from public.yasal_metinler
               where tur = 'kosullar' and surum = '1.13'
                 and govde_hash <> encode(sha256(convert_to(govde, 'UTF8')), 'hex')) then
-    raise exception '0183: govde_hash tutmuyor';
+    raise exception '0184: govde_hash tutmuyor';
   end if;
-  raise notice '0183 tamam: Kosullar 1.13 (onay surumu degismedi).';
+  raise notice '0184 tamam: Kosullar 1.13 (onay surumu degismedi).';
 end $$;
