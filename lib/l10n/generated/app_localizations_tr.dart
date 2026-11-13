@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1598,15 +1599,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String biometricLockYontem(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Face ID ile kilitle',
-        'touchId': 'Touch ID ile kilitle',
-        'biyometrik': 'Biyometrik kilit',
-        'other': 'Ekran kilidiyle kilitle',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Face ID ile kilitle',
+      'touchId': 'Touch ID ile kilitle',
+      'biyometrik': 'Biyometrik kilit',
+      'other': 'Ekran kilidiyle kilitle',
+    });
     return '$_temp0';
   }
 
@@ -3671,15 +3669,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Face ID ile koru',
-        'touchId': 'Touch ID ile koru',
-        'biyometrik': 'Biyometrik kilitle koru',
-        'other': 'Ekran kilidiyle koru',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Face ID ile koru',
+      'touchId': 'Touch ID ile koru',
+      'biyometrik': 'Biyometrik kilitle koru',
+      'other': 'Ekran kilidiyle koru',
+    });
     return '$_temp0';
   }
 
@@ -3696,15 +3691,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Face ID\'yi aç',
-        'touchId': 'Touch ID\'yi aç',
-        'biyometrik': 'Biyometrik kilidi aç',
-        'other': 'Uygulama kilidini aç',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Face ID\'yi aç',
+      'touchId': 'Touch ID\'yi aç',
+      'biyometrik': 'Biyometrik kilidi aç',
+      'other': 'Uygulama kilidini aç',
+    });
     return '$_temp0';
   }
 
@@ -4140,7 +4132,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String chartOhlcLine(
-      String acilis, String yuksek, String dusuk, String kapanis) {
+    String acilis,
+    String yuksek,
+    String dusuk,
+    String kapanis,
+  ) {
     return 'A $acilis · Y $yuksek · D $dusuk · K $kapanis';
   }
 
@@ -5692,7 +5688,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi) {
+    String date,
+    String end,
+    String change,
+    String cpi,
+  ) {
     return 'İlk alımından ($date) $end sonuna birikimin $change, enflasyon $cpi oldu.';
   }
 
@@ -6496,7 +6496,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String cryEventEvidence(
-      String amount, String times, String pct, String share) {
+    String amount,
+    String times,
+    String pct,
+    String share,
+  ) {
     return '$amount · ortalamanın $times katı · fiyat $pct · alıcı payı $share';
   }
 
@@ -8416,6 +8420,46 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String ttNetNot(String brut) {
     return 'Stopaj sonrası net · brüt $brut';
+  }
+
+  @override
+  String ttOzet(String aylik, String verim) {
+    return 'Ayda ortalama $aylik · maliyetine göre $verim';
+  }
+
+  @override
+  String ttOzetAylik(String aylik) {
+    return 'Ayda ortalama $aylik';
+  }
+
+  @override
+  String ttOzetSemantik(String aylik, String verim) {
+    return 'Tahmin ayda ortalama $aylik ediyor. Bu, temettü dağıtan hisselerinin maliyetinin yılda $verim kadarı.';
+  }
+
+  @override
+  String ttOzetAylikSemantik(String aylik) {
+    return 'Tahmin ayda ortalama $aylik ediyor.';
+  }
+
+  @override
+  String ttKiyas(String tutar, String fark) {
+    return 'Geçen 12 ayda $tutar aldın · tahmin $fark';
+  }
+
+  @override
+  String ttKiyasTutar(String tutar) {
+    return 'Geçen 12 ayda $tutar aldın';
+  }
+
+  @override
+  String ttKiyasSemantik(String tutar, String fark) {
+    return 'Geçen 12 ayda deftere kaydettiğin net temettü $tutar. Önümüzdeki 12 ayın tahmini buna göre $fark.';
+  }
+
+  @override
+  String ttKiyasTutarSemantik(String tutar) {
+    return 'Geçen 12 ayda deftere kaydettiğin net temettü $tutar.';
   }
 
   @override
@@ -10360,7 +10404,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String kilometreTasiSiradakiIlerlemeEtiket(
-      String baslik, int yuzde, String kalan) {
+    String baslik,
+    int yuzde,
+    String kalan,
+  ) {
     return 'Sıradaki kilometre taşı: $baslik, yüzde $yuzde, $kalan kaldı';
   }
 
@@ -10717,7 +10764,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String yaSemantik(
-      String baslik, String dusuk, String yuksek, String bugun, String cumle) {
+    String baslik,
+    String dusuk,
+    String yuksek,
+    String bugun,
+    String cumle,
+  ) {
     return '$baslik: en düşük $dusuk, en yüksek $yuksek, bugün $bugun. $cumle';
   }
 
@@ -10767,7 +10819,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String bedelliOnizleme(
-      String elde, String yeni, String birim, String toplam) {
+    String elde,
+    String yeni,
+    String birim,
+    String toplam,
+  ) {
     return 'Elindeki $elde lota $yeni yeni lot, lot başı $birim, toplam $toplam';
   }
 
@@ -11103,7 +11159,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String aylikGetiriOzetUclar(
-      String iyiAy, String iyiDeger, String zorAy, String zorDeger) {
+    String iyiAy,
+    String iyiDeger,
+    String zorAy,
+    String zorDeger,
+  ) {
     return 'En iyi ay $iyiAy $iyiDeger, en zor $zorAy $zorDeger.';
   }
 
@@ -11124,7 +11184,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String aylikGetiriYilReelOkunan(
-      String yil, String getiri, String tufe, String reel) {
+    String yil,
+    String getiri,
+    String tufe,
+    String reel,
+  ) {
     return '$yil: $getiri. TÜFE yüzde $tufe, reel getiri $reel.';
   }
 

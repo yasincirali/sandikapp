@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
-import '../providers/preferences_provider.dart' show premiumKilitliProvider;
+import '../providers/preferences_provider.dart'
+    show balanceHiddenProvider, premiumKilitliProvider;
 import '../providers/temettu_tahmini_provider.dart';
 import '../services/seni_ilgilendiren_gunler.dart' show temettuGunleri;
 import '../services/takvim_ics.dart';
 import '../services/temettu_tahmini.dart';
 import '../theme/sandik.dart';
+import '../utils/money_format.dart' show BazPara;
 import '../utils/tr_format.dart';
 import '../widgets/premium_kilit_karti.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -58,14 +60,14 @@ class TemettuTahminiScreen extends ConsumerWidget {
         // Defter değişince tahmin yeniden hesaplanırken eski içerik kalır;
         // iskelet yalnız ilk yüklemede (Ar-Ge 12 Kas #6).
         child: tahmin.when(
-        skipLoadingOnReload: true,
-        loading: () => const SandikSkeletonList(rows: 4),
-        error: (e, _) => SandikErrorView(
-            error: e, onRetry: () => ref.invalidate(temettuTahminiProvider)),
-        data: (t) => t.bos
-            ? SandikBosDurum(metin: l.ttBos, alt: l.ttBosAlt)
-            : _Govde(t: t),
-      ),
+          skipLoadingOnReload: true,
+          loading: () => const SandikSkeletonList(rows: 4),
+          error: (e, _) => SandikErrorView(
+              error: e, onRetry: () => ref.invalidate(temettuTahminiProvider)),
+          data: (t) => t.bos
+              ? SandikBosDurum(metin: l.ttBos, alt: l.ttBosAlt)
+              : _Govde(t: t, gizli: ref.watch(balanceHiddenProvider)),
+        ),
       ),
     );
   }
@@ -83,9 +85,14 @@ String temettuKancaCumlesi(AppLocalizations l, TemettuKancasi k) {
 }
 
 class _Govde extends StatefulWidget {
-  const _Govde({required this.t});
+  const _Govde({required this.t, required this.gizli});
 
   final TemettuTahmini t;
+
+  /// "Bakiyeyi gizle" — ayda ortalama ve geçen yıl alınan tutar maskelenir,
+  /// yüzdeler açık kalır (varlık sayfasındaki verim satırıyla aynı kural:
+  /// oran tek başına portföy büyüklüğünü ele vermez).
+  final bool gizli;
 
   @override
   State<_Govde> createState() => _GovdeState();
@@ -133,8 +140,7 @@ class _GovdeState extends State<_Govde> {
                           DateFormat.MMMM(dil).format(DateTime(2000, ay))),
                   style: context.t.bodyMedium?.copyWith(color: c.text58)),
               const SizedBox(height: SandikSpace.xs),
-              Text(
-                  fmtTRY(ay == null ? (net ?? t.brutTry) : t.aylik[ay - 1]),
+              Text(fmtTRY(ay == null ? (net ?? t.brutTry) : t.aylik[ay - 1]),
                   style: context.t.numLarge
                       .copyWith(fontWeight: FontWeight.w600, color: c.gold)),
               const SizedBox(height: SandikSpace.xxs),
@@ -148,6 +154,10 @@ class _GovdeState extends State<_Govde> {
                         : l.ttNetNot(fmtTRY(t.brutTry)),
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
+              // Ayda ortalama + maliyetine göre verim, geçen yılla kıyas
+              // (2026-11-13). Yıllık toplama ait cümleler: ay seçiliyken
+              // büyük sayı o ayın brütü olduğu için çizilmez.
+              if (ay == null) ..._ozetSatirlari(context),
               const SizedBox(height: SandikSpace.md),
               _AyCubuklari(aylik: t.aylik, secili: ay, onSec: _sec),
             ],
@@ -170,6 +180,51 @@ class _GovdeState extends State<_Govde> {
         Text(l.ttKural, style: context.t.bodySmall?.copyWith(color: c.text58)),
       ],
     );
+  }
+}
+
+extension on _GovdeState {
+  /// Büyük sayının altındaki iki kişisel satır. Hesap modelde
+  /// (`TemettuTahmini.aylikOrtalama`, `maliyeteGoreVerim`, `gecenYilAlinan`,
+  /// `tahminFarkiYuzde`); burada yalnız biçim ve maske. Ekran okuyucu
+  /// "·" ile kısaltılmış satırı değil tam cümleyi okur.
+  List<Widget> _ozetSatirlari(BuildContext context) {
+    final l = context.l10n;
+    final t = widget.t;
+    String tl(double v) =>
+        widget.gizli ? const BazPara.lira().gizliTutar : fmtTRY(v);
+    final stil = context.t.bodySmall?.copyWith(color: context.c.text90);
+    final aylik = tl(t.aylikOrtalama);
+    final verim = t.maliyeteGoreVerim;
+    final verimMetni = verim == null ? null : fmtPct(verim, digits: 1);
+    final alinan = t.gecenYilAlinan;
+    final fark = t.tahminFarkiYuzde;
+    final farkMetni = fark == null ? null : fmtPctIsaretli(fark, digits: 0);
+    Widget satir(String metin, String okunus) => Padding(
+          padding: const EdgeInsets.only(top: SandikSpace.xs),
+          child: Semantics(
+            label: okunus,
+            excludeSemantics: true,
+            child: Text(metin, style: stil),
+          ),
+        );
+    return [
+      satir(
+        verimMetni == null ? l.ttOzetAylik(aylik) : l.ttOzet(aylik, verimMetni),
+        verimMetni == null
+            ? l.ttOzetAylikSemantik(aylik)
+            : l.ttOzetSemantik(aylik, verimMetni),
+      ),
+      if (alinan != null)
+        satir(
+          farkMetni == null
+              ? l.ttKiyasTutar(tl(alinan))
+              : l.ttKiyas(tl(alinan), farkMetni),
+          farkMetni == null
+              ? l.ttKiyasTutarSemantik(tl(alinan))
+              : l.ttKiyasSemantik(tl(alinan), farkMetni),
+        ),
+    ];
   }
 }
 
@@ -257,9 +312,8 @@ class _AyCubuklari extends StatelessWidget {
                               // tek ipucu olmasın.
                               style: context.t.labelSmall?.copyWith(
                                   color: secili == i + 1 ? c.text90 : c.text58,
-                                  fontWeight: secili == i + 1
-                                      ? FontWeight.w600
-                                      : null),
+                                  fontWeight:
+                                      secili == i + 1 ? FontWeight.w600 : null),
                             ),
                           ),
                         ],
