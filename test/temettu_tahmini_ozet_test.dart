@@ -192,6 +192,31 @@ void main() {
       expect(find.textContaining('₺6.000'), findsNothing);
     });
 
+    testWidgets(
+        'bakiye gizliyken ekranda ve ekran okuyucuda hiçbir TL tutarı yok '
+        '(büyük toplam, ay çubukları, satırlar)', (tester) async {
+      await ac(tester, gizli: true);
+      // Pay başı tutar bilerek açık (varlık sayfasındaki kural): lot
+      // yazmadığı için portföy büyüklüğünü ele vermez. Onu çıkarınca geriye
+      // rakamlı "₺" kalmamalı.
+      final payBasi = RegExp(r'pay başına ₺[\d.,]+');
+      final rakamliTl = RegExp(r'₺\s?\d');
+      final metinler = [
+        for (final w in tester.widgetList<Text>(find.byType(Text)))
+          w.data ?? w.textSpan?.toPlainText() ?? '',
+        for (final w in tester.widgetList<Semantics>(find.byType(Semantics)))
+          w.properties.label ?? '',
+      ];
+      expect(metinler, isNotEmpty);
+      for (final m in metinler) {
+        expect(rakamliTl.hasMatch(m.replaceAll(payBasi, '')), isFalse,
+            reason: 'gizliyken tutar açık: "$m"');
+      }
+      expect(find.text('₺••••'), findsWidgets);
+      // Yüzdeler açık kalır.
+      expect(find.textContaining('%8,5'), findsOneWidget);
+    });
+
     yaziOlcegiEkseni(() {
       testWidgets('büyük yazıda ve dar ekranda taşma yok', (tester) async {
         yaziOlceginiUygula(tester);
