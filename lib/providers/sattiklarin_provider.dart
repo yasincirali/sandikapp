@@ -21,12 +21,25 @@ import 'portfoy_provider.dart' show portfoyKapsamiProvider;
 /// listesini çeker, önceden kurulumda ağ isteği başlamasın.
 final sattiklarinProvider = Provider.autoDispose<List<KapanmisPozisyon>>((ref) {
   final uid = ref.watch(authProvider.select((u) => u.valueOrNull?.id));
-  final lotlar =
-      ref.watch(portfolioProvider.select((s) => s.valueOrNull?.assets));
+  final lotlar = ref.watch(
+    portfolioProvider.select((s) => s.valueOrNull?.assets),
+  );
   if (uid == null || lotlar == null) return const [];
   final kapsam = ref.watch(portfoyKapsamiProvider);
-  return kapanmisPozisyonlar(portfoyLotlari([
-    for (final a in lotlar)
-      if (a.userId == uid) a
-  ], kapsam.secim, kapsam.bilinen));
+  return kapanmisPozisyonlar(
+    portfoyLotlari(
+      [
+        for (final a in lotlar)
+          if (a.userId == uid) a,
+      ],
+      kapsam.secim,
+      kapsam.bilinen,
+    ),
+  );
 });
+
+/// Sattıkların sayfasının başındaki özet ([sattiklarinToplami]); liste
+/// değişmedikçe yeniden hesaplanmaz.
+final sattiklarinToplamiProvider = Provider.autoDispose<SattiklarinToplami>(
+  (ref) => sattiklarinToplami(ref.watch(sattiklarinProvider)),
+);

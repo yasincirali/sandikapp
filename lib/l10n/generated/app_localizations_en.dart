@@ -1087,6 +1087,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String eldeTutmaTufeSatiri(String tufe, String reel) {
+    return 'Inflation over the same period $tufe a year · real $reel';
+  }
+
+  @override
+  String eldeTutmaTufeA11yKazanc(String tufe, String reel) {
+    return 'Over the same period, inflation was $tufe percent a year; your real return is a $reel percent gain.';
+  }
+
+  @override
+  String eldeTutmaTufeA11yKayip(String tufe, String reel) {
+    return 'Over the same period, inflation was $tufe percent a year; your real return is a $reel percent loss.';
+  }
+
+  @override
+  String eldeTutmaTufeA11yBasaBas(String tufe) {
+    return 'Over the same period, inflation was $tufe percent a year; your real return is flat.';
+  }
+
+  @override
   String get fxSplitPrice => 'From price';
 
   @override
@@ -1100,6 +1120,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get fxSplitLocked =>
       'How much of your gain is price and how much is FX: Premium';
+
+  @override
+  String get fxSplitMissingRate =>
+      'No purchase rate saved; edit the transaction to add it';
+
+  @override
+  String get fxSplitSheetTitle => 'Where your gain came from';
+
+  @override
+  String get fxSplitSheetRate => 'Purchase rate → today\'s rate';
+
+  @override
+  String fxSplitSheetRateValue(String from, String to) {
+    return '$from → $to';
+  }
+
+  @override
+  String fxSplitSheetPriceBody(String gain, String rate) {
+    return 'Gain in currency $gain × purchase rate $rate';
+  }
+
+  @override
+  String fxSplitSheetFxBody(String value, String diff) {
+    return 'Today\'s value in currency $value × rate change $diff';
+  }
+
+  @override
+  String get fxSplitSheetTotal => 'Together: gain in TRY';
+
+  @override
+  String get fxSplitOpenHint => 'Opens the calculation details';
 
   @override
   String get gecmisFiyatlarSatiri => 'View as table';
@@ -8391,6 +8442,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yrKilitSatir => 'The annual report is part of Premium';
 
   @override
+  String yrKilitSayim(String yil, String kayitlar) {
+    return '$kayitlar recorded in $yil · your report is ready in Premium';
+  }
+
+  @override
+  String yrKilitSatisParca(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sales',
+      one: '1 sale',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yrKilitTemettuParca(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dividends',
+      one: '1 dividend',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yrKilitVe(String a, String b) {
+    return '$a and $b';
+  }
+
+  @override
   String get yrBos => 'Nothing to report yet';
 
   @override
@@ -8514,6 +8597,46 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String ttNetNot(String brut) {
     return 'Net after withholding · gross $brut';
+  }
+
+  @override
+  String ttOzet(String aylik, String verim) {
+    return 'About $aylik a month · $verim on cost';
+  }
+
+  @override
+  String ttOzetAylik(String aylik) {
+    return 'About $aylik a month';
+  }
+
+  @override
+  String ttOzetSemantik(String aylik, String verim) {
+    return 'The forecast averages $aylik a month. That is $verim a year of the cost of your dividend-paying stocks.';
+  }
+
+  @override
+  String ttOzetAylikSemantik(String aylik) {
+    return 'The forecast averages $aylik a month.';
+  }
+
+  @override
+  String ttKiyas(String tutar, String fark) {
+    return 'You received $tutar in the last 12 months · forecast $fark';
+  }
+
+  @override
+  String ttKiyasTutar(String tutar) {
+    return 'You received $tutar in the last 12 months';
+  }
+
+  @override
+  String ttKiyasSemantik(String tutar, String fark) {
+    return 'Net dividends you recorded in the last 12 months: $tutar. The forecast for the next 12 months is $fark compared with that.';
+  }
+
+  @override
+  String ttKiyasTutarSemantik(String tutar) {
+    return 'Net dividends you recorded in the last 12 months: $tutar.';
   }
 
   @override
@@ -9440,11 +9563,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pyzHataKota =>
-      'You\'ve used today\'s comments, try again tomorrow.';
+      'You\'ve used your daily comments, try again in a few hours.';
+
+  @override
+  String pyzHataKotaSaat(String saat) {
+    return 'You\'ve used your daily comments, you can try again from $saat.';
+  }
 
   @override
   String get pyzHataKotaAy =>
       'You\'ve used this month\'s comments, try again next month.';
+
+  @override
+  String pyzHataTavan(String tarih) {
+    return 'Comments are paused for this month and reopen on $tarih.';
+  }
 
   @override
   String get pyzHataRed =>
@@ -9459,6 +9592,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pyzKilit => 'AI commentary on your portfolio is part of Premium.';
+
+  @override
+  String pyzKilitOzet(String donem, String yuzde, String yon) {
+    String _temp0 = intl.Intl.selectLogic(
+      donem,
+      {
+        'hafta': 'Last week',
+        'other': 'Last month',
+      },
+    );
+    String _temp1 = intl.Intl.selectLogic(
+      yon,
+      {
+        'artti': 'rose',
+        'other': 'fell',
+      },
+    );
+    return '$_temp0 your portfolio $_temp1 $yuzde · Premium\'s AI explains why.';
+  }
+
+  @override
+  String pyzKilitOzetEtkili(
+      String donem, String yuzde, String yon, String varlik) {
+    String _temp0 = intl.Intl.selectLogic(
+      donem,
+      {
+        'hafta': 'Last week',
+        'other': 'Last month',
+      },
+    );
+    String _temp1 = intl.Intl.selectLogic(
+      yon,
+      {
+        'artti': 'rose',
+        'other': 'fell',
+      },
+    );
+    return '$_temp0 your portfolio $_temp1 $yuzde, moved most by $varlik · Premium\'s AI explains why.';
+  }
 
   @override
   String get pyzDonemSecici => 'Comment period';
@@ -10990,6 +11162,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kapanisYillikRapor => 'See in yearly report';
 
   @override
+  String get kapanisYillikRaporKilitli =>
+      'This sale\'s yearly report is in Premium';
+
+  @override
   String sattiklarinSatir(int count) {
     return 'Closed positions ($count)';
   }
@@ -11001,8 +11177,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sattiklarinAltMetin => 'Positions you sold in full, latest first';
 
   @override
-  String get sattiklarinKilitli =>
-      'Closed positions and their realized gains are in Premium';
+  String sattiklarinKilitli(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'You closed $count positions · your realized gain is in Premium',
+      one: 'You closed 1 position · your realized gain is in Premium',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinToplam(String tutar, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count positions',
+      one: '1 position',
+    );
+    return 'Realized total $tutar · $_temp0';
+  }
+
+  @override
+  String sattiklarinToplamA11y(String tutar, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Total realized gain or loss on $count closed positions with known cost: $tutar.',
+      one:
+          'Realized gain or loss on 1 closed position with known cost: $tutar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinToplamGizliA11y(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Total realized gain or loss on $count closed positions with known cost is not read out because your balance is hidden.',
+      one:
+          'Realized gain or loss on 1 closed position with known cost is not read out because your balance is hidden.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sattiklarinDipnot(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count positions have an unknown cost and are not in the total',
+      one: '1 position has an unknown cost and is not in the total',
+    );
+    return '$_temp0';
+  }
 
   @override
   String sattiklarinTuttun(String sure) {

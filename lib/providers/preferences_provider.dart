@@ -500,6 +500,12 @@ final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool
 final yatayGrafikAcildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.yatayGrafikIpucu, false));
 
+/// Performans'taki "Aylık getiri" kartı açık mı (2026-11-13). Varsayılan
+/// AÇIK: güncellemeyle gelen kullanıcı kartı eskisi gibi görür, katlamak
+/// onun seçimi. Yeni anahtar; taşınacak eski değer yok.
+final aylikGetiriAcikProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.aylikGetiriAcik, true));
+
 /// Bugün kartındaki hedef önerisinin görünürlük durumu — ham kod; kural
 /// `HedefOnerisiDurumu` (saf, `hedef_onerisi_test`). Kişiye özel.
 final hedefOnerisiProvider = NotifierProvider<_StringPrefNotifier, String>(

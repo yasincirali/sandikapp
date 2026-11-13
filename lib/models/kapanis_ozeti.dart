@@ -97,7 +97,7 @@ KapanisOzeti? kapanisOzeti({
           (a.isBuy || a.isSell || a.isDividend) &&
           !a.addedDate.isAfter(satis.addedDate) &&
           positionKey(a) == anahtar)
-        a
+        a,
   ]..sort((x, y) => x.addedDate.compareTo(y.addedDate));
 
   // Bugünkü elde tutmanın başı: net miktarın son kez sıfıra indiği
@@ -129,7 +129,8 @@ KapanisOzeti? kapanisOzeti({
   if (aylar < 0) aylar = 0;
   final gun = aylar == 0 ? sonGun.difference(basGun).inDays : 0;
 
-  final maliyetBilinmiyor = satis.maliyetBilinmiyor == true ||
+  final maliyetBilinmiyor =
+      satis.maliyetBilinmiyor == true ||
       tur.any((a) => a.isBuy && a.maliyetBilinmiyor == true);
   final satir = maliyetBilinmiyor ? null : yillikSatisSatiri(satis);
   double? karTry;
@@ -210,7 +211,7 @@ List<KapanmisPozisyon> kapanmisPozisyonlar(Iterable<Asset> defter) {
   gruplar.forEach((anahtar, lotlar) {
     final satislar = [
       for (final a in lotlar)
-        if (a.isSell) a
+        if (a.isSell) a,
     ];
     if (satislar.isEmpty || aktifLotlar(lotlar).isNotEmpty) return;
     satislar.sort((x, y) => y.addedDate.compareTo(x.addedDate));
@@ -225,4 +226,67 @@ List<KapanmisPozisyon> kapanmisPozisyonlar(Iterable<Asset> defter) {
   });
   sonuc.sort((x, y) => y.satis.addedDate.compareTo(x.satis.addedDate));
   return sonuc;
+}
+
+/// "Sattıkların" sayfasının başındaki özet: gerçekleşen toplam ve neyin
+/// toplama girmediği.
+@immutable
+class SattiklarinToplami {
+  const SattiklarinToplami({
+    required this.karTry,
+    required this.bilinen,
+    required this.bilinmeyen,
+  });
+
+  /// Maliyeti bilinen pozisyonların gerçekleşen kâr/zarar toplamı (₺).
+  /// Hiçbirinin maliyeti bilinmiyorsa `null`: sıfır yazmak "başa baş"
+  /// demek olurdu (uydurma sayı yok).
+  final double? karTry;
+
+  /// Toplama giren / girmeyen pozisyon sayısı.
+  final int bilinen;
+  final int bilinmeyen;
+
+  @override
+  bool operator ==(Object other) =>
+      other is SattiklarinToplami &&
+      other.karTry == karTry &&
+      other.bilinen == bilinen &&
+      other.bilinmeyen == bilinmeyen;
+
+  @override
+  int get hashCode => Object.hash(karTry, bilinen, bilinmeyen);
+}
+
+/// [liste]'nin gerçekleşen toplamı (Sattıkların özet satırı, 2026-11-13).
+///
+/// ## Kurallar
+/// - **Satırlarla aynı sayı.** Her satırın [KapanisOzeti.karTry]'si
+///   toplanır; ikinci formül yok. Satırlar zaten ₺: `yillikSatisSatiri`
+///   yabancı para birimli satışı satış günü kuruyla TL'ye çevirir, yani
+///   karışık para birimi listede TL karşılığı olarak durur. Toplam da o
+///   TL karşılıklarının toplamıdır; kendi kur çevirisi yapmaz.
+/// - **Maliyeti bilinmeyen toplama girmez** (`karTry == null`), sayısı
+///   [SattiklarinToplami.bilinmeyen]'de döner: ekran onu dipnotla söyler,
+///   toplam sessizce eksik kalmaz.
+/// - Saf: Flutter yok; ekran `build()` içinde yürümez, provider önbelleğe
+///   alır (`sattiklarinToplamiProvider`).
+SattiklarinToplami sattiklarinToplami(Iterable<KapanmisPozisyon> liste) {
+  var toplam = 0.0;
+  var bilinen = 0;
+  var bilinmeyen = 0;
+  for (final k in liste) {
+    final kar = k.ozet.karTry;
+    if (kar == null) {
+      bilinmeyen++;
+    } else {
+      toplam += kar;
+      bilinen++;
+    }
+  }
+  return SattiklarinToplami(
+    karTry: bilinen == 0 ? null : toplam,
+    bilinen: bilinen,
+    bilinmeyen: bilinmeyen,
+  );
 }

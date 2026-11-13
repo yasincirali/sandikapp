@@ -6,8 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/aylik_getiri_provider.dart';
+import 'package:portfoy_takip/config/pref_keys.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart'
-    show premiumKilitliProvider;
+    show initPreferencesCache, premiumKilitliProvider;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import 'package:portfoy_takip/services/aylik_getiri_tablosu.dart';
@@ -395,6 +397,82 @@ void main() {
       await tester.tap(find.text('Para ekleyip çekmen yüzdeyi değiştirmez.'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Yıl, ayların bileşiğidir'), findsOneWidget);
+    });
+
+    // Katlanır kart (2026-11-13): varsayılan açık, başlıktan katlanır,
+    // seçim açılışlar arasında kalır; kapalıyken özetin ilk cümlesi durur.
+    group('katlanır', () {
+      setUp(() async {
+        SharedPreferences.setMockInitialValues({});
+        await initPreferencesCache();
+      });
+      final baslik = find.byKey(const ValueKey('aylikGetiriBaslik'));
+
+      testWidgets('varsayılan açık; başlığa dokununca katlanır, kalıcı',
+          (tester) async {
+        final semantik = tester.ensureSemantics();
+        await pump(tester);
+        expect(find.text('Oca'), findsOneWidget);
+        expect(find.text("10 ayın 5'ini artıda kapattın."), findsNothing);
+        expect(
+            tester.getSemantics(baslik),
+            matchesSemantics(
+                isButton: true,
+                hasExpandedState: true,
+                isExpanded: true,
+                hasTapAction: true,
+                label: 'Aylık getiri'));
+        expect(tester.getSize(baslik).height,
+            greaterThanOrEqualTo(SandikTouch.min));
+
+        await tester.tap(baslik);
+        await tester.pumpAndSettle();
+        expect(find.text('Oca'), findsNothing);
+        expect(find.text('Para ekleyip çekmen yüzdeyi değiştirmez.'),
+            findsNothing);
+        expect(find.text('Aylık getiri'), findsOneWidget);
+        expect(find.text("10 ayın 5'ini artıda kapattın."), findsOneWidget);
+        expect(
+            tester.getSemantics(baslik),
+            matchesSemantics(
+                isButton: true,
+                hasExpandedState: true,
+                isExpanded: false,
+                hasTapAction: true,
+                label: 'Aylık getiri'));
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool(PrefKeys.aylikGetiriAcik), isFalse);
+
+        // Yeni açılış (taze ProviderScope): kapalı başlar.
+        await tester.pumpWidget(const SizedBox());
+        await pump(tester);
+        expect(find.text('Oca'), findsNothing);
+        expect(find.text("10 ayın 5'ini artıda kapattın."), findsOneWidget);
+
+        // Yeniden aç.
+        await tester.tap(baslik);
+        await tester.pumpAndSettle();
+        expect(find.text('Oca'), findsOneWidget);
+        expect(prefs.getBool(PrefKeys.aylikGetiriAcik), isTrue);
+        semantik.dispose();
+      });
+
+      testWidgets('hareketi azalt: tek karede katlanır', (tester) async {
+        await pump(tester, hareketiAzalt: true);
+        await tester.tap(baslik);
+        await tester.pump();
+        // Tek pump: panel ağaçtan çoktan çıktı (süre sıfır).
+        expect(find.text('Oca'), findsNothing);
+      });
+
+      testWidgets('kilitli ve kısa geçmiş: katlanır başlık yok',
+          (tester) async {
+        await pump(tester, kilitli: true);
+        expect(baslik, findsNothing);
+        await tester.pumpWidget(const SizedBox());
+        await pump(tester, ist: kisaIstek(DateTime(2025, 9, 3)));
+        expect(baslik, findsNothing);
+      });
     });
 
     testWidgets('tablo: yazı ×3,1 ve 320 pt taşma yok', (tester) async {

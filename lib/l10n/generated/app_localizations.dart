@@ -1892,6 +1892,30 @@ abstract class AppLocalizations {
   /// **'{sure}dır tutuyorsun · yıllık ortalaman Premium\'da'**
   String eldeTutmaKilitli(String sure);
 
+  /// Elde tutma satırının altı (Premium): aynı pencerenin yıllık TÜFE'si ve yıllık reel getiri (işaretli yüzde).
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı sürede TÜFE yıllık {tufe} · reel {reel}'**
+  String eldeTutmaTufeSatiri(String tufe, String reel);
+
+  /// Ekran okuyucu: reel getiri artıda. Sayılar işaretsiz, yön kelimeyle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı sürede enflasyon yıllık yüzde {tufe}, reel getiri yüzde {reel} kazanç.'**
+  String eldeTutmaTufeA11yKazanc(String tufe, String reel);
+
+  /// Ekran okuyucu: reel getiri ekside. Sayılar işaretsiz, yön kelimeyle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı sürede enflasyon yıllık yüzde {tufe}, reel getiri yüzde {reel} kayıp.'**
+  String eldeTutmaTufeA11yKayip(String tufe, String reel);
+
+  /// Ekran okuyucu: reel getiri sıfıra yuvarlanıyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı sürede enflasyon yıllık yüzde {tufe}, reel getiri başa baş.'**
+  String eldeTutmaTufeA11yBasaBas(String tufe);
+
   /// No description provided for @fxSplitPrice.
   ///
   /// In tr, this message translates to:
@@ -1915,6 +1939,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kârının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da'**
   String get fxSplitLocked;
+
+  /// No description provided for @fxSplitMissingRate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alış kuru kayıtlı değil; işlemi düzenleyip ekleyebilirsin'**
+  String get fxSplitMissingRate;
+
+  /// No description provided for @fxSplitSheetTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kâr nereden geldi'**
+  String get fxSplitSheetTitle;
+
+  /// No description provided for @fxSplitSheetRate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alış kuru → bugünkü kur'**
+  String get fxSplitSheetRate;
+
+  /// No description provided for @fxSplitSheetRateValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{from} → {to}'**
+  String fxSplitSheetRateValue(String from, String to);
+
+  /// No description provided for @fxSplitSheetPriceBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz bazında kâr {gain} × alış kuru {rate}'**
+  String fxSplitSheetPriceBody(String gain, String rate);
+
+  /// No description provided for @fxSplitSheetFxBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü döviz değeri {value} × kur farkı {diff}'**
+  String fxSplitSheetFxBody(String value, String diff);
+
+  /// No description provided for @fxSplitSheetTotal.
+  ///
+  /// In tr, this message translates to:
+  /// **'İkisinin toplamı: TL kâr'**
+  String get fxSplitSheetTotal;
+
+  /// No description provided for @fxSplitOpenHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabın ayrıntısını açar'**
+  String get fxSplitOpenHint;
 
   /// Varlık grafiğinin altındaki satır; seçili dönemin gün sonu fiyatlarını tablo olarak açar.
   ///
@@ -13643,6 +13715,30 @@ abstract class AppLocalizations {
   /// **'Yıllık rapor Premium\'da'**
   String get yrKilitSatir;
 
+  /// Ücretsiz kullanıcıda yıllık rapor kilit satırı: kaydı olan en yeni yılın satış/temettü ADEDİ kullanıcının kendi defterinden; tutar yok.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yil} yılında {kayitlar} kayıtlı · raporun Premium\'da hazır'**
+  String yrKilitSayim(String yil, String kayitlar);
+
+  /// yrKilitSayim içindeki satış adedi parçası.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 satışın} other{{count} satışın}}'**
+  String yrKilitSatisParca(int count);
+
+  /// yrKilitSayim içindeki temettü adedi parçası.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 temettün} other{{count} temettün}}'**
+  String yrKilitTemettuParca(int count);
+
+  /// İki sayım parçasını bağlar (4 satışın ve 3 temettün).
+  ///
+  /// In tr, this message translates to:
+  /// **'{a} ve {b}'**
+  String yrKilitVe(String a, String b);
+
   /// No description provided for @yrBos.
   ///
   /// In tr, this message translates to:
@@ -13858,6 +13954,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Stopaj sonrası net · brüt {brut}'**
   String ttNetNot(String brut);
+
+  /// No description provided for @ttOzet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayda ortalama {aylik} · maliyetine göre {verim}'**
+  String ttOzet(String aylik, String verim);
+
+  /// No description provided for @ttOzetAylik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayda ortalama {aylik}'**
+  String ttOzetAylik(String aylik);
+
+  /// No description provided for @ttOzetSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmin ayda ortalama {aylik} ediyor. Bu, temettü dağıtan hisselerinin maliyetinin yılda {verim} kadarı.'**
+  String ttOzetSemantik(String aylik, String verim);
+
+  /// No description provided for @ttOzetAylikSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmin ayda ortalama {aylik} ediyor.'**
+  String ttOzetAylikSemantik(String aylik);
+
+  /// No description provided for @ttKiyas.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen 12 ayda {tutar} aldın · tahmin {fark}'**
+  String ttKiyas(String tutar, String fark);
+
+  /// No description provided for @ttKiyasTutar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen 12 ayda {tutar} aldın'**
+  String ttKiyasTutar(String tutar);
+
+  /// No description provided for @ttKiyasSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen 12 ayda deftere kaydettiğin net temettü {tutar}. Önümüzdeki 12 ayın tahmini buna göre {fark}.'**
+  String ttKiyasSemantik(String tutar, String fark);
+
+  /// No description provided for @ttKiyasTutarSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen 12 ayda deftere kaydettiğin net temettü {tutar}.'**
+  String ttKiyasTutarSemantik(String tutar);
 
   /// No description provided for @ttVarliklarUpper.
   ///
@@ -15344,14 +15488,26 @@ abstract class AppLocalizations {
   /// No description provided for @pyzHataKota.
   ///
   /// In tr, this message translates to:
-  /// **'Bugünlük yorum hakkın doldu, yarın yeniden dene.'**
+  /// **'Günlük yorum hakkın doldu, birkaç saat sonra yeniden dene.'**
   String get pyzHataKota;
+
+  /// Günlük AI yorum hakkı (son 24 saat) doldu; sunucunun söylediği açılış anı. saat: '21:40' ya da '14 Kas 09:12'.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük yorum hakkın doldu, {saat} itibarıyla yeniden deneyebilirsin.'**
+  String pyzHataKotaSaat(String saat);
 
   /// No description provided for @pyzHataKotaAy.
   ///
   /// In tr, this message translates to:
   /// **'Bu ayki yorum hakkın doldu, gelecek ay yeniden dene.'**
   String get pyzHataKotaAy;
+
+  /// Ortak aylık AI maliyet tavanı doldu (kişisel hak değil). tarih: '1 Aralık'.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yorumlar bu ay için geçici olarak durdu, {tarih} itibarıyla yeniden açılır.'**
+  String pyzHataTavan(String tarih);
 
   /// No description provided for @pyzHataRed.
   ///
@@ -15376,6 +15532,19 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Portföyünü yapay zekâyla yorumlamak Premium\'da.'**
   String get pyzKilit;
+
+  /// Ücretsiz hesapta kilitli AI yorum kartı; dönem değişimi cihazda hesaplanır. donem: hafta|ay, yuzde: '%3,2', yon: artti|azaldi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem, select, hafta{Geçen hafta} other{Geçen ay}} portföyün {yuzde} {yon, select, artti{arttı} other{azaldı}} · nedenini yapay zekâ Premium\'da anlatır.'**
+  String pyzKilitOzet(String donem, String yuzde, String yon);
+
+  /// pyzKilitOzet + dönemi en çok etkileyen varlık. varlik: 'THYAO'.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem, select, hafta{Geçen hafta} other{Geçen ay}} portföyün {yuzde} {yon, select, artti{arttı} other{azaldı}}, en çok {varlik} etkiledi · nedenini yapay zekâ Premium\'da anlatır.'**
+  String pyzKilitOzetEtkili(
+      String donem, String yuzde, String yon, String varlik);
 
   /// No description provided for @pyzDonemSecici.
   ///
@@ -17647,6 +17816,12 @@ abstract class AppLocalizations {
   /// **'Yıllık raporda gör'**
   String get kapanisYillikRapor;
 
+  /// Kapanış özetinde ücretsiz kullanıcıya rapor bağlantısı; dokununca doğrudan paywall.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu satışın yıllık raporu Premium\'da'**
+  String get kapanisYillikRaporKilitli;
+
   /// No description provided for @sattiklarinSatir.
   ///
   /// In tr, this message translates to:
@@ -17665,11 +17840,35 @@ abstract class AppLocalizations {
   /// **'Tamamını sattığın pozisyonlar, son kapanan önde'**
   String get sattiklarinAltMetin;
 
-  /// No description provided for @sattiklarinKilitli.
+  /// Ücretsiz kullanıcıda Sattıkların satırı: kapatılan pozisyon sayısı kullanıcının kendi defterinden açık, gerçekleşen kâr kilitli.
   ///
   /// In tr, this message translates to:
-  /// **'Sattıkların ve gerçekleşen kârları Premium\'da'**
-  String get sattiklarinKilitli;
+  /// **'{count, plural, =1{1 pozisyonu kapattın · gerçekleşen kârın Premium\'da} other{{count} pozisyonu kapattın · gerçekleşen kârın Premium\'da}}'**
+  String sattiklarinKilitli(int count);
+
+  /// Sattıkların sayfasının başı: maliyeti bilinen kapanmış pozisyonların gerçekleşen kâr/zarar toplamı ve kaç pozisyonun toplandığı.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gerçekleşen toplam {tutar} · {count, plural, =1{1 pozisyon} other{{count} pozisyon}}'**
+  String sattiklarinToplam(String tutar, int count);
+
+  /// No description provided for @sattiklarinToplamA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{Maliyeti bilinen 1 kapanmış pozisyonun gerçekleşen kâr ya da zararı {tutar}.} other{Maliyeti bilinen {count} kapanmış pozisyonun gerçekleşen toplam kâr ya da zararı {tutar}.}}'**
+  String sattiklarinToplamA11y(String tutar, int count);
+
+  /// No description provided for @sattiklarinToplamGizliA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{Maliyeti bilinen 1 kapanmış pozisyonun gerçekleşen kâr ya da zararı, bakiye gizli olduğu için okunmuyor.} other{Maliyeti bilinen {count} kapanmış pozisyonun gerçekleşen toplamı, bakiye gizli olduğu için okunmuyor.}}'**
+  String sattiklarinToplamGizliA11y(int count);
+
+  /// No description provided for @sattiklarinDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 pozisyonun maliyeti bilinmiyor, toplama girmedi} other{{count} pozisyonun maliyeti bilinmiyor, toplama girmedi}}'**
+  String sattiklarinDipnot(int count);
 
   /// No description provided for @sattiklarinTuttun.
   ///

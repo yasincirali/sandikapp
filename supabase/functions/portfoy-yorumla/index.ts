@@ -16,10 +16,14 @@
 // 4. Kota: kullanıcı başına günde PORTFOY_YORUM_GUNLUK (varsayılan 10) ve
 //    takvim ayında PORTFOY_YORUM_AYLIK (varsayılan 30, yasin 2 Kas 2026)
 //    yeni yorum; ay toplamı PORTFOY_YORUM_AYLIK_TAVAN_USD (varsayılan 100)
-//    aşılınca Haiku 5.5'e iner, 3 katında o ay durur (429 `tavan`).
+//    aşılınca Haiku 5.5'e iner, 3 katında o ay durur (429 `tavan`; istemci
+//    bunu kişisel hak gibi değil "bu ay geçici durdu" diye yazar, 2026-11-13).
+//    `gunluk_hak` 429'u isteğe bağlı `yeniden_dene` (ISO) taşır: hak son 24
+//    saatle sayıldığı için "yarın" yanlıştı; eski istemci alanı tanımaz.
 // 5. Messages API (Batch değil: kullanıcı bekliyor), yapılandırılmış JSON,
-//    sayı + dil kapısı. Red/hata da satır olarak yazılır (günlük sayaca girer,
-//    okura gitmez — RLS yalnız 'yayinda').
+//    sayı + dil kapısı. Model yanıtı reddedilirse de satır yazılır (token
+//    harcandı, sayaca girer; okura gitmez — RLS yalnız 'yayinda'). Model
+//    hiç yanıt vermediyse (sağlayıcı/ağ hatası) hak geri verilir.
 // 6. Saklama: son 4 hafta + 12 ay; aynı dönemin eski yayındaki satırı silinir.
 //
 // Seçili dönem / varlık kapsamı (0151, 2026-10-14): `tur` 'secili' + `donem_kodu`
@@ -42,7 +46,10 @@ import {
   paketiDogrula,
   saklamaSiniri,
   seciliSaklamaSiniri,
+  sonrakiAn,
+  sonrakiUtcGunBasi,
   TAVAN_MODELI,
+  yenidenDeneAni,
 } from '../_shared/portfoy_yorum.ts';
 
 const corsHeaders = {
@@ -132,7 +139,21 @@ Deno.serve(async (req: Request) => {
     // 10 (0151'e kadar 3): seçili dönem ve varlık detayı yüzeyleri eklendi;
     // her yüzey yorumu gün boyu saklar, sayaç yalnız yeni yazımları sayar.
     const hak = Number(Deno.env.get('PORTFOY_YORUM_GUNLUK') ?? '10') || 10;
-    if ((count ?? 0) >= hak) return jsonResponse({ ok: false, neden: 'gunluk_hak' }, 429);
+    // Kayan pencerenin (aşağıdaki atomik kapı) açılış anı. Okunamazsa alan
+    // yazılmaz; istemci saatsiz metne düşer (hak kararı bundan etkilenmez).
+    const kapiAcilisi = async (): Promise<string | null> => {
+      const { data, error } = await db.from('rate_limit_attempts').select('attempted_at')
+        .eq('subject', userId).eq('scope', 'portfoy_yorum')
+        .gte('attempted_at', new Date(Date.now() - 86400_000).toISOString())
+        .order('attempted_at', { ascending: true }).limit(1000);
+      if (error) return null;
+      return yenidenDeneAni((data ?? []).map((r) => String(r.attempted_at)), hak, 86400);
+    };
+    const gunlukHakDoldu = (yenidenDene: string | null) =>
+      jsonResponse({ ok: false, neden: 'gunluk_hak', ...(yenidenDene ? { yeniden_dene: yenidenDene } : {}) }, 429);
+    if ((count ?? 0) >= hak) {
+      return gunlukHakDoldu(sonrakiAn(sonrakiUtcGunBasi(new Date()), await kapiAcilisi()));
+    }
 
     const ayBasi = new Date();
     ayBasi.setUTCDate(1);
@@ -141,7 +162,10 @@ Deno.serve(async (req: Request) => {
     // her gün dolduran tek kullanıcı ayda ~27 $ harcatıyor ve herkesin
     // ortak tavanını (aşağıda) bitirebiliyordu; 30'la en kötü durum kişi
     // başı ~1,5 $. Saklanan yorumun yeniden açılması buraya girmez (kayıt
-    // yukarıda döndü). Günlük sayaç gibi red/hata satırları da sayılır.
+    // yukarıda döndü). Günlük sayaç gibi reddedilen yanıt satırları da
+    // sayılır (model token harcadı). Sağlayıcı hatası satır yazmaz; kapının
+    // satırı da geri alınır (2026-11-13, aşağıda): kullanıcı bizim ya da
+    // sağlayıcının arızası yüzünden hak kaybetmez.
     const aylikHak = Number(Deno.env.get('PORTFOY_YORUM_AYLIK') ?? '30') || 30;
     const { count: aySayi, error: ase } = await db.from('portfoy_yorumlari')
       .select('id', { count: 'exact', head: true })
@@ -168,12 +192,34 @@ Deno.serve(async (req: Request) => {
       console.error('portfoy-yorumla hiz kapisi', he.code ?? 'hata');
       return jsonResponse({ ok: false, neden: 'sunucu' }, 503);
     }
-    if (izin !== true) return jsonResponse({ ok: false, neden: 'gunluk_hak' }, 429);
+    if (izin !== true) return gunlukHakDoldu(await kapiAcilisi());
 
+    // Model çağrısı kendi try'ında (2026-11-13): sağlayıcı/ağ hatasında
+    // yanıt ve token yok, ama kapı satırı yukarıda yazıldı ve 24 saat hak
+    // yiyordu (Anthropic aksadığında yeniden deneyen kullanıcı 10 hakkını
+    // boşa bitiriyordu). O satır geri alınır. En yeni satır silinir: aynı
+    // anda gelen başka bir isteğinki olsa bile sayım doğru kalır (bir
+    // başarı + bir hata = bir satır). Silme başarısızsa yalnız hak yanar,
+    // para harcanmaz; yanıt yine `sunucu`.
+    let modelHatasi: unknown = null;
     const yanit = await new Anthropic({ apiKey }).messages.create(
       // deno-lint-ignore no-explicit-any
       istekGovdesi(p, model) as any,
-    );
+    ).catch((e) => {
+      modelHatasi = e;
+      return null;
+    });
+    if (yanit === null) {
+      console.error('portfoy-yorumla model', hataOzeti(modelHatasi));
+      const { data: son, error: se } = await db.from('rate_limit_attempts').select('id')
+        .eq('subject', userId).eq('scope', 'portfoy_yorum')
+        .order('attempted_at', { ascending: false }).limit(1).maybeSingle();
+      const { error: de } = !se && son
+        ? await db.from('rate_limit_attempts').delete().eq('id', son.id)
+        : { error: se };
+      if (de) console.error('portfoy-yorumla hak iadesi', hataOzeti(de));
+      return jsonResponse({ ok: false, neden: 'sunucu' }, 500);
+    }
     const kullanim = {
       input_tokens: yanit.usage?.input_tokens ?? 0,
       output_tokens: yanit.usage?.output_tokens ?? 0,

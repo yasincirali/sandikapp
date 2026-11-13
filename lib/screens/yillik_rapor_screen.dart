@@ -47,6 +47,12 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     if (ref.watch(premiumKilitliProvider)) {
+      // Kilit satırı kullanıcının kendi defteriyle konuşur: yalnız ADET
+      // (satış/temettü), tutar yok (yasin 2026-11-13). Sayım servis
+      // katmanında (`yillikKayitSayimi`); kaydı yoksa genel cümle.
+      final sayim = yillikKayitSayimi(
+          ref.watch(portfolioProvider).valueOrNull?.assets ?? const [],
+          ref.watch(authProvider).valueOrNull?.id ?? '');
       return Scaffold(
         appBar: SandikAppBar(title: l.yrBaslik),
         body: PremiumKilitGovdesi(
@@ -54,15 +60,14 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
             ikon: Icons.receipt_long_rounded,
             baslik: l.yrKilitBaslik,
             govde: l.yrKilitGovde,
-            kilitMetni: l.yrKilitSatir,
+            kilitMetni: yillikRaporKilitMetni(l, sayim),
             kaynak: 'yillik_rapor',
           ),
         ),
       );
     }
     final uid = ref.watch(authProvider).valueOrNull?.id ?? '';
-    final lotlar =
-        ref.watch(portfolioProvider).valueOrNull?.assets ?? const [];
+    final lotlar = ref.watch(portfolioProvider).valueOrNull?.assets ?? const [];
     final yillar = raporYillari(lotlar, uid);
     if (yillar.isEmpty) {
       return Scaffold(
@@ -230,9 +235,8 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
       bistStopajOrani: oran,
     );
     try {
-      await DisaAktarimService.instance
-          .paylasBirlikte(belge,
-              bicimler: bicimler, tur: 'yillik_rapor', kaynak: kaynak);
+      await DisaAktarimService.instance.paylasBirlikte(belge,
+          bicimler: bicimler, tur: 'yillik_rapor', kaynak: kaynak);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'YillikRapor.paylas');
       if (mounted) showAppError(context, e);
@@ -263,9 +267,8 @@ class _OzetSatiri extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final v = tutar;
-    final renk = !renkli || v == null || v == 0
-        ? c.text90
-        : (v > 0 ? c.gain : c.loss);
+    final renk =
+        !renkli || v == null || v == 0 ? c.text90 : (v > 0 ? c.gain : c.loss);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
       child: Row(
@@ -305,9 +308,8 @@ class _KayitSatiri extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final dil = Localizations.localeOf(context).toString();
-    final renk = !renkli || tutar == 0
-        ? c.text90
-        : (tutar > 0 ? c.gain : c.loss);
+    final renk =
+        !renkli || tutar == 0 ? c.text90 : (tutar > 0 ? c.gain : c.loss);
     final altMetin = [
       DateFormat('d MMM y', dil).format(tarih),
       if (alt != null) alt!,
@@ -337,4 +339,21 @@ class _KayitSatiri extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Kilitli ekranın satırı. Sıfır olan parça yazılmaz ("0 temettün" bir
+/// şey söylemez); ikisi de sıfırsa ya da sayım yoksa bugünkü genel cümle.
+/// Yıl `String` geçer: `int` placeholder'ı "2.026" diye biçimlenirdi.
+String yillikRaporKilitMetni(
+    AppLocalizations l, ({int yil, int satis, int temettu})? sayim) {
+  if (sayim == null) return l.yrKilitSatir;
+  final parcalar = [
+    if (sayim.satis > 0) l.yrKilitSatisParca(sayim.satis),
+    if (sayim.temettu > 0) l.yrKilitTemettuParca(sayim.temettu),
+  ];
+  if (parcalar.isEmpty) return l.yrKilitSatir;
+  final kayitlar = parcalar.length == 2
+      ? l.yrKilitVe(parcalar[0], parcalar[1])
+      : parcalar[0];
+  return l.yrKilitSayim('${sayim.yil}', kayitlar);
 }

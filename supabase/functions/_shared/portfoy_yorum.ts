@@ -415,3 +415,35 @@ export function saklamaSiniri(tur: 'haftalik' | 'aylik', baslangic: string): str
 export function seciliSaklamaSiniri(bugunIso: string): string {
   return gunEkle(bugunIso, -6);
 }
+
+/// Kayan pencerede hakkın yeniden açılacağı an (ISO) — 429 `gunluk_hak`
+/// yanıtının isteğe bağlı `yeniden_dene` alanı (2026-11-13).
+///
+/// Neden: `ai_hiz_kapisi` (0159) "gün"ü takvimle değil son 24 saatle
+/// sayar; istemcinin "yarın yeniden dene" demesi yanlıştı (gece 01'de
+/// dolan hak ertesi gece 01'de açılır). Pencerede `n` deneme varsa sayının
+/// `hak`ın altına inmesi için en eski `n - hak + 1` denemenin düşmesi
+/// gerekir; o an sıralı listedeki `n - hak`. indeksin pencere sonudur.
+/// Hak dolmamışsa ya da zaman okunamazsa `null` (alan hiç yazılmaz).
+export function yenidenDeneAni(denemeler: string[], hak: number, pencereSn: number): string | null {
+  const sirali = denemeler.map((d) => Date.parse(d)).filter(Number.isFinite).sort((a, b) => a - b);
+  if (hak < 1 || sirali.length < hak) return null;
+  return new Date(sirali[sirali.length - hak] + pencereSn * 1000).toISOString();
+}
+
+/// İki adaydan SONRAKİ (biri yoksa öteki). Takvim günü sayacı (UTC gün
+/// başı) ile kayan pencere ayrı kapılar; kullanıcıya ikisinin de açıldığı
+/// an söylenir ki verilen saatte yine reddedilmesin.
+export function sonrakiAn(a: string | null, b: string | null): string | null {
+  if (!a) return b;
+  if (!b) return a;
+  return Date.parse(a) >= Date.parse(b) ? a : b;
+}
+
+/// Bir sonraki UTC gün başı (ISO): günlük sayaç `olusturuldu >= UTC gün
+/// başı` ile sayar, o sayaç bu anda sıfırlanır.
+export function sonrakiUtcGunBasi(simdi: Date): string {
+  const d = new Date(simdi.getTime());
+  d.setUTCHours(24, 0, 0, 0);
+  return d.toISOString();
+}

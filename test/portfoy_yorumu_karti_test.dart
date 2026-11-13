@@ -25,6 +25,21 @@ PortfoyYorumPaketi _paket(String iz) => PortfoyYorumPaketi(
       ],
     );
 
+PortfoyYorumPaketi _tanitim(double? getiri, String? etkili,
+        {YorumTuru tur = YorumTuru.aylik, bool yeterli = true}) =>
+    PortfoyYorumPaketi(
+      tur: tur,
+      baslangic: DateTime(2026, 10, 1),
+      bitis: DateTime(2026, 10, 31),
+      parmakIzi: 'v1:t',
+      olcumler: [
+        if (yeterli) const YorumOlcumu('getiri', 'Dönem getirisi', '+%3,2'),
+        const YorumOlcumu('pozisyon_sayisi', 'Dönem sonunda varlık sayısı', '4'),
+      ],
+      donemGetirisi: getiri,
+      enEtkili: etkili,
+    );
+
 PortfoyYorumu _yorum() => PortfoyYorumu(
       tur: YorumTuru.haftalik,
       baslangic: DateTime(2026, 10, 5),
@@ -47,7 +62,8 @@ Future<void> _pump(WidgetTester tester,
     bool kilitli = false,
     double en = 375,
     Widget kart = const PortfoyYorumuKarti(),
-    PortfoyYorumu? varlikKaydi}) async {
+    PortfoyYorumu? varlikKaydi,
+    PortfoyYorumPaketi? tanitim}) async {
   tester.view.physicalSize = Size(en * 3, 2400 * 3);
   tester.view.devicePixelRatio = 3.0;
   yaziOlceginiUygula(tester);
@@ -59,6 +75,7 @@ Future<void> _pump(WidgetTester tester,
       portfoyYorumuProvider.overrideWith((ref, tur) async => durum),
       portfoySeciliYorumProvider.overrideWith((ref, p) async => durum),
       varlikYorumKaydiProvider.overrideWith((ref, a) async => varlikKaydi),
+      portfoyYorumTanitimProvider.overrideWith((ref, tur) async => tanitim),
     ],
     child: MaterialApp(
       theme: ThemeData(
@@ -125,6 +142,24 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.text('Bu dönemi yorumla'), findsNothing);
         expect(find.textContaining('Yatırım tavsiyesi değildir'), findsOneWidget);
+        // Paket yok → bugünkü düz cümle.
+        expect(find.text("Portföyünü yapay zekâyla yorumlamak Premium'da."),
+            findsOneWidget);
+      });
+
+      // 2026-11-13: ücretsiz hesap kendi dönemini görür (cihazdaki paketten).
+      testWidgets('kilitli + paket: dönem cümlesi, taşma yok ($en)', (tester) async {
+        await _pump(tester,
+            durum: null,
+            kilitli: true,
+            tanitim: _tanitim(3.24, 'THYAO', tur: YorumTuru.haftalik),
+            en: en);
+        expect(tester.takeException(), isNull);
+        expect(
+            find.text('Geçen hafta portföyün %3,2 arttı, en çok THYAO etkiledi'
+                " · nedenini yapay zekâ Premium'da anlatır."),
+            findsOneWidget);
+        expect(find.text('Bu dönemi yorumla'), findsNothing);
       });
 
       testWidgets('seçili dönem: ilk sekme, ekonomist açıklaması ($en)', (tester) async {

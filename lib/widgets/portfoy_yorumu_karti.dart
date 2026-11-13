@@ -13,12 +13,70 @@ import '../services/remote_config_service.dart';
 import '../services/yorum_notu.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart' show showSandikConfirm;
-import '../utils/tr_format.dart' show dayKey, fmtTarihAraligi;
+import '../utils/tr_format.dart' show dayKey, fmtPct, fmtTarihAraligi;
 import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_async_button.dart';
 import 'sandik_segment.dart';
 import 'sandik_skeleton.dart';
 import 'yorum_notu_sayfasi.dart';
+
+/// Fonksiyon hatasının kullanıcı metni. SAF (test `portfoy_yorumu_hata_test`).
+///
+/// 2026-11-13: ortak aylık tavan (`tavan`) günlük hakla aynı metne düşüyordu
+/// ("bugünlük hakkın doldu, yarın dene"); kullanıcı ay sonuna dek her gün
+/// bunu okuyordu. Tavan kişisel hak değil, metni nötr ve ayın 1'ini söyler.
+/// Günlük hak son 24 saatle sayıldığı için "yarın" da yanlıştı: sunucu
+/// açılış anını (`yeniden_dene`) verirse saat yazılır (bugün değilse günüyle),
+/// vermezse (eski sunucu) "birkaç saat sonra".
+String portfoyYorumHataMetni(AppLocalizations l, PortfoyYorumHatasi e,
+    {required String dil, required DateTime simdi}) {
+  switch (e.tur) {
+    case YorumHataTuru.kota:
+      final an = e.yenidenDene;
+      if (an == null) return l.pyzHataKota;
+      final ayniGun = dayKey(an) == dayKey(simdi);
+      final bicim =
+          ayniGun ? DateFormat.Hm(dil) : DateFormat('d MMM', dil).add_Hm();
+      return l.pyzHataKotaSaat(bicim.format(an));
+    case YorumHataTuru.tavan:
+      return l.pyzHataTavan(DateFormat('d MMMM', dil)
+          .format(DateTime(simdi.year, simdi.month + 1, 1)));
+    case YorumHataTuru.kotaAy:
+      return l.pyzHataKotaAy;
+    case YorumHataTuru.reddedildi:
+      return l.pyzHataRed;
+    case YorumHataTuru.kapali:
+      return l.pyzHataKapali;
+    case YorumHataTuru.premium:
+      return l.pyzKilit;
+    case YorumHataTuru.riza:
+    case YorumHataTuru.diger:
+      return l.pyzHataGenel;
+  }
+}
+
+/// Ücretsiz hesabın kilitli kart cümlesi. SAF (test `portfoy_yorumu_tanitim_test`).
+///
+/// 2026-11-13: düz "Premium'da" cümlesi yerine kullanıcının KENDİ dönemi:
+/// "Geçen ay portföyün %3,2 arttı, en çok THYAO etkiledi · nedenini yapay
+/// zekâ Premium'da anlatır". Sayılar cihazda kurulan paketten (model yok,
+/// ek istek yok). Paket yeterli değilse ya da getiri yoksa/sıfıra yuvarlanıyorsa
+/// eski cümle: uydurma ya da "%0,0 arttı" gibi boş bir sayı yazılmaz. Düşüşte
+/// nötr "azaldı" (ton kuralı: uyarı/kutlama dili yok). Bakiye gizliyken de
+/// gösterilir: yüzde ve varlık adı tutar ele vermez (temettü verimi satırıyla
+/// aynı kural).
+String portfoyKilitMetni(AppLocalizations l, PortfoyYorumPaketi? p) {
+  final g = p?.donemGetirisi;
+  if (p == null || !p.yeterli || g == null || !g.isFinite) return l.pyzKilit;
+  final yuzde = fmtPct(g.abs(), digits: 1);
+  if (yuzde == fmtPct(0, digits: 1)) return l.pyzKilit;
+  final donem = p.tur == YorumTuru.haftalik ? 'hafta' : 'ay';
+  final yon = g > 0 ? 'artti' : 'azaldi';
+  final varlik = p.enEtkili;
+  return varlik == null || varlik.isEmpty
+      ? l.pyzKilitOzet(donem, yuzde, yon)
+      : l.pyzKilitOzetEtkili(donem, yuzde, yon, varlik);
+}
 
 /// Performans › Özet: kişiye özel AI portföy yorumu (0145, 2026-10-13).
 ///
@@ -62,17 +120,9 @@ class PortfoyYorumuKarti extends ConsumerStatefulWidget {
 mixin _YorumIstegi<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   String? hata;
 
-  String _hataMetni(YorumHataTuru t) {
-    final l = context.l10n;
-    return switch (t) {
-      YorumHataTuru.kota => l.pyzHataKota,
-      YorumHataTuru.kotaAy => l.pyzHataKotaAy,
-      YorumHataTuru.reddedildi => l.pyzHataRed,
-      YorumHataTuru.kapali => l.pyzHataKapali,
-      YorumHataTuru.premium => l.pyzKilit,
-      _ => l.pyzHataGenel,
-    };
-  }
+  String _hataMetni(PortfoyYorumHatasi e) => portfoyYorumHataMetni(
+      context.l10n, e,
+      dil: context.tarihDili, simdi: DateTime.now());
 
   /// Rıza yoksa önce sorar; paket [paket] ile o anda kurulur. Başarıda
   /// [yenile] kaydı yeniden okutur.
@@ -105,7 +155,7 @@ mixin _YorumIstegi<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       await PortfoyYorumuService.instance.yorumla(p);
       yenile();
     } on PortfoyYorumHatasi catch (e) {
-      if (mounted) setState(() => hata = _hataMetni(e.tur));
+      if (mounted) setState(() => hata = _hataMetni(e));
     } catch (_) {
       if (mounted) setState(() => hata = context.l10n.pyzHataGenel);
     }
@@ -174,7 +224,15 @@ class _PortfoyYorumuKartiState extends ConsumerState<PortfoyYorumuKarti>
 
     Widget govde;
     if (kilitli) {
-      govde = KilitSatiri(metin: l.pyzKilit, kaynak: 'portfoy_yorumu');
+      // Kilit cümlesi cihazda kurulan paketten (2026-11-13): seçili dönem
+      // sekmesinde de geçen ayı anlatır, çünkü kapanmış dönem paketi kayıt
+      // okumadan kurulabilen tek paket. Yüklenirken/eksikse düz cümle.
+      final tanitimTuru = tur == YorumTuru.haftalik ? tur : YorumTuru.aylik;
+      govde = KilitSatiri(
+        metin: portfoyKilitMetni(
+            l, ref.watch(portfoyYorumTanitimProvider(tanitimTuru)).valueOrNull),
+        kaynak: 'portfoy_yorumu',
+      );
     } else if (tur == YorumTuru.secili &&
         !seciliYorumlanabilir(widget.secili!)) {
       govde = Text(widget.secili!.yilBasindan ? l.pyzYilBasi : l.pyzGunIci,

@@ -142,22 +142,21 @@ Map<int, AylikGetiriYilReeli> aylikGetiriYilReelleri(
   for (final yil in tablo.aylar.keys) {
     final getiri = tablo.yilToplami[yil];
     if (getiri == null) continue;
-    var carpan = 1.0;
-    var tam = true;
-    var herhangi = false;
+    // Tablonun bu yıldaki aralığı bitişiktir (ilk alım ayı → bu ay);
+    // zincir ilk ayın öncesinden son aya, delik denetimi ortak yardımcıda
+    // (`InflationService.zincirliDegisimPct`; elde tutma satırı da onu
+    // kullanır).
+    int? ilk;
+    int? son;
     for (var m = 1; m <= 12; m++) {
       if (!tablo.aralikta(yil, m)) continue;
-      final bu = endeks[DateTime(yil, m)];
-      final onceki = endeks[DateTime(yil, m - 1)];
-      if (bu == null || onceki == null || onceki <= 0) {
-        tam = false;
-        break;
-      }
-      carpan *= bu / onceki;
-      herhangi = true;
+      ilk ??= m;
+      son = m;
     }
-    if (!tam || !herhangi) continue;
-    final tufe = (carpan - 1) * 100;
+    if (ilk == null || son == null) continue;
+    final tufe = InflationService.zincirliDegisimPct(
+        endeks, DateTime(yil, ilk - 1), DateTime(yil, son));
+    if (tufe == null) continue;
     final reel = InflationService.realReturnPct(getiri, tufe);
     if (!tufe.isFinite || !reel.isFinite) continue;
     sonuc[yil] = AylikGetiriYilReeli(tufe: tufe, reel: reel);
