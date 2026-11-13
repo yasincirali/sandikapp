@@ -14,7 +14,6 @@ import 'package:portfoy_takip/widgets/bugun_karti.dart';
 import 'package:portfoy_takip/widgets/hedef_sheet.dart' show hedefSheetSaati;
 import 'package:portfoy_takip/widgets/sigan_metin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:portfoy_takip/widgets/hedef_sheet.dart' show hedefSheetSaati;
 
 /// Hedefe tarih — Bugün kartı ve hedef sayfası (2026-11-12).
 ///
