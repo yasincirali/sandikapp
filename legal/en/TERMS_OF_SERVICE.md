@@ -1,10 +1,10 @@
 # Terms of Service — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** November 7, 2026
-**Version:** 1.12
+**Last updated:** November 13, 2026
+**Version:** 1.13
 **Consent version:** 1.6
-**Source:** TR 1.12 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.13 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -145,7 +145,7 @@ If these rules are breached, **your account may be closed without notice**.
 
 ## 7. Third-Party Services
 
-The App uses third-party services such as Supabase (server, database and authentication), Google Firebase (notifications, crash reports, usage statistics, remote configuration), Apple (iOS notifications and the lock-screen Live Activity), Sign in with Apple and Google Sign-In (if you choose them), Google's email infrastructure (verification codes), Anthropic (writing asset notes with AI, no personal data is sent; with your explicit consent, the portfolio comment and reading statements), RevenueCat (Premium subscription verification), the App Store and Google Play (Premium payment) and public market-data providers (exchanges, banks, fund platforms, official institutions and exchange-rate and price data services). **The Company is not responsible** for problems arising from outages, delays or errors of these services.
+The App uses third-party services such as Supabase (server, database and authentication), Google Firebase (notifications, crash reports, usage statistics, remote configuration), Apple (iOS notifications and the lock-screen Live Activity), Sign in with Apple and Google Sign-In (if you choose them), Google's email infrastructure (verification codes), Anthropic (writing asset notes and reading funds' monthly portfolio breakdown reports with AI, no personal data is sent; with your explicit consent, the portfolio comment and reading statements), RevenueCat (Premium subscription verification), the App Store and Google Play (Premium payment) and public market-data providers (exchanges, banks, fund platforms, official institutions and exchange-rate and price data services). **The Company is not responsible** for problems arising from outages, delays or errors of these services.
 
 The terms of use of third-party data providers, including information provided by market-data sources, apply. If data retrieval is temporarily blocked, alternative sources or manual data entry options may be offered.
 

@@ -571,7 +571,7 @@ kullanılamıyor" der. Yeniden onay kapısı açılmaz (rıza ilk kullanımda). 
       1.12, Koşullar 1.10 (yalnız "Sürüm"). **Sıra:** birleşince Supabase deploy (hedef
       `ikisi`, migrations **ve** fonksiyon `portfoy-yorumla` birlikte; önce 0151 sonra
       fonksiyon). Fonksiyon 0151'siz giderse yeni kolonlara yazamaz; eski build'ler etkilenmez.
-- [ ] Supabase › Edge Functions › Secrets (iki proje): `PORTFOY_YORUM_ACIK=1`.
+- [x] Supabase › Edge Functions › Secrets: `PORTFOY_YORUM_ACIK=1` (yasin 12 Kas; paywall ön kontrolü 12 Kas 15:13 doğruladı).
       İsteğe bağlı: `PORTFOY_YORUM_GUNLUK` (varsayılan 10; 0151'e kadar 3), `PORTFOY_YORUM_AYLIK`
       (kişi başı takvim ayında yeni yorum, varsayılan 30; yasin 2026-11-02), `PORTFOY_YORUM_AYLIK_TAVAN_USD`
       (varsayılan 100; aşılınca Haiku'ya iner, 3 katında o ay durur). Aylık sınır fonksiyonla
@@ -1011,7 +1011,7 @@ Dağıtım sırası:
          "uygulama KAP verisi göstermez (lisans)" diyor. Katman A tam olarak
          KAP verisi gösterir. Bu yüzden kalem katmanı kod olarak hazır ama
          iki anahtarla kapalı; yanıt gelmeden açma.
-      3. Açınca Kullanım Koşulları §7'deki Anthropic parantezi ("varlık
+      3. **YAPILDI (2026-11-13, 0182, Koşullar 1.13).** Açınca Kullanım Koşulları §7'deki Anthropic parantezi ("varlık
          notlarının yapay zekâ ile yazımı") "ve fon raporlarının okunması"
          diye genişletilmeli (kişisel veri gitmez; esaslı değil, yalnız
          Sürüm artar, yeni migration).
