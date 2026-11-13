@@ -686,6 +686,54 @@ class PeriodSummaryService {
     );
   }
 
+  /// Dönem hareketine TL olarak en çok katkı yapan pozisyon (2026-11-13;
+  /// ücretsiz hesabın AI yorum kartındaki kilit cümlesi: "en çok THYAO
+  /// etkiledi").
+  ///
+  /// [enIyiEnZayif] yüzdeye bakar: küçük bir pozisyonun %40'ı portföyü
+  /// kıpırdatmaz, "en çok etkileyen" o değildir. Burada etki = serinin iki
+  /// ucu arasındaki değer farkı − aradaki akış ([flowOf]: alım +, satış −).
+  /// Akış yalnız `(ilk ölçüm, son ölçüm]` içinde düşülür: ilk ölçümden
+  /// önceki alım ilk değerin zaten içindedir ([compute]'taki çifte sayım
+  /// notu), son ölçümden sonraki alım son değerde yoktur. Akışlı pozisyon
+  /// elenmez (en iyi/en zayıftan farkı): akış düşülünce kalan fiyat etkisidir
+  /// ve ayın en büyük alımı çoğu zaman en etkili varlıktır.
+  ///
+  /// [yon] dönem getirisinin işareti; yalnız o yönde etki yapan aday olur
+  /// (artan ayda düşen varlığı "etkiledi" diye yazmak yanıltırdı). Aday
+  /// yoksa `null`: isim uydurulmaz. Test `portfoy_yorumu_tanitim_test`.
+  static String? enEtkiliPozisyon({
+    required Map<String, Map<int, double>> byPosition,
+    required List<Asset> assets,
+    required int fromMs,
+    required int toMs,
+    required double yon,
+    required String Function(String positionKey) etiket,
+  }) {
+    if (yon == 0 || !yon.isFinite) return null;
+    final isaret = yon.sign;
+    String? enKey;
+    var enEtki = 0.0;
+    byPosition.forEach((key, seri) {
+      final u = uclar(seri, fromMs: fromMs, toMs: toMs);
+      if (u == null || u.firstTs == u.lastTs) return;
+      var akis = 0.0;
+      for (final a in assets) {
+        final ms = a.addedDate.millisecondsSinceEpoch;
+        if (ms <= u.firstTs || ms > u.lastTs) continue;
+        if (positionKey(a) != key) continue;
+        akis += flowOf(a);
+      }
+      final etki = (u.last - u.first - akis) * isaret;
+      if (etki.isFinite && etki > enEtki) {
+        enEtki = etki;
+        enKey = key;
+      }
+    });
+    final k = enKey;
+    return k == null ? null : etiket(k);
+  }
+
   /// Dönem içindeki işlem günlerinden kaçı artıda kapadı.
   ///
   /// Gün başına SON ölçüm alınır ve ardışık günler karşılaştırılır. Nakit

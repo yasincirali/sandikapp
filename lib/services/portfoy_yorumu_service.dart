@@ -119,6 +119,8 @@ class PortfoyYorumPaketi {
     this.donemKodu,
     this.varlikIzi,
     this.varlikAdi,
+    this.donemGetirisi,
+    this.enEtkili,
   });
 
   final YorumTuru tur;
@@ -136,6 +138,14 @@ class PortfoyYorumPaketi {
 
   /// Yalnız [YorumKapsami.varlik]: modelin varlığı adıyla anması için.
   final String? varlikAdi;
+
+  /// Kilitli kartın cümlesi için (2026-11-13, ücretsiz hesap): dönem
+  /// getirisi (yüzde, `PeriodSummary.getiriPct`) ve dönemi en çok etkileyen
+  /// pozisyonun etiketi ([PeriodSummaryService.enEtkiliPozisyon]). Paket
+  /// zaten istemcide kurulduğu için model çağrısı ve ek istek gerekmez.
+  /// Sunucuya GİTMEZ ([toJson]'da yok): modelin girdisi ölçümlerdir.
+  final double? donemGetirisi;
+  final String? enEtkili;
 
   /// Yorum yazmaya değer mi? Dönemde seri yoksa (portföy yeni, veri yok)
   /// model çağrılmaz — "bu hafta %0" diye uydurma bir yorum çıkmasın.
@@ -176,6 +186,7 @@ class PortfoyYorumPaketi {
     required String Function(String positionKey) etiket,
     String? donemKodu,
     List<YorumOlcumu> ekOlcumler = const [],
+    String? enEtkili,
   }) {
     final fromMs = baslangic.millisecondsSinceEpoch;
     final toMs = DateTime(bitis.year, bitis.month, bitis.day, 23, 59, 59).millisecondsSinceEpoch;
@@ -262,6 +273,8 @@ class PortfoyYorumPaketi {
       parmakIzi: portfoyParmakIzi(sonDegerler),
       olcumler: o.take(30).toList(),
       donemKodu: donemKodu,
+      donemGetirisi: (getiri != null && getiri.isFinite) ? getiri : null,
+      enEtkili: enEtkili,
     );
   }
 
@@ -625,13 +638,52 @@ class PortfoyYorumu {
 /// Fonksiyonun döndüğü kullanıcıya gösterilebilir neden.
 /// [kotaAy]: sunucunun kişi başı aylık sınırı (`aylik_hak`, 2026-11-02);
 /// metni günlükten ayrı, çünkü "yarın dene" demek yanlış olurdu.
-enum YorumHataTuru { riza, premium, kota, kotaAy, reddedildi, kapali, diger }
+/// [tavan]: herkesin ortak aylık maliyet tavanı (429 `tavan`). 2026-11-13'e
+/// kadar [kota]'ya düşüyordu; kullanıcı ay sonuna dek her gün "bugünlük
+/// hakkın doldu, yarın dene" okuyordu. Kişisel hak değil, ayın 1'inde açılır.
+enum YorumHataTuru {
+  riza,
+  premium,
+  kota,
+  kotaAy,
+  tavan,
+  reddedildi,
+  kapali,
+  diger,
+}
 
 class PortfoyYorumHatasi implements Exception {
-  const PortfoyYorumHatasi(this.tur);
+  const PortfoyYorumHatasi(this.tur, {this.yenidenDene});
   final YorumHataTuru tur;
+
+  /// Yalnız [YorumHataTuru.kota]: sunucunun isteğe bağlı `yeniden_dene`
+  /// alanı (2026-11-13). Günlük hak son 24 saatle sayılır; varsa kart saati
+  /// yazar, yoksa (eski sunucu) "birkaç saat sonra" der.
+  final DateTime? yenidenDene;
+
   @override
   String toString() => 'PortfoyYorumHatasi(${tur.name})';
+
+  /// SAF: fonksiyonun hata gövdesi → kullanıcıya gösterilebilir neden.
+  /// Test `portfoy_yorumu_hata_test`.
+  static PortfoyYorumHatasi govdeden(Object? details) {
+    final m = details is Map ? details : const <Object?, Object?>{};
+    final tur = switch (m['neden']) {
+      'riza' => YorumHataTuru.riza,
+      'premium' => YorumHataTuru.premium,
+      'gunluk_hak' => YorumHataTuru.kota,
+      'aylik_hak' => YorumHataTuru.kotaAy,
+      'tavan' => YorumHataTuru.tavan,
+      'reddedildi' => YorumHataTuru.reddedildi,
+      'kapali' => YorumHataTuru.kapali,
+      _ => YorumHataTuru.diger,
+    };
+    final ham = m['yeniden_dene'];
+    final an = tur == YorumHataTuru.kota && ham is String
+        ? DateTime.tryParse(ham)?.toLocal()
+        : null;
+    return PortfoyYorumHatasi(tur, yenidenDene: an);
+  }
 }
 
 /// Açık rıza kartı metninin sürümü (`pyzRizaMetin`; sunucu kaydı
@@ -680,6 +732,7 @@ class PortfoyYorumuService {
       pencereBaslangici: d.baslangic,
       etiket: et,
     );
+    final getiri = ozet.getiriPct;
     return PortfoyYorumPaketi.kur(
       tur: tur,
       baslangic: d.baslangic,
@@ -687,6 +740,16 @@ class PortfoyYorumuService {
       ozet: ozet,
       breakdown: bd,
       etiket: et,
+      enEtkili: getiri == null
+          ? null
+          : PeriodSummaryService.enEtkiliPozisyon(
+              byPosition: bd.byPosition,
+              assets: lotlar,
+              fromMs: d.baslangic.millisecondsSinceEpoch,
+              toMs: son.millisecondsSinceEpoch,
+              yon: getiri,
+              etiket: et,
+            ),
     );
   }
 
@@ -906,20 +969,11 @@ class PortfoyYorumuService {
       if (y == null) throw const PortfoyYorumHatasi(YorumHataTuru.diger);
       return y;
     } on FunctionException catch (e, st) {
-      final neden = e.details is Map ? (e.details as Map)['neden'] : null;
-      final tur = switch (neden) {
-        'riza' => YorumHataTuru.riza,
-        'premium' => YorumHataTuru.premium,
-        'gunluk_hak' || 'tavan' => YorumHataTuru.kota,
-        'aylik_hak' => YorumHataTuru.kotaAy,
-        'reddedildi' => YorumHataTuru.reddedildi,
-        'kapali' => YorumHataTuru.kapali,
-        _ => YorumHataTuru.diger,
-      };
-      if (tur == YorumHataTuru.diger) {
+      final hata = PortfoyYorumHatasi.govdeden(e.details);
+      if (hata.tur == YorumHataTuru.diger) {
         CrashReporter.report(e, st, reason: 'portfoy_yorumla_${e.status}');
       }
-      throw PortfoyYorumHatasi(tur);
+      throw hata;
     }
   }
 }
