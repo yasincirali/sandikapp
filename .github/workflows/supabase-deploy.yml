@@ -15,8 +15,9 @@
 # verisi bayat olduğu için geri dönüş/yedek değeri de kalmadı ve duraklatılıp
 # silinecek. Duraklatılmış bir projeye deploy kırmızı döneceği için varsayılan
 # Frankfurt; `ikisi`, `esitlik` işi ve tek seferlik `frankfurt_esitle` işi
-# kaldırıldı. `tokyo` seçeneği yalnız Tokyo silinmeden geri açılırsa diye
-# duruyor (silinince bu seçenek ve `SUPABASE_DB_PASSWORD` de kalkar).
+# kaldırıldı. Tokyo 2026-11-13'te silindi; `tokyo` seçeneği ve
+# `SUPABASE_DB_PASSWORD` de kalktı. Tek seçenekli `hedef` girdisi kasıtlı:
+# Actions formunda deploy'un hangi projeye gittiği görünür kalsın.
 #
 # Gerekli secret'lar (Settings → Secrets and variables → Actions):
 #   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens. _EU yoksa
@@ -24,8 +25,6 @@
 #   SUPABASE_ACCESS_TOKEN_EU — isteğe bağlı: Frankfurt'u gören hesabın token'ı.
 #                            İki proje ayrı hesaptaysa şart (2026-10-01'de ortak
 #                            token Frankfurt'ta 403 aldı); yoksa ortağa düşülür.
-#   SUPABASE_DB_PASSWORD   — yalnız Tokyo, isteğe bağlı: güncel CLI şifre
-#                            yerine token'la geçici giriş rolü kurar
 # Proje ref'leri secret DEĞİL (uygulamada zaten açık, supabase_config.dart);
 # aşağıdaki matriste yazılı. `SUPABASE_PROJECT_REF` artık okunmuyor.
 name: Supabase deploy
@@ -34,9 +33,9 @@ on:
   workflow_dispatch:
     inputs:
       hedef:
-        description: "Hangi sunucu: frankfurt (canlı, varsayılan) ya da tokyo (yalnız silinmeden geri açılırsa)"
+        description: "Sunucu: frankfurt (tek canlı proje; Tokyo 2026-11-13 silindi)"
         type: choice
-        options: [frankfurt, tokyo]
+        options: [frankfurt]
         default: frankfurt
       migrations:
         description: "supabase db push (migration'ları koş)"
@@ -94,8 +93,7 @@ jobs:
       # token Frankfurt'ta 403 aldı). `_EU` tanımlıysa Frankfurt onu kullanır,
       # değilse ortak token'a düşer — secret eklenene kadar davranış aynı.
       SUPABASE_ACCESS_TOKEN: ${{ matrix.hedef == 'frankfurt' && secrets.SUPABASE_ACCESS_TOKEN_EU || secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ matrix.hedef == 'tokyo' && secrets.SUPABASE_DB_PASSWORD || '' }}
-      PROJECT_REF: ${{ matrix.hedef == 'tokyo' && 'ybdbzouzhzwthjgwlbmk' || 'ynwymnpdiwudrlxfrmuo' }}
+      PROJECT_REF: ynwymnpdiwudrlxfrmuo
     steps:
       - uses: actions/checkout@v4
 

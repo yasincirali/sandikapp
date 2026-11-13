@@ -31,7 +31,10 @@ Deno.test('0077 iki projede de bulunan user_id indeksini silmez', () => {
 // giden deploy/eşitlik adımı her koşuyu kırmızıya çevirirdi.
 Deno.test('deploy varsayılanı tek sunucu Frankfurt; ikisi ve eşitlik kapısı yok', () => {
   assertEquals(/hedef:[\s\S]*?default: frankfurt/.test(deploy), true);
-  assertEquals(deploy.includes('options: [frankfurt, tokyo]'), true);
+  assertEquals(deploy.includes('options: [frankfurt]'), true);
+  // 2026-11-13: Tokyo silindi — deploy onun ref'ini ve şifre secret'ını taşımaz.
+  assertEquals(kod(deploy).includes('ybdbzouzhzwthjgwlbmk'), false);
+  assertEquals(kod(deploy).includes('SUPABASE_DB_PASSWORD'), false);
   const govde = kod(deploy); // yorumdaki tarihçe sayılmaz
   assertEquals(govde.includes(`'["frankfurt","tokyo"]'`), false);
   assertEquals(govde.includes('tool/sema_esitlik.py'), false);
