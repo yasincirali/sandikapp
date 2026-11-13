@@ -23,6 +23,7 @@ import '../providers/yuzde_alarmi_provider.dart';
 import '../services/alarm_onbellegi.dart';
 import '../services/alarm_siniri.dart';
 import '../services/analytics_service.dart';
+import '../services/gosterge_degeri.dart' show gostergeDegeriProvider;
 import '../services/cizim_alarmi.dart'
     show cizgiAlarmEtiketi, cizgiEtiketiniAyir, yatayAlarmCizimi;
 import '../services/notification_service.dart';
@@ -838,6 +839,26 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       calisti = g.triggeredAt != null;
       tetik = g.tetikFiyat;
       anahtar = 'gosterge_${g.id}';
+      // Göstergenin şu anki değeri ve uzaklık (Ar-Ge 14 Kas 02:03 #5):
+      // "EMA50 ₺4.212 · %1,4 kaldı", fiyat alarmıyla aynı dil. Hesap
+      // [gostergeDegeriProvider]'da (sunucunun seviye tanımı, seri sembol
+      // başına bir kez çekilir); seri yoksa ya da kısaysa satır eskisi gibi.
+      if (!calisti && fiyat > 0) {
+        final v = ref.watch(gostergeDegeriProvider(
+            (sembol: g.symbol, gosterge: g.gosterge, canli: fiyat)));
+        if (v != null) {
+          altlar.add('${gostergeAdi(l10n, g.gosterge)} '
+              '${fmtFiyat(v, symbol: alarmFiyatSimgesi(g.symbol) ?? '')}');
+          mesafe = alarmMesafesi(
+              fiyat: fiyat,
+              hedef: v,
+              yukari: switch (g.yon) {
+                SeviyeYon.yukari => true,
+                SeviyeYon.asagi => false,
+                SeviyeYon.herIkisi => null,
+              });
+        }
+      }
       final n = ref.read(gostergeAlarmlariProvider.notifier);
       sil = () => n.delete(g.id);
       geriAl = calisti ? null : () => n.create(g);

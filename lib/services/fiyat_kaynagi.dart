@@ -385,6 +385,29 @@ class FiyatKaynagi {
     return !t.startsWith(eurobondOneki);
   }
 
+  /// Gösterge alarmının (0170) seviyesini hesaplamak için çekilecek GÜNLÜK
+  /// seri; kapsam dışıysa `null` (Ar-Ge 14 Kas 02:03 #5, Alarmlarım
+  /// satırındaki "EMA50 ₺4.212 · %1,4 kaldı").
+  ///
+  /// Sunucu seviyeyi alarm sembolünün kendi günlük serisinden hesaplar
+  /// (`_shared/price_history.ts › fetchGunlukNoktalar(sembol)`, 2 yıl);
+  /// istemci AYNI sembolü ve aynı pencereyi ([gostergeAlarmSerisiAraligi])
+  /// ister ki satırdaki sayı push'un karar verdiği sayıyla aynı olsun
+  /// (madde 1 ve 2: kaynak ve ölçek alarm fiyatıyla aynı). Kapsam
+  /// [gostergeAlarmiKapsamindaMi]: altın ve TL dövizde seri ile canlı fiyat
+  /// ayrı kaynak, değer yazılmaz (madde 3).
+  static String? gostergeAlarmSerisi(String sembol) =>
+      gostergeAlarmiKapsamindaMi(sembol) ? sembol.trim() : null;
+
+  /// [gostergeAlarmSerisi] penceresi: sunucunun `fetchYahooNoktalari(…,
+  /// '2y')` / kripto ve TEFAS'ta 730 günü. Günlük çözünürlük
+  /// (`PriceService._intervalFor('2y')` → `1d`). TEFAS'ın ay cinsinden
+  /// periyodunda '2y' yok (3 aya düşerdi, EMA200 hiç çıkmazdı): 3 yıl
+  /// istenir, hesap sunucu gibi son 730 güne kırpar
+  /// (`gostergeKapanislari`).
+  static String gostergeAlarmSerisiAraligi(String seri) =>
+      seri.startsWith('TEFAS:') ? '3y' : '2y';
+
   /// Temettü olaylarının (Yahoo `events=div`) çekileceği sembol; olay
   /// aranmayacaksa `null`.
   ///
