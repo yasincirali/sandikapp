@@ -8330,6 +8330,38 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yrKilitSatir => 'Yıllık rapor Premium\'da';
 
   @override
+  String yrKilitSayim(String yil, String kayitlar) {
+    return '$yil yılında $kayitlar kayıtlı · raporun Premium\'da hazır';
+  }
+
+  @override
+  String yrKilitSatisParca(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count satışın',
+      one: '1 satışın',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yrKilitTemettuParca(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count temettün',
+      one: '1 temettün',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yrKilitVe(String a, String b) {
+    return '$a ve $b';
+  }
+
+  @override
   String get yrBos => 'Raporlanacak kayıt yok';
 
   @override
@@ -10961,6 +10993,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get kapanisYillikRapor => 'Yıllık raporda gör';
+
+  @override
+  String get kapanisYillikRaporKilitli =>
+      'Bu satışın yıllık raporu Premium\'da';
 
   @override
   String sattiklarinSatir(int count) {

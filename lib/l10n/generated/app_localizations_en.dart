@@ -8446,6 +8446,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yrKilitSatir => 'The annual report is part of Premium';
 
   @override
+  String yrKilitSayim(String yil, String kayitlar) {
+    return '$kayitlar recorded in $yil · your report is ready in Premium';
+  }
+
+  @override
+  String yrKilitSatisParca(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sales',
+      one: '1 sale',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yrKilitTemettuParca(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dividends',
+      one: '1 dividend',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yrKilitVe(String a, String b) {
+    return '$a and $b';
+  }
+
+  @override
   String get yrBos => 'Nothing to report yet';
 
   @override
@@ -11135,6 +11167,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kapanisYillikRapor => 'See in yearly report';
+
+  @override
+  String get kapanisYillikRaporKilitli =>
+      'This sale\'s yearly report is in Premium';
 
   @override
   String sattiklarinSatir(int count) {

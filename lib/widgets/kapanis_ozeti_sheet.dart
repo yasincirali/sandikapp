@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/magaza.dart';
 import '../l10n/l10n.dart';
 import '../models/kapanis_ozeti.dart';
 import '../screens/yillik_rapor_screen.dart';
-import '../services/remote_config_service.dart';
+import '../providers/preferences_provider.dart' show premiumKilitliProvider;
+import '../providers/premium_provider.dart'
+    show premiumOzellikleriGorunurProvider;
+import '../screens/paywall_screen.dart';
 import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import '../utils/money_format.dart';
@@ -27,9 +31,18 @@ import 'tam_ekran/grafik_paylasimi.dart' show grafikPaylasimKisaBaglanti;
 /// - "Yıllık raporda gör" yalnız rapor satırının göründüğü yerde
 ///   (`premiumOzellikleriGorunur`, Raporlar kapısıyla aynı anahtar);
 ///   kapalıyken bağlantı da yok, yoksa gizli ekran bu yoldan açılırdı.
+///   Kapı provider'dan okunur (`RemoteConfigService.instance` değil):
+///   satın alma/geri yükleme sayfa açıkken bağlantıyı günceller.
+/// - Ücretsizde bağlantı "Bu satışın yıllık raporu Premium'da" der ve
+///   dokununca DOĞRUDAN paywall açar (`kapanis_rapor`, yasin 2026-11-13):
+///   önce tam sayfa kilit, sonra paywall iki adımdı. Paywall yalnız
+///   dokunuşla açılır; sayfa kendiliğinden satış istemez.
 /// - Paylaşım ve rapor sayfa KAPANDIKTAN sonra açılır: iki katman modal
 ///   olmasın (`showShareSheet` ile aynı gerekçe).
-enum _Secim { paylas, rapor }
+enum _Secim { paylas, rapor, paywall }
+
+/// Kapanış özetindeki kilitli rapor bağlantısının analitik kaynağı.
+const kapanisRaporPaywallKaynagi = 'kapanis_rapor';
 
 Future<void> showKapanisOzeti(
   BuildContext context,
@@ -65,6 +78,9 @@ Future<void> showKapanisOzeti(
           adaptiveRoute<void>(
               settings: const RouteSettings(name: 'yillik_rapor'),
               builder: (_) => const YillikRaporScreen()));
+      return;
+    case _Secim.paywall:
+      await PaywallScreen.show(context, source: kapanisRaporPaywallKaynagi);
       return;
     case null:
       break;
@@ -121,7 +137,7 @@ String kapanisSureMetni(AppLocalizations l, KapanisOzeti o) {
   return l.kapanisSureBirGundenKisa;
 }
 
-class KapanisOzetiSayfasi extends StatelessWidget {
+class KapanisOzetiSayfasi extends ConsumerWidget {
   const KapanisOzetiSayfasi(
       {super.key, required this.ozet, this.tutarGizli = false});
 
@@ -131,7 +147,7 @@ class KapanisOzetiSayfasi extends StatelessWidget {
   final bool tutarGizli;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final c = context.c;
     final kar = ozet.karTry;
@@ -139,7 +155,8 @@ class KapanisOzetiSayfasi extends StatelessWidget {
     final kazanc = ozet.kazanc;
     final cumle = l.kapanisTuttun(
         ozet.ad, trBelirtme(ozet.ad), kapanisSureMetni(l, ozet));
-    final raporAcik = RemoteConfigService.instance.premiumOzellikleriGorunur;
+    final raporAcik = ref.watch(premiumOzellikleriGorunurProvider);
+    final raporKilitli = ref.watch(premiumKilitliProvider);
     final h = SandikSpace.screenH(context);
     return SafeArea(
       top: false,
@@ -194,8 +211,18 @@ class KapanisOzetiSayfasi extends StatelessWidget {
                   style: TextButton.styleFrom(
                       minimumSize: SandikTouch.minSize,
                       padding: EdgeInsets.zero),
-                  onPressed: () => Navigator.pop(context, _Secim.rapor),
-                  child: Text(l.kapanisYillikRapor),
+                  onPressed: () => Navigator.pop(
+                      context, raporKilitli ? _Secim.paywall : _Secim.rapor),
+                  // Kilit ikonu: "Premium'da" metinde de yazılı, anlam
+                  // yalnız ikonda değil (HIG renk/ikon körlüğü).
+                  child: raporKilitli
+                      ? Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.lock_outline_rounded,
+                              size: SandikSpace.md),
+                          const SizedBox(width: SandikSpace.xs),
+                          Flexible(child: Text(l.kapanisYillikRaporKilitli)),
+                        ])
+                      : Text(l.kapanisYillikRapor),
                 ),
               ),
             ],

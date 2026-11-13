@@ -13727,6 +13727,30 @@ abstract class AppLocalizations {
   /// **'Yıllık rapor Premium\'da'**
   String get yrKilitSatir;
 
+  /// Ücretsiz kullanıcıda yıllık rapor kilit satırı: kaydı olan en yeni yılın satış/temettü ADEDİ kullanıcının kendi defterinden; tutar yok.
+  ///
+  /// In tr, this message translates to:
+  /// **'{yil} yılında {kayitlar} kayıtlı · raporun Premium\'da hazır'**
+  String yrKilitSayim(String yil, String kayitlar);
+
+  /// yrKilitSayim içindeki satış adedi parçası.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 satışın} other{{count} satışın}}'**
+  String yrKilitSatisParca(int count);
+
+  /// yrKilitSayim içindeki temettü adedi parçası.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 temettün} other{{count} temettün}}'**
+  String yrKilitTemettuParca(int count);
+
+  /// İki sayım parçasını bağlar (4 satışın ve 3 temettün).
+  ///
+  /// In tr, this message translates to:
+  /// **'{a} ve {b}'**
+  String yrKilitVe(String a, String b);
+
   /// No description provided for @yrBos.
   ///
   /// In tr, this message translates to:
@@ -17815,6 +17839,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yıllık raporda gör'**
   String get kapanisYillikRapor;
+
+  /// Kapanış özetinde ücretsiz kullanıcıya rapor bağlantısı; dokununca doğrudan paywall.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu satışın yıllık raporu Premium\'da'**
+  String get kapanisYillikRaporKilitli;
 
   /// No description provided for @sattiklarinSatir.
   ///
