@@ -132,7 +132,12 @@ cron işi `calendar-nudge-mevduat-vade`; mevcut anlar değişmez.
 - [ ] İsteğe bağlı kuru deneme: fonksiyona `{"occasion":"deposit_matured","dry_run":true}`
       (x-cron-secret ile) → `would_send` / `users` sayısı döner, push gitmez.
 
-## ⏳ 2026-11-06 Tokyo'yu kapatma (duraklat → sil) + Frankfurt yerel yedeği
+## ✅ 2026-11-06 Tokyo'yu kapatma (duraklat → sil) + Frankfurt yerel yedeği
+
+> **Bitti (2026-11-13):** RevenueCat Frankfurt'ta doğrulandı, ilk yedek 8 Kasım (92 tablo, 0177),
+> Tokyo 8 Kasım'da duraklatıldı, 13 Kasım'da silindi; deploy'dan `tokyo` seçeneği ve
+> `tool/sema_esitlik.py` kalktı. Kalıcı kural: RC `sunucu` = `frankfurt` kalır.
+> Haftalık/günlük yedek senin bilgisayarında zamanlanmış görev (`sandik yedek`).
 
 Neden: Tokyo 18 Ekim'den beri donmuş; verisi bayat, geri dönüş/yedek değeri
 yok, Supabase limitlerini yiyor ve hesabını sonradan silenlerin verisi hâlâ
