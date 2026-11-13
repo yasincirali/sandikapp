@@ -36,6 +36,13 @@ import 'sandik_async_button.dart';
 import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import '../utils/tr_format.dart';
 
+/// Sayfanın "bugün"ü. Kart [BugunKarti.saat] ile aynı anı kullanmalı: kart
+/// sabit saatle test edilirken sayfa gerçek saati okuyunca kalan ay sayısı
+/// (dolayısıyla "ayda ₺Z daha gerek") günden güne kayıyordu (2026-11-13,
+/// `hedef_tarihi_kart_test` takvim günü değişince kırıldı).
+@visibleForTesting
+DateTime Function() hedefSheetSaati = DateTime.now;
+
 /// Hazır hedef merdiveni (TRY). Basamaklar yukarı doğru genişler: 100
 /// binlik portföye 250 bin anlamlı bir hedef, 10 milyonluğa 25 milyon.
 const hedefMerdiveni = <int>[
@@ -157,7 +164,7 @@ class _HedefSheetState extends ConsumerState<_HedefSheet> {
       });
 
   Future<void> _takvimdenSec() async {
-    final bugun = DateTime.now();
+    final bugun = hedefSheetSaati();
     final yarin = DateTime(bugun.year, bugun.month, bugun.day + 1);
     final t = await pickSandikDate(
       context,
@@ -427,7 +434,7 @@ class _TarihBolumu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final bugun = DateTime.now();
+    final bugun = hedefSheetSaati();
     final secenek = hedefTarihSecenegi(tarih, bugun);
     final dil = Localizations.localeOf(context).languageCode == 'en'
         ? 'en_US'
@@ -581,7 +588,7 @@ class HedefProfilSatiri extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hedefVar = ref.watch(portfolioGoalProvider) > 0;
     final oneri = HedefOnerisiDurumu.coz(ref.watch(hedefOnerisiProvider));
-    if (hedefVar || oneri.gorunur(DateTime.now())) {
+    if (hedefVar || oneri.gorunur(hedefSheetSaati())) {
       return const SizedBox.shrink();
     }
     final l = context.l10n;

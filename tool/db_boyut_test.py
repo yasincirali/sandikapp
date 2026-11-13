@@ -57,6 +57,16 @@ class DbBoyutTest(unittest.TestCase):
         self.assertEqual(fn["toplam"], 760)
         self.assertEqual(fn["yollar"]["widget-fiyat"], 40)
 
+    def test_log_kaynak_ve_rest_tablosu(self):
+        kaynak = db.fn_coz({"result": [{"yol": "edge_logs", "n": "19000"},
+                                       {"yol": "function_edge_logs", "n": 3000}]})
+        rest = db.fn_coz({"result": [{"yol": "kripto_fiyat", "n": 9000},
+                                     {"yol": "rpc/portfoy_ozet", "n": 10}]})
+        metin, _ = db.rapor(self._s(kaynak=kaynak, rest=rest))
+        self.assertIn("| Log kaynağı (son 24 saat) | Satır |", metin)
+        self.assertIn("| `edge_logs` | 19.000 |", metin)
+        self.assertIn("| `rpc/portfoy_ozet` | 10 |", metin)
+
     def test_fn_coz_metin_sayi(self):
         self.assertEqual(db.fn_coz({"result": [{"n": "42"}]})["toplam"], 42)
 
