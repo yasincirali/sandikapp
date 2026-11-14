@@ -228,10 +228,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get otpWrongEmail =>
-      'Yanlış e-posta mı girdin? Geri dönüp tekrar deneyebilirsin.';
-
-  @override
   String get settings => 'Ayarlar';
 
   @override
@@ -5930,6 +5926,17 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cihazListesiBos => 'Kayıtlı cihaz yok.';
+
+  @override
+  String get ePostaOneriSoru => 'Bunu mu demek istedin? ';
+
+  @override
+  String get otpEpostayiDegistir => 'E-postayı değiştir';
+
+  @override
+  String otpAdresKontrol(String eposta) {
+    return 'Kod hâlâ gelmediyse adresi kontrol et: $eposta';
+  }
 
   @override
   String get otpSpamIpucu => 'Kod gelmediyse Gereksiz / Spam klasörüne de bak.';

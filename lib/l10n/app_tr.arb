@@ -90,7 +90,6 @@
       }
     }
   },
-  "otpWrongEmail": "Yanlış e-posta mı girdin? Geri dönüp tekrar deneyebilirsin.",
   "settings": "Ayarlar",
   "settingsAppearance": "Görünüm",
   "settingsNotifications": "Bildirimler",
@@ -4025,6 +4024,10 @@
   },
   "cihazKaldirildi": "Cihaz kaldırıldı",
   "cihazListesiBos": "Kayıtlı cihaz yok.",
+  "ePostaOneriSoru": "Bunu mu demek istedin? ",
+  "otpEpostayiDegistir": "E-postayı değiştir",
+  "otpAdresKontrol": "Kod hâlâ gelmediyse adresi kontrol et: {eposta}",
+  "@otpAdresKontrol": {"placeholders": {"eposta": {"type": "String"}}},
   "otpSpamIpucu": "Kod gelmediyse Gereksiz / Spam klasörüne de bak.",
   "welcomeSkip": "Atla",
   "welcomeNext": "Devam",

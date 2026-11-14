@@ -213,5 +213,28 @@ void main() {
       // Uyarının kendisi (tost/diyalog) kapanana kadar bekle.
       await tester.pump(const Duration(seconds: 5));
     });
+
+    // Yazım önerisi (2026-11-14): gmial.com biçimce geçerli ama kod hiç
+    // gelmez. Alan bırakılınca öneri çıkar, dokununca adres düzelir.
+    testWidgets('yazım hatalı alan adına "Bunu mu demek istedin?" önerisi',
+        (tester) async {
+      await ac(tester);
+      await tester.enterText(alan(l.email), 'ahmet@gmial.com');
+      await tester.pump();
+      // Alan dokunulmadan (odak bırakılmadan) öneri yazarken sözü kesmez.
+      expect(find.textContaining(l.ePostaOneriSoru, findRichText: true),
+          findsNothing);
+      await tester.testTextInput.receiveAction(TextInputAction.next);
+      await tester.pump();
+      final oneri = find.textContaining('ahmet@gmail.com', findRichText: true);
+      expect(oneri, findsOneWidget);
+      await tester.tap(oneri);
+      await tester.pump();
+      final alanMetni =
+          tester.widget<TextField>(alan(l.email)).controller!.text;
+      expect(alanMetni, 'ahmet@gmail.com');
+      expect(find.textContaining(l.ePostaOneriSoru, findRichText: true),
+          findsNothing);
+    });
   });
 }
