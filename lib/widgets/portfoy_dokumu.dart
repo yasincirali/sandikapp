@@ -11,6 +11,7 @@ import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/disa_aktarim/disa_aktarim_service.dart';
 import '../services/disa_aktarim/rapor_belgeleri.dart';
+import '../services/share_card_service.dart';
 import '../utils/friendly_error.dart';
 import 'disa_aktarim_bicim_sayfasi.dart';
 
@@ -33,6 +34,9 @@ Future<void> portfoyDokumunuPaylas(BuildContext context, {Rect? kaynak}) async {
     await PaywallScreen.show(context, source: 'portfoy_disa_aktar');
     return;
   }
+  // Raporlar sayfasının satırı kapandı; popover'ın bakacağı yer çağıranın
+  // (Raporlar düğmesi) kendisi. Yoksa servis ekran ortasına düşer.
+  kaynak ??= ShareCardService.originOf(context);
   final bicim = await disaAktarimBicimiSor(context);
   if (bicim == null || !context.mounted) return;
   final durum = kap.read(portfolioProvider).valueOrNull;
