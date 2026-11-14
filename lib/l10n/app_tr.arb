@@ -5284,6 +5284,8 @@
   "sgnPremiumGec": "Premium'a geç",
   "cmpSinirPremium": "Premium ile 5 seriye kadar",
   "cmpSinirDolu": "En fazla 5 varlık",
+  "cmpCipKilitliSemantics": "{ad} kıyasa ekle, Premium",
+  "@cmpCipKilitliSemantics": {"placeholders": {"ad": {"type": "String"}}},
   "pwFiyatAylik": "{fiyat}/ay",
   "@pwFiyatAylik": {
     "placeholders": {

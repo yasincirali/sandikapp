@@ -7782,6 +7782,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmpSinirDolu => 'At most 5 assets';
 
   @override
+  String cmpCipKilitliSemantics(String ad) {
+    return 'Add $ad to comparison, Premium';
+  }
+
+  @override
   String pwFiyatAylik(String fiyat) {
     return '$fiyat/mo';
   }

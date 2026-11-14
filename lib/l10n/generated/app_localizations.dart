@@ -12527,6 +12527,12 @@ abstract class AppLocalizations {
   /// **'En fazla 5 varlık'**
   String get cmpSinirDolu;
 
+  /// No description provided for @cmpCipKilitliSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} kıyasa ekle, Premium'**
+  String cmpCipKilitliSemantics(String ad);
+
   /// No description provided for @pwFiyatAylik.
   ///
   /// In tr, this message translates to:

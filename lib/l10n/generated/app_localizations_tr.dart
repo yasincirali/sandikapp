@@ -7671,6 +7671,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cmpSinirDolu => 'En fazla 5 varlık';
 
   @override
+  String cmpCipKilitliSemantics(String ad) {
+    return '$ad kıyasa ekle, Premium';
+  }
+
+  @override
   String pwFiyatAylik(String fiyat) {
     return '$fiyat/ay';
   }

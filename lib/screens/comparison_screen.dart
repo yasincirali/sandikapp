@@ -102,6 +102,13 @@ class ComparisonScreen extends ConsumerStatefulWidget {
   /// tahakkukudur, sembolü `MEVDUAT:<uuid>` gibi kullanıcıya gösterilemez
   /// ve satırın Al/Sat düğmeleri onlara uymaz), elle fiyatlanan ve "diğer"
   /// (piyasa serisi yok). Bunlarda varlık ekranı kendi seçicisini korur.
+  /// Test kancası: verilirse seriler ağdan değil buradan gelir (sembol,
+  /// gün → normalize seri). Widget testleri getiri cümlesini ve kilitli çip
+  /// önizlemesini gerçek sayıyla sınar; üretimde hep null.
+  @visibleForTesting
+  static Future<NormalizedSeries?> Function(String ticker, int days)?
+      testSeriKaynagi;
+
   static bool varligiAcabilir(Asset a) =>
       !a.type.sozlesmeli && !a.isManualPrice && a.type != AssetType.diger;
 
@@ -160,12 +167,19 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// `gain`/`loss` BİLEREK kullanılmadı: bu grafikte yeşil/kırmızı "kâr/
   /// zarar" anlamına gelmez, yalnızca farklı varlıkları ayırır. Aynı renkleri
   /// kullanmak kullanıcıya yanlış anlam okutur.
+  ///
+  /// Dördüncü ve beşinci renk eskiden ekrana özgü iki ham değerdi (menekşe
+  /// `9B8AFB`, turkuaz `4DD0C7`). Ar-Ge 14 Kas 22:03 #8: `SandikPalette`'te
+  /// amber/mavi/altın dışında kâr-zarar anlamı taşımayan ton yok (`danger`
+  /// hata kırmızısı, `text*` gri), bu yüzden en yakın iki MARKA tonu
+  /// alındı: Yarış ekranının yarışçı paletinden orkide ve nane — o liste de
+  /// aynı kuralla seçilmiş ("renk kimlik anlatır, kâr/zarar değil").
   static List<Color> _seriesColors(SandikPalette p) => [
         p.amberFill,
         p.info,
         p.gold,
-        const Color(0xFF9B8AFB),
-        const Color(0xFF4DD0C7),
+        Sandik.yarisci[3], // orkide
+        Sandik.yarisci[1], // nane
       ];
 
   /// Odaktaki serinin gerçek mumları (araç çubuğu, 2026-10-10 gece).
@@ -280,6 +294,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 
   Future<NormalizedSeries?> _fetch(String ticker, int days) async {
+    final testKaynagi = ComparisonScreen.testSeriKaynagi;
+    if (testKaynagi != null) return testKaynagi(ticker, days);
     // Varlık ekranından gelen varlık BİRİM serisiyle çizilir — bkz.
     // [ComparisonScreen.baslangicVarligi]. Pencere motoru portföy serisiyle
     // aynı (`getPortfolioHistory`), yani grafikteki öteki satırlarla aynı
@@ -1102,8 +1118,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         const SizedBox(width: 3),
         Text(
           fmtPct(pct.abs(), digits: 2),
+          // w700 → w600: unslop ağırlık tavanı (Ar-Ge 14 Kas 22:03 #8).
           style: context.t.bodyMedium
-              ?.copyWith(color: color, fontWeight: FontWeight.w700),
+              ?.copyWith(color: color, fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -1240,10 +1257,20 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         for (final b in _benchmarks)
           Builder(builder: (context) {
             final on = _selected.contains(b);
-            final disabled = !on && full;
+            // Ücretsiz sınırda dolu grafikte çip KİLİTLİDİR, devre dışı
+            // değil (Ar-Ge 14 Kas 22:03 #1): eskiden soluk (text36) görünüp
+            // dokununca paywall açıyordu, ekran okuyucu da "kıyasa ekle"
+            // diyordu. Kilitli çip normal tonda yazar, `+` yerine kilit
+            // taşır ve etiketi Premium'u söyler; yalnız renkle anlam kalmaz.
+            // Premium'un 5'lik sınırında dolu grafik gerçekten devre dışıdır.
+            final cipKilitli = !on && kilitli;
+            final disabled = !on && full && !kilitli;
             return SandikTappable(
-              semanticLabel:
-                  on ? '${b.name} zaten kıyasta' : '${b.name} kıyasa ekle',
+              semanticLabel: on
+                  ? '${b.name} zaten kıyasta'
+                  : cipKilitli
+                      ? context.l10n.cmpCipKilitliSemantics(b.name)
+                      : '${b.name} kıyasa ekle',
               onTap: on
                   ? null
                   : kilitli
@@ -1264,8 +1291,14 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SandikIkonGecisi(on ? Icons.check_rounded : Icons.add_rounded,
-                        boyut: 14, renk: on ? p.amberText : p.text58),
+                    SandikIkonGecisi(
+                        on
+                            ? Icons.check_rounded
+                            : cipKilitli
+                                ? Icons.lock_outline_rounded
+                                : Icons.add_rounded,
+                        boyut: 14,
+                        renk: on ? p.amberText : p.text58),
                     const SizedBox(width: SandikSpace.xs),
                     Text(
                       b.name,
