@@ -403,7 +403,7 @@ void main() {
       // `paylasim_tek_kapi_test`'te.
       final servis = File('lib/services/share_card_service.dart')
           .readAsStringSync();
-      expect('sharePositionOrigin: origin'.allMatches(servis).length,
+      expect('sharePositionOrigin: _kaynak(origin)'.allMatches(servis).length,
           greaterThanOrEqualTo(2),
           reason: 'shareXFiles ve share ikisi de dikdörtgeni iletmeli');
     });
