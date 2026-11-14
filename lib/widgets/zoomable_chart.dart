@@ -1,8 +1,9 @@
-import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/physics.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../theme/sandik.dart';
 import '../l10n/l10n.dart';
@@ -247,6 +248,13 @@ class ZoomableChart extends StatefulWidget {
   /// `null` → eski davranış (yalnız aralık değişimi, pencere korunur).
   final Object? sifirlamaAnahtari;
 
+  /// X ekseninin mutlak kökeni (x ile aynı birimde; Performans'ta dönem
+  /// başı, Unix gününden). İki dönemin kökeni de verilmişse ve biri
+  /// ötekinin penceresini kapsıyorsa dönem geçişi KAMERA olur: çizgi biçim
+  /// değiştirmez, pencere yakınlaşır/uzaklaşır (yasin 2026-11-14, "C").
+  /// `null` → nokta morfu (Bugün'ün dakika ekseni gibi farklı birimler).
+  final double? kameraKokeni;
+
   const ZoomableChart({
     super.key,
     required this.fullMinX,
@@ -270,6 +278,7 @@ class ZoomableChart extends StatefulWidget {
     this.imlecEtiketiBuilder,
     this.titresimNoktalari = const {},
     this.sifirlamaAnahtari,
+    this.kameraKokeni,
   });
 
   @override
@@ -277,7 +286,7 @@ class ZoomableChart extends StatefulWidget {
 }
 
 class _ZoomableChartState extends State<ZoomableChart>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Controller yoksa iç state — verildiyse controller kaynak.
   double _localMinX = 0;
   double _localMaxX = 0;
@@ -440,17 +449,6 @@ class _ZoomableChartState extends State<ZoomableChart>
   //
   // Hareketi azalt açıkken ikisi de kurulmaz: yeni çizim tek karede gelir.
 
-  /// Köprünün asıl hedefi (builder'ın verdiği seri); köprü yokken null.
-  LineChartData? _kopruHedef;
-
-  /// Köprü sürerken LineChart'a verilen sıklaşmış veri ve süresi.
-  LineChartData? _kopruCizim;
-  Duration _kopruSure = Duration.zero;
-  Timer? _kopruBitis;
-
-  /// Her yeni köprü bir öncekinin geç kalan geri çağrılarını geçersiz kılar.
-  int _kopruNo = 0;
-
   /// Son dönem değişiminden beri görünür bir değişiklik çizildi mi. Dönem
   /// sekmesi önbellekten değil ağdan geliyorsa anahtar ÖNCE, veri SONRA
   /// değişir; sönme veri geldiği karede oynamalı.
@@ -459,14 +457,6 @@ class _ZoomableChartState extends State<ZoomableChart>
   /// Sönen eski çizim (çubuk sayısı değişen dönem geçişi) ve kimliği.
   LineChartData? _solan;
   int _solmaNo = 0;
-
-  void _kopruyuBirak() {
-    _kopruBitis?.cancel();
-    _kopruBitis = null;
-    _kopruHedef = null;
-    _kopruCizim = null;
-    _kopruNo++;
-  }
 
   /// Eski ve yeni seriyi ortak nokta sayısına sıklaştırır. Köprü
   /// kurulamıyorsa (boşluklu seri, noktası gösterilen çubuk, tek nokta)
@@ -533,39 +523,310 @@ class _ZoomableChartState extends State<ZoomableChart>
     return sonuc;
   }
 
-  /// Bu karede LineChart'a ne, hangi sürede verilecek. [veri] builder'ın
-  /// verdiği seridir; köprü/sönme kararı burada, build'in geri kalanı
-  /// yalnız sonucu çizer.
-  ({LineChartData cizim, Duration sure}) _cizimSec(
-      BuildContext context, LineChartData veri) {
+  // ── Geçiş motoru: tek saat, yay, kamera (yasin 2026-11-14) ────────────
+  //
+  // yasin (TestFlight): "zaman seçimleri arasında geçişte dikey uzunluk
+  // değişiyor ve y etiketlerinin yerleri değişiyor"; artifact'te seçtiği
+  // çözüm "C · kamera + yay", şartı "kararlı, sıçramasız, akıcı".
+  //
+  // Önceki düzen fl_chart'ın kendi lerp'ine dayanıyordu. O lerp minY/maxY
+  // ile birlikte ETİKET ve IZGARA ADIMINI da ara değerlerden geçirir
+  // (25 bin → 31.700 → 50 bin): etiketler her karede başka sayıya düşer,
+  // genişlikleri değişip küçülür, sınıra denk gelen bir anda kaybolur.
+  // Şimdi:
+  //  • LineChart'a hep SIFIR süreyle hazır kare verilir; kareyi bu saat
+  //    üretir. Çizgi, ölçek, ızgara ve etiket aynı saatten okur, ayrışmaz.
+  //  • Saat süre değil yay sürer ([_yay]: tepki ~0,42 sn, sönüm 0,9 —
+  //    gözle görülür sekme yok). Yarıda yeni dönem seçilirse hız korunur,
+  //    hareket bulunduğu yerden döner; süreli eğri sıfır hızdan başlayıp
+  //    duraklıyordu.
+  //  • Kamera ([ZoomableChart.kameraKokeni]): iki dönem aynı zaman ekseninde
+  //    yazılabiliyorsa çizgi biçim değiştirmez, pencere yakınlaşır ya da
+  //    uzaklaşır. Pencereyi kapsayan seri ALTTA çizilir; öteki dönemin
+  //    (sıklığı farklı) serisi ÜSTTE solar/belirir ve Y bandı ikisinin
+  //    ağırlığıyla karışır — ilk kare önceki çizimin, son kare yeni çizimin
+  //    pikseli pikseline aynısıdır. Her ara kare gerçek veridir.
+  //  • Kamera kurulamıyorsa (Bugün ↔ dönem, kökensiz grafik) nokta morfu:
+  //    köprü ([_kopruKur]) iki seriyi ortak nokta sayısına sıklaştırır.
+  //  • Y etiketi ve yatay ızgara bu sınıfta çizilir ([_takimlar]): her
+  //    etiket kendi DEĞERİNE bağlıdır, ölçekle o değerin yeni yerine kayar;
+  //    adım değişince eski takım söner, yenisi belirir, ara değer yazılmaz.
+  //
+  // Hareketi azalt açıkken hiçbiri kurulmaz: yeni çizim tek karede gelir.
+
+  static final SpringDescription _yay =
+      SpringDescription.withDampingRatio(mass: 1, stiffness: 224, ratio: 0.9);
+
+  AnimationController? _gecisSaati;
+
+  /// Süren geçiş: [_Morf] ya da [_Kamera]; durgunken null.
+  Object? _gecis;
+  int _gecisNo = 0;
+
+  /// Son çizilen karenin kaynağı. Kamera "nereden" sorusunu buradan
+  /// yanıtlar: hangi kurucu, hangi köken, hangi pencere (o kurucunun
+  /// koordinatında). Morf karesinde kurucu yok (kamera kurulmaz).
+  LineChartData Function(double, double)? _sonKurucu;
+  double? _sonKoken;
+  double _sonMin = 0;
+  double _sonMax = 0;
+
+  void _gecisBaslat(Object g) {
+    final c = _gecisSaati ??= AnimationController.unbounded(vsync: this)
+      ..addListener(() {
+        if (mounted && !_kurulumda && _gecis != null) setState(() {});
+      });
+    final hiz = _gecis != null && c.isAnimating ? c.velocity * 0.6 : 0.0;
+    _gecis = g;
+    final no = ++_gecisNo;
+    final k = _kurulumda;
+    _kurulumda = true;
+    c.value = 0;
+    c
+        .animateWith(SpringSimulation(_yay, 0, 1, hiz,
+            tolerance: const Tolerance(distance: 0.002, velocity: 0.02)))
+        .then((_) {
+      if (!mounted || no != _gecisNo) return;
+      setState(_gecisiBirak);
+    });
+    _kurulumda = k;
+  }
+
+  void _gecisiBirak() {
+    _gecis = null;
+    _gecisNo++;
+    _gecisSaati?.stop();
+  }
+
+  _Kare _durgun(LineChartData veri) {
+    _sonKurucu = widget.builder;
+    _sonKoken = widget.kameraKokeni;
+    _sonMin = veri.minX;
+    _sonMax = veri.maxX;
+    return _Kare(veri, veri);
+  }
+
+  _Kare _gecisKaresi(Object g, double p) {
+    if (g is _Kamera) return _kameraKaresi(g, p);
+    final m = g as _Morf;
+    _sonKurucu = null;
+    return _Kare(_morfKaresi(m.eski, m.yeni, p.clamp(0.0, 1.02)), m.hedef);
+  }
+
+  /// fl_chart'ın `LineChartData.lerp`'i yerine: sınırlar, çubuklar ve ek
+  /// çizgiler ara değerden geçer, geri kalanı hedefin. O lerp null → değer
+  /// adımında (otomatik → açık aralık) ilk karede 0 üretip assert'e
+  /// düşüyordu; adımı bir taraf null ise ötekinden alırız. Adım ara değerden
+  /// geçmeli: hedefin adımı eskinin aralığına uygulanırsa (dakika ↔ gün)
+  /// eksen milyonlarca tik dener.
+  static LineChartData _morfKaresi(LineChartData e, LineChartData y, double t) {
+    double l(double a, double b) => a + (b - a) * t;
+    double? li(double? a, double? b) =>
+        a == null || b == null ? (b ?? a) : l(a, b);
+    AxisTitles ax(AxisTitles a, AxisTitles b) => b.copyWith(
+        sideTitles: b.sideTitles.copyWith(
+            interval: li(a.sideTitles.interval, b.sideTitles.interval)));
+    final et = e.titlesData;
+    final yt = y.titlesData;
+    return y.copyWith(
+      minX: l(e.minX, y.minX),
+      maxX: l(e.maxX, y.maxX),
+      minY: l(e.minY, y.minY),
+      maxY: l(e.maxY, y.maxY),
+      lineBarsData: [
+        for (var i = 0; i < y.lineBarsData.length; i++)
+          i < e.lineBarsData.length
+              ? LineChartBarData.lerp(e.lineBarsData[i], y.lineBarsData[i], t)
+              : y.lineBarsData[i],
+      ],
+      extraLinesData: ExtraLinesData.lerp(e.extraLinesData, y.extraLinesData, t),
+      titlesData: yt.copyWith(
+        leftTitles: ax(et.leftTitles, yt.leftTitles),
+        topTitles: ax(et.topTitles, yt.topTitles),
+        rightTitles: ax(et.rightTitles, yt.rightTitles),
+        bottomTitles: ax(et.bottomTitles, yt.bottomTitles),
+      ),
+      gridData: y.gridData.copyWith(
+        horizontalInterval:
+            li(e.gridData.horizontalInterval, y.gridData.horizontalInterval),
+        verticalInterval:
+            li(e.gridData.verticalInterval, y.gridData.verticalInterval),
+      ),
+    );
+  }
+
+  /// Eski pencere yenisinin içindeyse (ya da tersi) kamera; yoksa null.
+  _Kamera? _kameraKur(LineChartData veri) {
+    final yeniKoken = widget.kameraKokeni;
+    final eskiKoken = _sonKoken;
+    final eskiKurucu = _sonKurucu;
+    if (yeniKoken == null || eskiKoken == null || eskiKurucu == null) {
+      return null;
+    }
+    if (identical(eskiKurucu, widget.builder)) return null;
+    // eski x + d = yeni x
+    final d = eskiKoken - yeniKoken;
+    final bMin = _sonMin + d;
+    final bMax = _sonMax + d;
+    final sMin = veri.minX;
+    final sMax = veri.maxX;
+    if (bMax - bMin <= 0 || sMax - sMin <= 0) return null;
+    final eps = (sMax - sMin).abs() * 0.002 + 1e-9;
+    final disari = sMin <= bMin + eps && sMax >= bMax - eps;
+    final iceri = bMin <= sMin + eps && bMax >= sMax - eps;
+    if (disari == iceri) return null;
+    return disari
+        // Uzaklaşma: yeni seri eski pencereyi kapsar → altta yeni, eski
+        // (daha sık) seri üstte söner.
+        ? _Kamera(
+            hedef: veri,
+            alt: widget.builder,
+            altKayma: 0,
+            altKoken: yeniKoken,
+            ust: eskiKurucu,
+            ustKayma: d,
+            ustGiris: false,
+            basMin: bMin,
+            basMax: bMax,
+            sonMin: sMin,
+            sonMax: sMax)
+        // Yakınlaşma: eski seri yeni pencereyi kapsar → altta eski, yeni
+        // seri sonda belirir.
+        : _Kamera(
+            hedef: veri,
+            alt: eskiKurucu,
+            altKayma: d,
+            altKoken: eskiKoken,
+            ust: widget.builder,
+            ustKayma: 0,
+            ustGiris: true,
+            basMin: bMin,
+            basMax: bMax,
+            sonMin: sMin,
+            sonMax: sMax);
+  }
+
+  _Kare _kameraKaresi(_Kamera k, double p) {
+    final q = p.clamp(0.0, 1.0);
+    // Sağ uç doğrusal, genişlik logaritmik: 1 ay → 5 yıl yakınlaşması göze
+    // sabit hızda görünür (doğrusal genişlikte ilk karelerde fırlardı).
+    final sag = k.basMax + (k.sonMax - k.basMax) * q;
+    final bu = k.basMax - k.basMin;
+    final su = k.sonMax - k.sonMin;
+    final uz = math.exp(math.log(bu) + (math.log(su) - math.log(bu)) * q);
+    final sol = sag - uz;
+    final a = k.alt(sol - k.altKayma, sag - k.altKayma);
+    final u = k.ust(sol - k.ustKayma, sag - k.ustKayma);
+    final w = Curves.easeInOut.transform(k.ustGiris
+        ? ((q - 0.55) / 0.45).clamp(0.0, 1.0)
+        : (1 - q / 0.45).clamp(0.0, 1.0));
+    double karis(double x, double y) => x + (y - x) * w;
+
+    final alt = _cizgiOpakligi(a, 1 - w * w)
+        .copyWith(minY: karis(a.minY, u.minY), maxY: karis(a.maxY, u.maxY));
+    _sonKurucu = k.alt;
+    _sonKoken = k.altKoken;
+    _sonMin = sol - k.altKayma;
+    _sonMax = sag - k.altKayma;
+    final eksen = w > 0.5 ? u : a;
+    if (w <= 0.001) return _Kare(alt, eksen);
+    return _Kare(alt, eksen, ust: _yalnizCizgi(u, alt), ustOpak: w);
+  }
+
+  /// Üst katman yalnız çizgiyi taşır: eksen yazısı, ızgara, ek çizgi ve
+  /// dokunma alttaki grafiğindir. Etiket rezervleri aynı kalır ki çizim
+  /// alanı birebir örtüşsün; Y bandı alttakinin.
+  static LineChartData _yalnizCizgi(LineChartData d, LineChartData ref) =>
+      d.copyWith(
+        minY: ref.minY,
+        maxY: ref.maxY,
+        gridData: const FlGridData(show: false),
+        titlesData: _bosEtiketler(ref.titlesData),
+        extraLinesData: const ExtraLinesData(),
+        rangeAnnotations: const RangeAnnotations(),
+        lineTouchData: const LineTouchData(enabled: false),
+        borderData: ref.borderData,
+      );
+
+  static AxisTitles _bosEksen(AxisTitles a) => a.copyWith(
+        axisNameWidget: a.axisNameWidget == null ? null : const SizedBox.shrink(),
+        sideTitles: a.sideTitles
+            .copyWith(getTitlesWidget: (_, __) => const SizedBox.shrink()),
+      );
+
+  static FlTitlesData _bosEtiketler(FlTitlesData t) => t.copyWith(
+        leftTitles: _bosEksen(t.leftTitles),
+        topTitles: _bosEksen(t.topTitles),
+        rightTitles: _bosEksen(t.rightTitles),
+        bottomTitles: _bosEksen(t.bottomTitles),
+      );
+
+  static LineChartData _cizgiOpakligi(LineChartData d, double a) {
+    if (a >= 0.999) return d;
+    Color? c(Color? x) => x?.withValues(alpha: x.a * a);
+    Gradient? g(Gradient? x) => x is LinearGradient
+        ? LinearGradient(
+            begin: x.begin,
+            end: x.end,
+            stops: x.stops,
+            tileMode: x.tileMode,
+            transform: x.transform,
+            colors: [for (final k in x.colors) k.withValues(alpha: k.a * a)])
+        : x;
+    BarAreaData alan(BarAreaData b) => BarAreaData(
+          show: b.show,
+          color: c(b.color),
+          gradient: g(b.gradient),
+          spotsLine: b.spotsLine,
+          cutOffY: b.cutOffY,
+          applyCutOffY: b.applyCutOffY,
+        );
+    return d.copyWith(lineBarsData: [
+      for (final b in d.lineBarsData)
+        b.copyWith(
+          color: c(b.color),
+          gradient: g(b.gradient),
+          belowBarData: alan(b.belowBarData),
+          aboveBarData: alan(b.aboveBarData),
+        ),
+    ]);
+  }
+
+  /// Bu karede ne çizilecek. [veri] builder'ın verdiği seridir; geçiş
+  /// kararı burada, build'in geri kalanı yalnız sonucu çizer.
+  _Kare _cizimSec(BuildContext context, LineChartData veri) {
     _sakinKare = false;
     final hareketVar = !MediaQuery.disableAnimationsOf(context) &&
         widget.swapDuration > Duration.zero;
-    // Süren köprü: hedef aynıysa ve parmak ekranda değilse devam.
-    final hedef = _kopruHedef;
-    if (hedef != null) {
-      if (!_interacting &&
-          hareketVar &&
-          !_karsilastir(hedef, veri).degisti) {
+    final g = _gecis;
+    if (g != null) {
+      final hedef = g is _Kamera ? g.hedef : (g as _Morf).hedef;
+      final p = _gecisSaati?.value ?? 1;
+      if (!_interacting && hareketVar && !_karsilastir(hedef, veri).degisti) {
         _oncekiCizilen = veri;
-        return (cizim: _kopruCizim!, sure: _kopruSure);
+        return _gecisKaresi(g, p);
       }
-      // Hedef değişti (yeni tik, başka dönem) ya da jest başladı: köprü
-      // bırakılır, karşılaştırma köprünün o an çizdiğinden yapılır.
-      _oncekiCizilen = _kopruCizim;
-      _kopruyuBirak();
+      // Hedef değişti (yeni tik, başka dönem) ya da jest başladı: o an
+      // çizilen kare yeni karşılaştırmanın başlangıcıdır.
+      _oncekiCizilen = _gecisKaresi(g, p).cizim;
+      if (_interacting || !hareketVar) _gecisiBirak();
     }
     final onceki = _oncekiCizilen;
     final degisti = _gorunurDegisti(veri);
     final donem = _donemDegisti && degisti;
     if (degisti) _donemDegisti = false;
-    if (!degisti || _interacting || !hareketVar) {
+    if (!degisti || _interacting || !hareketVar || onceki == null) {
+      if (_gecis != null) _gecisiBirak();
       _sakinKare = !degisti && !_interacting && hareketVar && onceki != null;
-      return (cizim: veri, sure: Duration.zero);
+      return _durgun(veri);
     }
-    // İlk kurulum: LineChart ilk karede zaten tween kurmaz; süre eskisi gibi
-    // token kalır (`chart_transition_continuity_test`).
-    if (onceki == null) return (cizim: veri, sure: widget.swapDuration);
+    if (donem) {
+      final k = _kameraKur(veri);
+      if (k != null) {
+        _gecisBaslat(k);
+        return _kameraKaresi(k, 0);
+      }
+    }
     if (_yapiDegisti) {
       // Gösterge aç/kapa: anında (bkz. [_karsilastir]). Dönem değişimi:
       // eski çizim üstte söner.
@@ -573,28 +834,204 @@ class _ZoomableChartState extends State<ZoomableChart>
         _solan = onceki;
         _solmaNo++;
       }
-      return (cizim: veri, sure: Duration.zero);
+      if (_gecis != null) _gecisiBirak();
+      return _durgun(veri);
     }
     final kopru = _kopruKur(onceki, veri);
-    if (kopru == null) return (cizim: veri, sure: widget.swapDuration);
-    _kopruHedef = veri;
-    _kopruCizim = kopru.eski;
-    _kopruSure = Duration.zero;
-    final no = ++_kopruNo;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || no != _kopruNo) return;
-      setState(() {
-        _kopruCizim = kopru.yeni;
-        _kopruSure = widget.swapDuration;
+    final m = _Morf(veri, kopru?.eski ?? onceki, kopru?.yeni ?? veri);
+    _gecisBaslat(m);
+    return _gecisKaresi(m, 0);
+  }
+
+  // ── Değerine bağlı Y etiketleri ve yatay ızgara (2026-11-14) ──────────
+  //
+  // fl_chart sağ etiketleri ve yatay ızgarayı her karede adımın ara
+  // değeriyle yeniden dizer. Burada her ADIM bir takımdır; takımın
+  // etiketleri değerlerine bağlıdır ve ölçekle birlikte kayar. Adım
+  // değişince eski takım [SandikMotion.surface] içinde söner, yenisi
+  // belirir; iki takımda ortak değer hiç sönmez. Etiketin kendisi yine
+  // sahibin `getTitlesWidget`'ından gelir (biçim ve stil sahibinde kalır),
+  // yeri fl_chart'ın koyduğu yerdir: sağ rezervin solu, değerin hizası.
+
+  List<_TikTakimi> _takimlar = [];
+  AnimationController? _takimSaati;
+
+  double _opak(_TikTakimi k) {
+    final c = _takimSaati;
+    if (c == null || !c.isAnimating) return k.hedef;
+    return k.bas + (k.hedef - k.bas) * SandikMotion.enter.transform(c.value);
+  }
+
+  void _takimGuncelle(double adim, SideTitles etiket,
+      FlLine Function(double)? izgara, bool hareket) {
+    final son = _takimlar.isEmpty ? null : _takimlar.last;
+    if (son != null && (son.adim - adim).abs() <= adim * 1e-9) {
+      son.etiket = etiket;
+      son.izgara = izgara;
+      return;
+    }
+    if (!hareket || son == null) {
+      _takimSaati?.stop();
+      _takimlar = [_TikTakimi(adim, etiket, izgara, 1, 1)];
+      return;
+    }
+    for (final k in _takimlar) {
+      k.bas = _opak(k);
+      k.hedef = 0;
+    }
+    _takimlar
+      ..removeWhere((k) => k.bas <= 0.01)
+      ..add(_TikTakimi(adim, etiket, izgara, 0, 1));
+    final c = _takimSaati ??= AnimationController(vsync: this)
+      ..addListener(() {
+        if (mounted && !_kurulumda) setState(() {});
+      })
+      ..addStatusListener((st) {
+        if (st == AnimationStatus.completed && mounted) {
+          setState(() => _takimlar.removeWhere((k) => k.hedef == 0));
+        }
       });
-      _kopruBitis = Timer(widget.swapDuration, () {
-        if (!mounted || no != _kopruNo) return;
-        // Köprü biter: bir sonraki kare gerçek seriyi sıfır sürede verir
-        // (`_oncekiCizilen` zaten o; sıklaşmış hâliyle aynı çizgi).
-        setState(_kopruyuBirak);
-      });
-    });
-    return (cizim: kopru.eski, sure: Duration.zero);
+    c.duration = SandikMotion.surface;
+    final k = _kurulumda;
+    _kurulumda = true;
+    c.forward(from: 0);
+    _kurulumda = k;
+  }
+
+  static double _yan(FlTitlesData t, AxisTitles a) => !t.show
+      ? 0
+      : (a.sideTitles.showTitles ? a.sideTitles.reservedSize : 0) +
+          (a.axisNameWidget != null ? a.axisNameSize : 0);
+
+  /// Sağ etiketleri bu sınıf mı çiziyor (rezervli sağ eksen, adım belli).
+  static bool _yEkseniBizde(LineChartData d) =>
+      d.titlesData.show &&
+      d.titlesData.rightTitles.sideTitles.showTitles &&
+      d.titlesData.rightTitles.sideTitles.interval != null &&
+      d.minY < d.maxY;
+
+  static bool _izgaraBizde(LineChartData d) {
+    final g = d.gridData;
+    final adim = d.titlesData.rightTitles.sideTitles.interval;
+    return g.show &&
+        g.drawHorizontalLine &&
+        (g.horizontalInterval == null || g.horizontalInterval == adim);
+  }
+
+  /// fl_chart'a giden kare: sağ etiket yazısı ve (bizdeyse) yatay ızgara
+  /// boşaltılır; rezerv aynı kalır, çizim alanı kımıldamaz.
+  static LineChartData _eksensiz(LineChartData d, bool izgara) => d.copyWith(
+        titlesData: d.titlesData.copyWith(
+            rightTitles: _bosEksen(d.titlesData.rightTitles)),
+        gridData: izgara ? d.gridData.copyWith(drawHorizontalLine: false) : null,
+      );
+
+  /// Görünür tikler: değer, opaklık (takım × kenar × sıklık), takım.
+  static List<({double deger, double opak, _TikTakimi takim})> gorunurTikler(
+    List<_TikTakimi> takimlar,
+    double Function(_TikTakimi) opak, {
+    required double minY,
+    required double maxY,
+    required double eksenPx,
+  }) {
+    final aralik = maxY - minY;
+    if (aralik <= 0 || eksenPx <= 0) return const [];
+    final tikler = <String, ({double deger, double opak, _TikTakimi takim})>{};
+    for (final k in takimlar) {
+      final o = opak(k);
+      if (o <= 0.01 || k.adim <= 0) continue;
+      // Adım ekranda 24 px'ten sıksa (ölçek açılırken sıkışan eski takım)
+      // erken söner: etiketler üst üste binmez.
+      final bosluk = eksenPx * k.adim / aralik;
+      final sik = ((bosluk - 10) / 14).clamp(0.0, 1.0);
+      if (sik <= 0) continue;
+      final ilk = (minY / k.adim).ceil();
+      final son = (maxY / k.adim).floor();
+      if (son - ilk > 64) continue;
+      for (var i = ilk; i <= son; i++) {
+        final v = i * k.adim;
+        final eps = k.adim * 1e-9;
+        // fl_chart'taki sahipler uç değeri gizler (`val == meta.min/max`).
+        if ((v - minY).abs() <= eps || (v - maxY).abs() <= eps) continue;
+        // İki takımda aynı değer tek tiktir (ortak etiket sönmez).
+        final anahtar = v.toStringAsPrecision(10);
+        final top = o * sik;
+        final eski = tikler[anahtar];
+        if (eski == null || top >= eski.opak) {
+          tikler[anahtar] = (deger: v, opak: math.max(top, eski?.opak ?? 0), takim: k);
+        }
+      }
+    }
+    return tikler.values.toList();
+  }
+
+  /// Izgara ve etiket katmanları; `null` → sağ ekseni fl_chart çiziyor.
+  ({Widget izgara, Widget etiketler})? _yEkseniKatmanlari(
+      LineChartData cizim, double genislik) {
+    if (_takimlar.isEmpty || !_yEkseniBizde(cizim)) return null;
+    final t = cizim.titlesData;
+    final kenar = cizim.borderData.isVisible()
+        ? cizim.borderData.border.dimensions.resolve(TextDirection.ltr)
+        : EdgeInsets.zero;
+    final ust = _yan(t, t.topTitles) + kenar.top;
+    final alt = _yan(t, t.bottomTitles) + kenar.bottom;
+    final sagRezerv = _yan(t, t.rightTitles);
+    final sol = _yan(t, t.leftTitles) + kenar.left;
+    final sag = genislik - sagRezerv - kenar.right;
+    final eksenPx = widget.height - ust - alt;
+    final minY = cizim.minY;
+    final maxY = cizim.maxY;
+    final tikler = gorunurTikler(_takimlar, _opak,
+        minY: minY, maxY: maxY, eksenPx: eksenPx);
+    double konum(double v) => (1 - (v - minY) / (maxY - minY)) * eksenPx;
+    final cizgiler = <(double, double, FlLine)>[];
+    final etiketler = <Widget>[];
+    for (final tk in tikler) {
+      final loc = konum(tk.deger);
+      // Kenarda yumuşak çıkış: merkez çizim alanının 8 px dışına
+      // giderken söner (fl_chart sınırı geçen etiketi tek karede atıyordu).
+      final disari = loc < 0 ? -loc : (loc > eksenPx ? loc - eksenPx : 0.0);
+      final o = tk.opak * (1 - disari / 8).clamp(0.0, 1.0);
+      if (o <= 0.01) continue;
+      final izgara = tk.takim.izgara;
+      if (izgara != null && loc >= 0 && loc <= eksenPx) {
+        cizgiler.add((ust + loc, o, izgara(tk.deger)));
+      }
+      final st = tk.takim.etiket;
+      etiketler.add(Positioned(
+        key: ValueKey(tk.deger.toStringAsPrecision(10)),
+        left: genislik - sagRezerv,
+        width: sagRezerv,
+        top: ust + loc - 20,
+        height: 40,
+        child: Opacity(
+          opacity: o,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: sagRezerv,
+              child: st.getTitlesWidget(
+                tk.deger,
+                TitleMeta(
+                  min: minY,
+                  max: maxY,
+                  parentAxisSize: eksenPx,
+                  axisPosition: loc,
+                  appliedInterval: tk.takim.adim,
+                  sideTitles: st,
+                  formattedValue: tk.deger.toString(),
+                  axisSide: AxisSide.right,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+    }
+    return (
+      izgara: CustomPaint(painter: _IzgaraBoyasi(cizgiler, sol, sag)),
+      etiketler: Stack(clipBehavior: Clip.hardEdge, children: etiketler),
+    );
   }
 
   // ── Kayan yatay çizgiler (alarm seviyesi, 2026-11-11) ──────────────────
@@ -806,7 +1243,8 @@ class _ZoomableChartState extends State<ZoomableChart>
 
   @override
   void dispose() {
-    _kopruBitis?.cancel();
+    _gecisSaati?.dispose();
+    _takimSaati?.dispose();
     _kayma?.dispose();
     widget.viewportController?.removeListener(_onControllerChanged);
     super.dispose();
@@ -1186,11 +1624,28 @@ class _ZoomableChartState extends State<ZoomableChart>
       _chartWidth = constraints.maxWidth <= 0 ? 1.0 : constraints.maxWidth;
       final ham = _cizimSec(context, _grafikVerisi());
       _kurulumda = true;
-      final secim = (
-        cizim: _kayanCizgiler(context, ham.cizim),
-        sure: ham.sure,
-      );
+      var cizim = _kayanCizgiler(context, ham.cizim);
       _kurulumda = false;
+      // Sağ eksen bizdeyse fl_chart'a yazısız ve (uygunsa) ızgarasız kare
+      // gider; takım adımı eksen kaynağından (geçişin hedefi), konum çizilen
+      // kareden okunur.
+      ({Widget izgara, Widget etiketler})? yEkseni;
+      if (_yEkseniBizde(ham.eksen) && _yEkseniBizde(cizim)) {
+        final izgaraBizde = _izgaraBizde(ham.eksen);
+        final st = ham.eksen.titlesData.rightTitles.sideTitles;
+        _takimGuncelle(
+            st.interval!,
+            st,
+            izgaraBizde ? ham.eksen.gridData.getDrawingHorizontalLine : null,
+            !MediaQuery.disableAnimationsOf(context));
+        yEkseni = _yEkseniKatmanlari(cizim, _chartWidth);
+        if (yEkseni != null) {
+          cizim = _eksensiz(cizim, izgaraBizde && _izgaraBizde(cizim));
+        }
+      } else {
+        _takimlar = [];
+      }
+      final ust = ham.ust;
       final solan = _solan;
       return SizedBox(
         height: widget.height,
@@ -1210,6 +1665,13 @@ class _ZoomableChartState extends State<ZoomableChart>
           // Sıfırla çipi hepsi kutunun içinde konumlanıyor.
           clipBehavior: Clip.hardEdge,
           children: [
+            // Değerine bağlı yatay ızgara: çizginin ALTINDA (açık temada
+            // ızgara beyazdır, üstte olsa çizgiyi keserdi). Katman HEP ağaçta.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: yEkseni?.izgara ?? const SizedBox.shrink(),
+              ),
+            ),
             // Alt: LineChart (tooltip'i için touch handler kendi içinde çalışır)
             //
             // `LineChart` bir ImplicitlyAnimatedWidget: yeni LineChartData
@@ -1229,16 +1691,33 @@ class _ZoomableChartState extends State<ZoomableChart>
               child: _IlkCizim(
                 child: RepaintBoundary(
                 child: LineChart(
-                  secim.cizim,
-                  // Hareketi azalt açıkken morf da yok: `swapDuration`
-                  // varsayılanı ham token, kendisi korumaz. Görünür bir şey
-                  // değişmediyse, jest sürerken ya da çubuk sayısı
-                  // değiştiyse de yok; nokta sayısı değiştiyse köprüden
-                  // akar (hepsi `_cizimSec`'te).
-                  duration: secim.sure,
-                  curve: widget.swapCurve,
+                  cizim,
+                  // Süre HEP sıfır: ara kareyi geçiş motoru üretir (bkz.
+                  // `_cizimSec`). fl_chart'ın kendi lerp'i etiket adımını
+                  // ara değerlerden geçirip etiketleri zıplatıyordu.
+                  duration: Duration.zero,
                 ),
               ),
+              ),
+            ),
+
+            // Kamera geçişinde öteki dönemin serisi (yalnız çizgi) burada
+            // solar/belirir. Katman HEP ağaçta, boşken yer tutmaz.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: ust == null
+                    ? const SizedBox.shrink()
+                    : Opacity(
+                        opacity: ham.ustOpak.clamp(0.0, 1.0),
+                        child: LineChart(ust, duration: Duration.zero),
+                      ),
+              ),
+            ),
+
+            // Değerine bağlı Y etiketleri (bkz. `_yEkseniKatmanlari`).
+            Positioned.fill(
+              child: IgnorePointer(
+                child: yEkseni?.etiketler ?? const SizedBox.shrink(),
               ),
             ),
 
@@ -1648,4 +2127,107 @@ class KayanYatayCizgi extends HorizontalLine {
   /// İlk kez göründüğünde (yeni kurulan alarm) buradan kayar — son fiyat.
   /// `null` → yerinde belirir.
   final double? dogumY;
+}
+
+/// Bir karede çizilecekler: alt grafik, eksen kaynağı (etiket adımı ve
+/// biçimi bundan okunur: geçişte hedef), kamera geçişinde üst katman.
+class _Kare {
+  _Kare(this.cizim, this.eksen, {this.ust, this.ustOpak = 0});
+  final LineChartData cizim;
+  final LineChartData eksen;
+  final LineChartData? ust;
+  final double ustOpak;
+}
+
+/// Nokta morfu: [eski]'den [yeni]'ye (köprülü, eşit nokta sayısı); bitince
+/// [hedef] (gerçek seri) çizilir.
+class _Morf {
+  _Morf(this.hedef, this.eski, this.yeni);
+  final LineChartData hedef;
+  final LineChartData eski;
+  final LineChartData yeni;
+}
+
+/// Kamera geçişi. Pencere uçları YENİ dönemin koordinatında; kurucuya
+/// verilirken kendi kaymasıyla çevrilir (kurucu x = ortak x − kayma).
+class _Kamera {
+  _Kamera({
+    required this.hedef,
+    required this.alt,
+    required this.altKayma,
+    required this.altKoken,
+    required this.ust,
+    required this.ustKayma,
+    required this.ustGiris,
+    required this.basMin,
+    required this.basMax,
+    required this.sonMin,
+    required this.sonMax,
+  });
+  final LineChartData hedef;
+
+  /// Geçiş boyunca pencereyi kapsayan seri (uzaklaşmada yeni, yakınlaşmada
+  /// eski dönem).
+  final LineChartData Function(double, double) alt;
+  final double altKayma;
+  final double altKoken;
+
+  /// Öteki dönem: uzaklaşmada başta söner, yakınlaşmada sonda belirir.
+  final LineChartData Function(double, double) ust;
+  final double ustKayma;
+  final bool ustGiris;
+  final double basMin;
+  final double basMax;
+  final double sonMin;
+  final double sonMax;
+}
+
+/// Bir etiket adımının takımı ve opaklık geçişi.
+class _TikTakimi {
+  _TikTakimi(this.adim, this.etiket, this.izgara, this.bas, this.hedef);
+  final double adim;
+  SideTitles etiket;
+  FlLine Function(double)? izgara;
+  double bas;
+  double hedef;
+}
+
+class _IzgaraBoyasi extends CustomPainter {
+  _IzgaraBoyasi(this.cizgiler, this.sol, this.sag);
+
+  /// (piksel y, opaklık, çizgi stili)
+  final List<(double, double, FlLine)> cizgiler;
+  final double sol;
+  final double sag;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final (y, o, c) in cizgiler) {
+      final renk = c.color;
+      if (c.strokeWidth <= 0 || renk == null) continue;
+      final boya = Paint()
+        ..color = renk.withValues(alpha: renk.a * o)
+        ..strokeWidth = c.strokeWidth
+        ..style = PaintingStyle.stroke;
+      final desen = c.dashArray;
+      if (desen == null || desen.length < 2) {
+        canvas.drawLine(Offset(sol, y), Offset(sag, y), boya);
+        continue;
+      }
+      var x = sol;
+      var i = 0;
+      while (x < sag && i < 4096) {
+        final uz = math.max(1.0, desen[i % desen.length].toDouble());
+        if (i.isEven) {
+          canvas.drawLine(Offset(x, y), Offset(math.min(x + uz, sag), y), boya);
+        }
+        x += uz;
+        i++;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_IzgaraBoyasi eski) =>
+      eski.sol != sol || eski.sag != sag || !listEquals(eski.cizgiler, cizgiler);
 }

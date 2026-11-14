@@ -156,7 +156,24 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
       double maxY = -double.infinity;
       double sumY = 0;
       int countY = 0;
+      FlSpot? onceki;
       for (final spot in primarySeg.spots) {
+        // Pencere kenarının çizgiyi kestiği yer de banda girer (kamera
+        // geçişi, 2026-11-14): yalnız içerideki noktalara bakınca kenardan
+        // bir tepe girdiği karede bant sıçrıyordu; kesişimle bant pencereyle
+        // SÜREKLİ değişir. Ortalama yine yalnız gerçek noktalardan.
+        final o = onceki;
+        if (o != null && !o.isNull() && !spot.isNull()) {
+          for (final kenar in [viewMinX, viewMaxX]) {
+            if (o.x < kenar && spot.x > kenar) {
+              final y = o.y + (spot.y - o.y) * (kenar - o.x) / (spot.x - o.x);
+              if (y > maxY) maxY = y;
+              if (y < minY) minY = y;
+            }
+          }
+        }
+        onceki = spot;
+        if (spot.isNull()) continue;
         if (spot.x < viewMinX || spot.x > viewMaxX) continue;
         if (spot.y > maxY) maxY = spot.y;
         if (spot.y < minY) minY = spot.y;
@@ -895,6 +912,13 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             height: GrafikStili.grafikYuksekligi,
             builder: buildData,
             viewportController: viewport,
+            // Dönem geçişi kamera olsun (yasin 2026-11-14, "C"): x ekseni
+            // dönem başından gün; köken Unix günü olarak verilince iki dönem
+            // aynı zaman ekseninde yazılır. Gün içinde x dakika: köken yok,
+            // geçiş nokta morfu.
+            kameraKokeni: intraday
+                ? null
+                : start.millisecondsSinceEpoch / Duration.millisecondsPerDay,
             // Sağdaki Y ekseni rezervi (rightTitles.reservedSize ile aynı).
             // Crosshair bu alana **girmez** — plot area net sınırlı.
             plotPaddingRight: 60,

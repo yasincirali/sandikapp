@@ -327,7 +327,8 @@ void main() {
             ),
           ),
         ));
-        await t.pump();
+        // Sınırlar geçiş saatiyle akar (2026-11-14): oturmuş kare okunur.
+        await t.pumpAndSettle();
         return t.widget<LineChart>(find.byType(LineChart)).data;
       }
 

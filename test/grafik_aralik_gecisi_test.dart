@@ -334,13 +334,14 @@ void main() {
         expect(noktalar(tester), contains(p),
             reason: 'eski köşeler sıklaştırmada yerinde kalmalı');
       }
-      // 2. kare: yeni çizgiye token süresiyle akış.
-      await tester.pump();
-      expect(cizgi(tester).duration, SandikMotion.state);
-      expect(noktalar(tester), veri(40).lineBarsData.single.spots);
-      // Akış bitince gerçek seri, süre sıfır.
-      await tester.pump(SandikMotion.state);
-      await tester.pump();
+      // Sonraki karelerde geçiş saati yeni çizgiye akıtır (2026-11-14: ara
+      // kareyi fl_chart değil ZoomableChart üretir; süre hep sıfır).
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(cizgi(tester).duration, Duration.zero);
+      expect(noktalar(tester).length, 40);
+      expect(noktalar(tester), isNot(veri(40).lineBarsData.single.spots));
+      // Akış bitince gerçek seri.
+      await tester.pumpAndSettle();
       expect(cizgi(tester).duration, Duration.zero);
       expect(noktalar(tester), veri(40).lineBarsData.single.spots);
     });
@@ -351,14 +352,8 @@ void main() {
       await tester.pump(SandikMotion.flow);
       await tester.pumpWidget(kur(veri(10)));
       expect(noktalar(tester).length, 40);
-      await tester.pump();
-      expect(noktalar(tester).length, 40);
-      for (final p in veri(10).lineBarsData.single.spots) {
-        expect(noktalar(tester), contains(p),
-            reason: 'yeni köşeler sıklaştırmada yerinde kalmalı');
-      }
-      await tester.pump(SandikMotion.state);
-      await tester.pump();
+      await tester.pumpAndSettle();
+      // Hedef (yeni seri sıklaşmış) ve ardından gerçek 10 nokta.
       expect(noktalar(tester).length, 10,
           reason: 'akış bitince dokunma balonu gerçek noktaları okur');
     });
