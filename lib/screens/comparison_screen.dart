@@ -22,6 +22,8 @@ import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
 import '../services/kiyas_paylasimi.dart';
+import '../services/kiyas_seti.dart';
+import '../services/kiyas_siralamasi.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/remote_config_service.dart';
 import '../services/symbol_search_service.dart';
@@ -55,6 +57,12 @@ import '../widgets/share_card.dart' show KiyasPaylasKarti, kSandikMarka, showSha
 /// Üretildiği yer ve adın ilk parçasını okuyan iki yer aynı sabiti kullanır;
 /// eskiden üçü ayrı ayrı uzun tire yazıyordu (taste-skill, 2026-10-01).
 const _ortakAdAyraci = ' · ';
+
+/// Kilitli çipin yarım sonucu bu oturumda gösterildi mi (Ar-Ge 14 Kas 22:03,
+/// YAP 4). Ekran ömrü değil UYGULAMA oturumu: Karşılaştır'ı kapatıp açan
+/// ücretsiz kullanıcı aynı teşviki ikinci kez görmesin; sonraki kilitli
+/// dokunuşlar bugünkü gibi doğrudan paywall'u açar.
+bool _kilitliOnizlemeGosterildi = false;
 
 /// Varlık karşılaştırma — "almadığım şey ne yapardı?"
 ///
@@ -102,6 +110,17 @@ class ComparisonScreen extends ConsumerStatefulWidget {
   /// tahakkukudur, sembolü `MEVDUAT:<uuid>` gibi kullanıcıya gösterilemez
   /// ve satırın Al/Sat düğmeleri onlara uymaz), elle fiyatlanan ve "diğer"
   /// (piyasa serisi yok). Bunlarda varlık ekranı kendi seçicisini korur.
+  /// Test kancası: verilirse seriler ağdan değil buradan gelir (sembol,
+  /// gün → normalize seri). Widget testleri getiri cümlesini ve kilitli çip
+  /// önizlemesini gerçek sayıyla sınar; üretimde hep null.
+  @visibleForTesting
+  static Future<NormalizedSeries?> Function(String ticker, int days)?
+      testSeriKaynagi;
+
+  /// Test kancası: kilitli çip önizlemesinin oturum işaretini sıfırlar.
+  @visibleForTesting
+  static void kilitliOnizlemeyiSifirla() => _kilitliOnizlemeGosterildi = false;
+
   static bool varligiAcabilir(Asset a) =>
       !a.type.sozlesmeli && !a.isManualPrice && a.type != AssetType.diger;
 
@@ -115,6 +134,10 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
   /// Her sembolün normalize serisi. Sembol eklendiğinde doldurulur.
   final Map<String, NormalizedSeries> _series = {};
+
+  /// Kilitli çipe ilk dokunuşta çekilen serinin dönem getirisi; çizilmez,
+  /// çip satırının altında tek satır olur. Dönem değişince düşer.
+  ({String ad, double pct})? _kilitliOnizleme;
 
   /// Odaklanılan serinin anahtarı — `null` ise odak yok.
   ///
@@ -160,12 +183,19 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// `gain`/`loss` BİLEREK kullanılmadı: bu grafikte yeşil/kırmızı "kâr/
   /// zarar" anlamına gelmez, yalnızca farklı varlıkları ayırır. Aynı renkleri
   /// kullanmak kullanıcıya yanlış anlam okutur.
+  ///
+  /// Dördüncü ve beşinci renk eskiden ekrana özgü iki ham değerdi (menekşe
+  /// `9B8AFB`, turkuaz `4DD0C7`). Ar-Ge 14 Kas 22:03 #8: `SandikPalette`'te
+  /// amber/mavi/altın dışında kâr-zarar anlamı taşımayan ton yok (`danger`
+  /// hata kırmızısı, `text*` gri), bu yüzden en yakın iki MARKA tonu
+  /// alındı: Yarış ekranının yarışçı paletinden orkide ve nane — o liste de
+  /// aynı kuralla seçilmiş ("renk kimlik anlatır, kâr/zarar değil").
   static List<Color> _seriesColors(SandikPalette p) => [
         p.amberFill,
         p.info,
         p.gold,
-        const Color(0xFF9B8AFB),
-        const Color(0xFF4DD0C7),
+        Sandik.yarisci[3], // orkide
+        Sandik.yarisci[1], // nane
       ];
 
   /// Odaktaki serinin gerçek mumları (araç çubuğu, 2026-10-10 gece).
@@ -205,12 +235,34 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     // gösterirdi. `_add` setState çağırdığı için burada alanlar doğrudan
     // yazılır, yükleme `_load` ile başlar.
     final varlik = widget.baslangicVarligi;
-    if (varlik != null) {
-      _selected.add(SymbolHit(
-          ticker: varlik.ticker, name: varlik.name, source: varlik.type.label));
-      _loading.add(varlik.ticker);
-      CrashReporter.arkaPlan(_load(varlik.ticker),
-          reason: 'comparison_screen.baslangicVarligi');
+    final baslangicHit = varlik == null
+        ? null
+        : SymbolHit(
+            ticker: varlik.ticker,
+            name: varlik.name,
+            source: varlik.type.label);
+    // Hatırlanan kıyas seti (Ar-Ge 14 Kas 22:03, YAP 2): Premium'da son set
+    // aynı sırayla geri gelir; varlık sayfasından gelinmişse o varlık başta,
+    // set arkasında, toplam sınıra kırpılır. Ön seçimli açılışta
+    // (`initialTickers`) set kurulmaz: çağıran ne istediğini söylemiştir.
+    final kayitli = _kiyasSetiHatirlanir && widget.initialTickers.isEmpty
+        ? kiyasSetiCoz(ref.read(karsilastirmaSetiProvider),
+            ortakIdleri: {
+              for (final o in ref.read(activePartnersProvider)) o.id,
+            })
+        : const <SymbolHit>[];
+    _kayitliBaslangicVar =
+        baslangicHit != null && kayitli.contains(baslangicHit);
+    for (final hit in kiyasSetiAcilisi(
+        baslangic: baslangicHit,
+        kayitli: kayitli,
+        sinir: ref.read(karsilastirmaSeriSiniriProvider))) {
+      _selected.add(hit);
+      _loading.add(hit.ticker);
+      CrashReporter.arkaPlan(_load(hit.ticker),
+          reason: hit == baslangicHit
+              ? 'comparison_screen.baslangicVarligi'
+              : 'comparison_screen.kiyasSeti');
     }
     // Detay ekranından gelen ön seçimler.
     if (widget.initialTickers.isNotEmpty) {
@@ -247,12 +299,64 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       _loading.add(hit.ticker);
       _failed.remove(hit.ticker);
     });
+    _kiyasSetiniKaydet();
     await _load(hit.ticker);
+  }
+
+  /// Kıyas seti hatırlanır mı: yalnız Premium sınırında (5 seri; paywall
+  /// kapalıyken herkes oradadır, 5 seri de herkese açıktır). Ücretsizde set
+  /// ne okunur ne yazılır — Premium'dan düşen kullanıcının kayıtlı beşlisi
+  /// silinmez, geri dönünce aynen gelir.
+  bool get _kiyasSetiHatirlanir =>
+      ref.read(karsilastirmaSeriSiniriProvider) >= kKarsilastirmaEnFazla;
+
+  /// Varlık sayfasından gelinen varlık kayıtlı sette de var mıydı. Yoksa o
+  /// satır sete YAZILMAZ: varlık sayfasının bağlamıdır (seri de birim varlık
+  /// motoruyla çekilir, bkz. [_fetch]); kullanıcının kendi kurduğu kıyas
+  /// değildir. Varsa seçimdeki yeriyle yazılır ki açılış onu setten silmesin.
+  bool _kayitliBaslangicVar = false;
+
+  void _kiyasSetiniKaydet() {
+    if (!_kiyasSetiHatirlanir) return;
+    final baslangic = widget.baslangicVarligi?.ticker;
+    ref.read(karsilastirmaSetiProvider.notifier).set(kiyasSetiKodla(
+        _selected.where((s) => s.ticker != baslangic || _kayitliBaslangicVar)));
   }
 
   /// Grafik Premium'un sınırında değil, ücretsiz sınırda mı dolu.
   bool get _premiumSiniri =>
       ref.read(karsilastirmaSeriSiniriProvider) < kKarsilastirmaEnFazla;
+
+  /// Ücretsiz sınırda kilitli çipe dokunuş (Ar-Ge 14 Kas 22:03, YAP 4).
+  ///
+  /// Oturumdaki İLK dokunuşta paywall'dan önce gerçek veri: seri bu dönem
+  /// için çekilir ama ÇİZİLMEZ, çip satırının altında "Gram altın bu dönemde
+  /// +%9,80…" satırı çıkar (satır paywall'u açar). Seri gelmezse (ağ hatası,
+  /// iki noktadan az veri) satır yok, bugünkü gibi doğrudan paywall: uydurma
+  /// sayı yerine kilit. Sonraki dokunuşlar doğrudan paywall.
+  Future<void> _kilitliCipeDokun(SymbolHit hit) async {
+    if (_kilitliOnizlemeGosterildi) {
+      _paywallAc();
+      return;
+    }
+    _kilitliOnizlemeGosterildi = true;
+    final days = _periods[_periodIdx].days;
+    NormalizedSeries? norm;
+    try {
+      norm = await _fetch(hit.ticker, days);
+    } catch (_) {
+      // `_changePeriod` ile aynı: çekilemeyen seri "veri yok"tur; servis
+      // katmanı kendi hatasını zaten bildiriyor.
+      norm = null;
+    }
+    if (!mounted) return;
+    final pct = norm?.totalReturnPct;
+    if (pct == null || !pct.isFinite || days != _periods[_periodIdx].days) {
+      _paywallAc();
+      return;
+    }
+    setState(() => _kilitliOnizleme = (ad: hit.name, pct: pct));
+  }
 
   void _paywallAc() {
     AnalyticsService.instance.logPremiumGateShown(feature: 'compare_series');
@@ -280,6 +384,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 
   Future<NormalizedSeries?> _fetch(String ticker, int days) async {
+    final testKaynagi = ComparisonScreen.testSeriKaynagi;
+    if (testKaynagi != null) return testKaynagi(ticker, days);
     // Varlık ekranından gelen varlık BİRİM serisiyle çizilir — bkz.
     // [ComparisonScreen.baslangicVarligi]. Pencere motoru portföy serisiyle
     // aynı (`getPortfolioHistory`), yani grafikteki öteki satırlarla aynı
@@ -358,6 +464,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       // hiçbir çizgi tam renkte olmaz — hepsi soluk kalır.
       if (_focused == ticker) _focused = null;
     });
+    _kiyasSetiniKaydet();
   }
 
   /// Periyot değişince TÜM seriler yeniden çekilir — normalize referansı
@@ -386,6 +493,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     setState(() {
       _periodIdx = idx;
       _loading.addAll(hedefler);
+      // Önizleme eski dönemin sayısıdır; yeni dönemde yanlış okunurdu.
+      _kilitliOnizleme = null;
     });
     final sonuclar = await Future.wait(hedefler.map((t) async {
       try {
@@ -450,6 +559,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                     padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 24),
                     children: [
                       _chartCard(p),
+                      _siralamaCumlesi(p),
                       const SizedBox(height: 16),
                       _selectionList(p),
                       const SizedBox(height: 12),
@@ -828,6 +938,40 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     );
   }
 
+  // ── Sıralama cümlesi ──────────────────────────────────────────────────────
+
+  /// "Bu dönemde sıralama" (Ar-Ge 14 Kas 22:03, YAP 3): grafiğin altında tek
+  /// cümle, Premium'da ve getirisi olan en az üç seride. Kural ve metin
+  /// `kiyas_siralamasi.dart`'ta; burada yalnız rozetlerle AYNI sayılar
+  /// (`_series`) verilir. Dönem değişirken eski dönemin sayısı yeni dönemin
+  /// seçicisi altında okunmasın diye cümle yeni seriler gelene kadar susar.
+  Widget _siralamaCumlesi(SandikPalette p) {
+    if (_donemBekliyor ||
+        ref.watch(karsilastirmaSeriSiniriProvider) < kKarsilastirmaEnFazla) {
+      return const SizedBox.shrink();
+    }
+    final siralama = kiyasSiralamasiKur([
+      for (final h in _selected)
+        if (_series[h.ticker] case final norm?)
+          (ticker: h.ticker, ad: _cumleAdi(h), pct: norm.totalReturnPct),
+    ]);
+    if (siralama == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.md),
+      child: Text(
+        siralama.cumle(context.l10n),
+        style: context.t.bodyMedium?.copyWith(color: p.text58),
+      ),
+    );
+  }
+
+  /// Cümledeki ad: hazır çiplerin okunur adı ("BIST 100", "Gram altın",
+  /// "TÜFE"), yoksa satır başlığı. Satırdaki "TÜFE (aylık)" ayracı cümlede
+  /// gürültü olurdu.
+  String _cumleAdi(SymbolHit hit) =>
+      _benchmarks.where((b) => b.ticker == hit.ticker).firstOrNull?.name ??
+      _displayTicker(hit);
+
   // ── Seçili varlık listesi ─────────────────────────────────────────────────
 
   Widget _selectionList(SandikPalette p) {
@@ -1102,8 +1246,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         const SizedBox(width: 3),
         Text(
           fmtPct(pct.abs(), digits: 2),
+          // w700 → w600: unslop ağırlık tavanı (Ar-Ge 14 Kas 22:03 #8).
           style: context.t.bodyMedium
-              ?.copyWith(color: color, fontWeight: FontWeight.w700),
+              ?.copyWith(color: color, fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -1233,6 +1378,46 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     final sinir = ref.watch(karsilastirmaSeriSiniriProvider);
     final full = _selected.length >= sinir;
     final kilitli = full && sinir < kKarsilastirmaEnFazla;
+    final onizleme = kilitli ? _kilitliOnizleme : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _cipSatiri(p, full: full, kilitli: kilitli),
+        if (onizleme != null) _kilitliOnizlemeSatiri(p, onizleme),
+      ],
+    );
+  }
+
+  /// Kilitli çipin yarım sonucu: tek satır, dokununca paywall. Satırın
+  /// tamamı hedef (≥44 pt); sağdaki ok dokunulabilir olduğunu söyler.
+  Widget _kilitliOnizlemeSatiri(
+      SandikPalette p, ({String ad, double pct}) o) {
+    final metin =
+        context.l10n.cmpKilitliOnizleme(o.ad, fmtPctIsaretli(o.pct));
+    return SandikTappable(
+      semanticLabel: metin,
+      onTap: _paywallAc,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.only(top: SandikSpace.sm),
+        alignment: Alignment.centerLeft,
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 16, color: p.amberText),
+            const SizedBox(width: SandikSpace.sm),
+            Expanded(
+              child: Text(metin,
+                  style: context.t.bodyMedium?.copyWith(color: p.text90)),
+            ),
+            Icon(Icons.chevron_right_rounded, size: 18, color: p.text58),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _cipSatiri(SandikPalette p,
+      {required bool full, required bool kilitli}) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -1240,14 +1425,25 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         for (final b in _benchmarks)
           Builder(builder: (context) {
             final on = _selected.contains(b);
-            final disabled = !on && full;
+            // Ücretsiz sınırda dolu grafikte çip KİLİTLİDİR, devre dışı
+            // değil (Ar-Ge 14 Kas 22:03 #1): eskiden soluk (text36) görünüp
+            // dokununca paywall açıyordu, ekran okuyucu da "kıyasa ekle"
+            // diyordu. Kilitli çip normal tonda yazar, `+` yerine kilit
+            // taşır ve etiketi Premium'u söyler; yalnız renkle anlam kalmaz.
+            // Premium'un 5'lik sınırında dolu grafik gerçekten devre dışıdır.
+            final cipKilitli = !on && kilitli;
+            final disabled = !on && full && !kilitli;
             return SandikTappable(
-              semanticLabel:
-                  on ? '${b.name} zaten kıyasta' : '${b.name} kıyasa ekle',
+              semanticLabel: on
+                  ? '${b.name} zaten kıyasta'
+                  : cipKilitli
+                      ? context.l10n.cmpCipKilitliSemantics(b.name)
+                      : '${b.name} kıyasa ekle',
               onTap: on
                   ? null
                   : kilitli
-                      ? _paywallAc
+                      ? () => CrashReporter.arkaPlan(_kilitliCipeDokun(b),
+                          reason: 'comparison_screen.kilitliCip')
                       : full
                           ? null
                           : () => _add(b),
@@ -1264,8 +1460,14 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SandikIkonGecisi(on ? Icons.check_rounded : Icons.add_rounded,
-                        boyut: 14, renk: on ? p.amberText : p.text58),
+                    SandikIkonGecisi(
+                        on
+                            ? Icons.check_rounded
+                            : cipKilitli
+                                ? Icons.lock_outline_rounded
+                                : Icons.add_rounded,
+                        boyut: 14,
+                        renk: on ? p.amberText : p.text58),
                     const SizedBox(width: SandikSpace.xs),
                     Text(
                       b.name,

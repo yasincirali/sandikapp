@@ -421,6 +421,12 @@ class _SiraPrefNotifier extends Notifier<List<String>?> {
 final takipSirasiProvider = NotifierProvider<_SiraPrefNotifier, List<String>?>(
     () => _SiraPrefNotifier(PrefKeys.takipSirasi));
 
+/// Karşılaştır'ın hatırlanan kıyas seti (`kiyas_seti.dart`); null = hiç
+/// kaydedilmedi. Sıralı liste: renk ataması seçim sırasına bağlı.
+final karsilastirmaSetiProvider =
+    NotifierProvider<_SiraPrefNotifier, List<String>?>(
+        () => _SiraPrefNotifier(PrefKeys.karsilastirmaSeti));
+
 /// Takip listesi sıralama seçimi (`TakipSiralama.index`; 0 = benim sıram).
 final takipSiralamaProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(PrefKeys.takipSiralama, 0, perUser: true));

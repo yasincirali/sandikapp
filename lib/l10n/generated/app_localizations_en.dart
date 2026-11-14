@@ -7782,6 +7782,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmpSinirDolu => 'At most 5 assets';
 
   @override
+  String cmpKilitliOnizleme(String ad, String yuzde) {
+    return '$ad is $yuzde this period. See its line and the ranking with Premium.';
+  }
+
+  @override
+  String cmpSiraLider(String ad, String yuzde) {
+    return '$ad leads: $yuzde.';
+  }
+
+  @override
+  String cmpSiraLiderPortfoy(String yuzde) {
+    return 'Your portfolio leads: $yuzde.';
+  }
+
+  @override
+  String cmpSiraListe(String liste) {
+    return 'Order: $liste.';
+  }
+
+  @override
+  String cmpSiraPortfoy(int sira) {
+    return 'Your portfolio ranks #$sira';
+  }
+
+  @override
+  String cmpSiraOnde(String ad, String puan) {
+    return '$puan points ahead of $ad';
+  }
+
+  @override
+  String cmpSiraGeride(String ad, String puan) {
+    return '$puan points behind $ad';
+  }
+
+  @override
+  String cmpSiraBasabas(String ad) {
+    return 'level with $ad';
+  }
+
+  @override
+  String get cmpSiraTufeUstunde => 'Your portfolio is above CPI.';
+
+  @override
+  String get cmpSiraTufeAltinda => 'Your portfolio is below CPI.';
+
+  @override
+  String cmpCipKilitliSemantics(String ad) {
+    return 'Add $ad to comparison, Premium';
+  }
+
+  @override
   String pwFiyatAylik(String fiyat) {
     return '$fiyat/mo';
   }

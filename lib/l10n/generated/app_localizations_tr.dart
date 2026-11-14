@@ -7671,6 +7671,57 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cmpSinirDolu => 'En fazla 5 varlık';
 
   @override
+  String cmpKilitliOnizleme(String ad, String yuzde) {
+    return '$ad bu dönemde $yuzde. Çizgisini ve sıralamayı Premium\'da görürsün.';
+  }
+
+  @override
+  String cmpSiraLider(String ad, String yuzde) {
+    return 'Önde $ad: $yuzde.';
+  }
+
+  @override
+  String cmpSiraLiderPortfoy(String yuzde) {
+    return 'Önde portföyün: $yuzde.';
+  }
+
+  @override
+  String cmpSiraListe(String liste) {
+    return 'Sıra: $liste.';
+  }
+
+  @override
+  String cmpSiraPortfoy(int sira) {
+    return 'Portföyün $sira. sırada';
+  }
+
+  @override
+  String cmpSiraOnde(String ad, String puan) {
+    return '$ad karşısında $puan puan önde';
+  }
+
+  @override
+  String cmpSiraGeride(String ad, String puan) {
+    return '$ad karşısında $puan puan geride';
+  }
+
+  @override
+  String cmpSiraBasabas(String ad) {
+    return '$ad ile başa baş';
+  }
+
+  @override
+  String get cmpSiraTufeUstunde => 'Portföyün TÜFE\'nin üstünde.';
+
+  @override
+  String get cmpSiraTufeAltinda => 'Portföyün TÜFE\'nin altında.';
+
+  @override
+  String cmpCipKilitliSemantics(String ad) {
+    return '$ad kıyasa ekle, Premium';
+  }
+
+  @override
   String pwFiyatAylik(String fiyat) {
     return '$fiyat/ay';
   }

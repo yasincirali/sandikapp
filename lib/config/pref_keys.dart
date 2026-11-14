@@ -226,6 +226,12 @@ class PrefKeys {
   /// sıra alanı yok; sıra yalnız bu telefonda.
   static const takipSirasi = 'pref_takip_sirasi';
 
+  /// Karşılaştır'ın son kıyas seti (Ar-Ge 14 Kas 2026 22:03, YAP 2): seçili
+  /// serilerin sıralı listesi, her öğe `{"t","n","s"}` JSON'u
+  /// (`kiyas_seti.dart`). Yalnız Premium sınırında yazılır/okunur; ücretsize
+  /// düşen kullanıcıda silinmez, Premium dönünce set geri gelir. Kişiye özel.
+  static const karsilastirmaSeti = 'pref_karsilastirma_seti';
+
   /// Takip listesi sıralama seçimi — `TakipSiralama.index` (0 benim sıram,
   /// 1 en çok yükselen, 2 en çok düşen). Kişiye özel.
   static const takipSiralama = 'pref_takip_siralama';
