@@ -94,6 +94,7 @@ class _Govde extends StatelessWidget {
     final kovalar = x.siraliKovalar;
     final gorunen = x.siraliGorunen;
     final icgoruler = x.icgoruler;
+    final tlDisi = tlDisiPayi(x);
     final notStili = context.t.bodySmall?.copyWith(color: c.text58);
     final kaynakStili = context.t.bodySmall?.copyWith(color: c.text36);
     final enBuyuk = kovalar.isEmpty ? 0.0 : kovalar.first.value;
@@ -126,6 +127,19 @@ class _Govde extends StatelessWidget {
               Text(fmtTRY(x.toplam),
                   style: context.t.numLarge
                       .copyWith(fontWeight: FontWeight.w600, color: c.text90)),
+              // TL dışı pay (Ar-Ge 14 Kas #3): nötr renk, yalnız durum —
+              // "risk/korunmasız" gibi korku dili yok. Fon varsa fonların
+              // katkısı da görünür; toplam 0 ise satır yok.
+              if (tlDisi != null) ...[
+                const SizedBox(height: SandikSpace.xs),
+                Text(
+                  x.fonVar
+                      ? l.xrTlDisi(fmtPct(tlDisi.fonlarla, digits: 0),
+                          fmtPct(tlDisi.fonsuz, digits: 0))
+                      : l.xrTlDisiTek(fmtPct(tlDisi.fonlarla, digits: 0)),
+                  style: notStili,
+                ),
+              ],
               const SizedBox(height: SandikSpace.md),
               if (x.fonVar) ...[
                 cubukUstu(l.xrTuttuklarin, l.xrTurSayisi(gorunen.length)),

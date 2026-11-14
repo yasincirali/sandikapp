@@ -5400,6 +5400,8 @@
   "xrKaynakBaslik": "Where this money comes from",
   "xrKaynakNot": "Fund shares from TEFAS allocation. The total matches the amount above.",
   "xrSinifEtiket": "{ad}, {pay}, {tutar}. Show sources.",
+  "xrTlDisi": "Non-TRY share {fonlarla} · {fonsuz} without your funds",
+  "xrTlDisiTek": "Non-TRY share {pay}",
   "xrKaynakAcEtiket": "{ad}, {tutar}. Open asset page.",
   "xrFonsuzNot": "You have no funds, so your real allocation is the same as what you hold. Add a fund and its contents open up here.",
   "xrRaporAltFonsuz": "Your allocation by asset class",

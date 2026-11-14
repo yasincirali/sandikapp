@@ -420,6 +420,42 @@ void main() {
     });
   });
 
+  // Ar-Ge 14 Kas #3: TL dışı pay, fonlarla ve fonlar olmadan.
+  group('tlDisiPayi', () {
+    test(
+        'döviz, eurobond, maden, emtia, ABD hissesi sayılır; mevduat ve '
+        'kripto sayılmaz; fonun içi yalnız "fonlarla"ya girer', () {
+      final x = _xray([
+        _lot('THYAO.IS', AssetType.hisse, fiyat: 1000, id: 'h'), // TL
+        _lot('AAPL', AssetType.hisse,
+            fiyat: 25, para: 'USD', sub: 'abd', id: 'u'), // 1.000 TL dışı
+        _lot('USD', AssetType.doviz, fiyat: 500, id: 'd'), // TL dışı
+        _lot('ALTIN', AssetType.altin, fiyat: 500, id: 'a'), // TL dışı
+        _lot('BTC', AssetType.kripto, fiyat: 1000, id: 'k'), // sayılmaz
+        _lot('MEV', AssetType.mevduat, fiyat: 1000, id: 'm'), // sayılmaz
+        _lot('AAA', AssetType.fon, fiyat: 1000, id: 'f'),
+      ], dag: {
+        // Fonun yarısı eurobond, dörtte biri maden: 750 TL dışı.
+        'AAA': _dag('AAA', {'eut': 50, 'km': 25, 'hs': 25}),
+      });
+      expect(x.toplam, 6000);
+      final t = tlDisiPayi(x)!;
+      expect(t.fonsuz, closeTo(2000 / 6000 * 100, 1e-9));
+      expect(t.fonlarla, closeTo(2750 / 6000 * 100, 1e-9));
+    });
+
+    test('fon yoksa ikisi aynı; toplam 0 ise null', () {
+      final x = _xray([
+        _lot('USD', AssetType.doviz, fiyat: 300, id: 'd'),
+        _lot('THYAO.IS', AssetType.hisse, fiyat: 700, id: 'h'),
+      ]);
+      final t = tlDisiPayi(x)!;
+      expect(t.fonlarla, closeTo(30, 1e-9));
+      expect(t.fonsuz, t.fonlarla);
+      expect(tlDisiPayi(_xray(const [])), isNull);
+    });
+  });
+
   // Ar-Ge 14 Kas #2: kaynak sayfasında satır → varlık sayfası.
   group('kaynakPozisyonlari — kaynak adı → tek pozisyon', () {
     test('fon kodu, hisse kodu ve doğrudan ad kendi pozisyonuna', () {

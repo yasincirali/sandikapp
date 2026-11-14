@@ -9488,6 +9488,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String xrTlDisi(String fonlarla, String fonsuz) {
+    return 'TL dışı payın $fonlarla · fonların olmadan $fonsuz';
+  }
+
+  @override
+  String xrTlDisiTek(String pay) {
+    return 'TL dışı payın $pay';
+  }
+
+  @override
   String xrKaynakAcEtiket(String ad, String tutar) {
     return '$ad, $tutar. Varlık sayfasını aç.';
   }

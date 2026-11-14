@@ -9621,6 +9621,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String xrTlDisi(String fonlarla, String fonsuz) {
+    return 'Non-TRY share $fonlarla · $fonsuz without your funds';
+  }
+
+  @override
+  String xrTlDisiTek(String pay) {
+    return 'Non-TRY share $pay';
+  }
+
+  @override
   String xrKaynakAcEtiket(String ad, String tutar) {
     return '$ad, $tutar. Open asset page.';
   }

@@ -15491,6 +15491,18 @@ abstract class AppLocalizations {
   /// **'{ad}, {pay}, {tutar}. Kaynakları göster.'**
   String xrSinifEtiket(String ad, String pay, String tutar);
 
+  /// No description provided for @xrTlDisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'TL dışı payın {fonlarla} · fonların olmadan {fonsuz}'**
+  String xrTlDisi(String fonlarla, String fonsuz);
+
+  /// No description provided for @xrTlDisiTek.
+  ///
+  /// In tr, this message translates to:
+  /// **'TL dışı payın {pay}'**
+  String xrTlDisiTek(String pay);
+
   /// No description provided for @xrKaynakAcEtiket.
   ///
   /// In tr, this message translates to:

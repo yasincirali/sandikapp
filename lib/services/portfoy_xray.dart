@@ -107,6 +107,7 @@ class PortfoyXray {
     this.kaynaklar = const {},
     this.disiKaynaklar = const {},
     this.kaynakPozisyonlari = const {},
+    this.dogrudanKovalar = const {},
   });
 
   /// X-Ray'e giren pozisyonların TL değeri (fiyatı bilinenler).
@@ -150,6 +151,12 @@ class PortfoyXray {
   /// pozisyon veriyorsa (iki "Gram altın" kaydı gibi) ad burada YOK:
   /// yanlış varlığa götürmektense satır dokunulmaz kalır.
   final Map<String, Position> kaynakPozisyonlari;
+
+  /// Yalnız DOĞRUDAN tutulan varlıkların kovaları (fonlar açılmadan;
+  /// fon/BES burada yok). "Tuttukların"ın sınıf karşılığı: [gorunen] türe
+  /// göredir ve ABD hissesini BIST hissesinden ayıramaz, TL dışı payın
+  /// "fonların olmadan" hâli ise kova ister ([tlDisiPayi]).
+  final Map<XrayKova, double> dogrudanKovalar;
 
   bool get bos => toplam <= 0;
 
@@ -239,6 +246,50 @@ class XrayIcgoru {
   double get fark => gercekPay - gorunenPay;
 }
 
+/// TL dışı sayılan kovalar (Ar-Ge 14 Kas #3: "TL'ye karşı korunuyor muyum").
+///
+/// Karar: değeri TL dışı bir birimin fiyatını izleyen sınıflar —
+///   · [XrayKova.doviz] (döviz),
+///   · [XrayKova.dovizBorclanma] (eurobond, döviz ödemeli/yurt dışı
+///     borçlanma; TEFAS `eut`/`kba`/`dot`/`db`/`yba`…),
+///   · [XrayKova.kiymetliMaden] ve [XrayKova.emtia] (fiyatı dolar
+///     cinsinden oluşur),
+///   · [XrayKova.yabanciHisse].
+/// Bilerek SAYILMAYANLAR:
+///   · [XrayKova.mevduat]: TEFAS döviz/altın hesabını (`vmd`, `khau`…)
+///     TL mevduatla aynı kovaya koyar; ayıramayız. TL sayılır, yani oran
+///     bir ALT SINIRDIR — uydurmaktansa eksik söylemek.
+///   · [XrayKova.kripto]: talep metni (fikir #3) döviz, döviz borçlanması,
+///     kıymetli maden/emtia ve yabancı hisseyi sayar; kripto "korunma"
+///     sorusunun cevabı olarak okunmasın diye dışarıda. Gerekirse tek
+///     satırla eklenir.
+///   · fon payı, gayrimenkul, diğer, etiketsiz ve X-Ray dışı: içi
+///     bilinmiyor; payda ([PortfoyXray.toplam]) yine onları içerir.
+const Set<XrayKova> tlDisiKovalar = {
+  XrayKova.doviz,
+  XrayKova.dovizBorclanma,
+  XrayKova.kiymetliMaden,
+  XrayKova.emtia,
+  XrayKova.yabanciHisse,
+};
+
+/// TL dışı pay (0–100): fonların içi açılınca ([fonlarla], gerçek
+/// dağılım) ve fonlar TL sayılınca ([fonsuz], yalnız doğrudan tutulanlar).
+/// Fon yoksa ikisi aynıdır.
+typedef XrayTlDisi = ({double fonlarla, double fonsuz});
+
+/// [PortfoyXray] kovalarından TL dışı pay; toplam 0 ise `null` (satır
+/// çizilmez). Yeni veri yok: kova toplamı / X-Ray toplamı.
+XrayTlDisi? tlDisiPayi(PortfoyXray x) {
+  if (x.toplam <= 0) return null;
+  double topla(Map<XrayKova, double> m) =>
+      tlDisiKovalar.fold(0.0, (s, k) => s + (m[k] ?? 0));
+  return (
+    fonlarla: x.pay(topla(x.kovalar)),
+    fonsuz: x.pay(topla(x.dogrudanKovalar)),
+  );
+}
+
 /// Kullanıcının fon (ve BES) ayağı: kaç ayrı fon, portföyün yüzde kaçı.
 ///
 /// ## Neden ayrı (Ar-Ge 14 Kas #1, #4)
@@ -319,6 +370,7 @@ PortfoyXray portfoyXray({
   final kaynaklar = <XrayKova, Map<String, double>>{};
   final disiKaynaklar = <String, double>{};
   final disiFonlar = <XrayDisiFon>[];
+  final dogrudanKovalar = <XrayKova, double>{};
   final kaynakPoz = <String, Position>{};
   final belirsizKaynak = <String>{};
   void kaynakBagla(String ad, Position p) {
@@ -373,6 +425,7 @@ PortfoyXray portfoyXray({
           : a.name;
       final kaynakAdi = ad.isEmpty ? a.name : ad;
       ekle(kova, d, kaynakAdi);
+      dogrudanKovalar[kova] = (dogrudanKovalar[kova] ?? 0) + d;
       kaynakBagla(kaynakAdi, p);
       if (a.type == AssetType.hisse) {
         // `ASELS.IS` → `ASELS`: KAP raporundaki kodla aynı biçim. ABD
@@ -441,5 +494,6 @@ PortfoyXray portfoyXray({
     kaynaklar: Map.unmodifiable(kaynaklar),
     disiKaynaklar: Map.unmodifiable(disiKaynaklar),
     kaynakPozisyonlari: Map.unmodifiable(kaynakPoz),
+    dogrudanKovalar: Map.unmodifiable(dogrudanKovalar),
   );
 }
