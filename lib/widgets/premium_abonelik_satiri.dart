@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
+import '../providers/premium_kullanim_provider.dart';
 import '../providers/premium_provider.dart';
 import '../screens/paywall_screen.dart';
 import '../services/abonelik_yonetimi.dart';
@@ -81,6 +82,11 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
       alt = l10n.prmBitis(bitis);
     }
     final sonGunler = kalan != null && kalan <= hediyeSonGunlerEsigi;
+    // "Premium'la kullandıkların" (Ar-Ge 14 Kas #2): yenileme öncesi "neye
+    // ödüyorum" sorusunun cevabı kullanıcının kendi sayıları. Sayım
+    // sağlayıcıda; hiçbir kalem yoksa satır yok.
+    final kullanim =
+        premiumKullanimMetni(l10n, ref.watch(premiumKullanimProvider));
 
     return SandikCard(
       // `min`: kart alt sayfada açılır (Profil › Premium satırı). Varsayılan
@@ -104,6 +110,9 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
                             fontWeight: FontWeight.w600, color: c.text90)),
                     if (alt != null)
                       Text(alt, style: t.bodySmall?.copyWith(color: c.text58)),
+                    if (kullanim != null)
+                      Text(kullanim,
+                          style: t.bodySmall?.copyWith(color: c.text58)),
                   ],
                 ),
               ),
@@ -144,4 +153,22 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Kalemleri tek satıra dizer: "Premium'la kullandıkların: 14 varlık · 3
+/// gösterge alarmı". Boş listede null (satır çizilmez).
+String? premiumKullanimMetni(AppLocalizations l, List<PremiumKullanim> k) {
+  if (k.isEmpty) return null;
+  final parcalar = [
+    for (final e in k)
+      switch (e.kalem) {
+        PremiumKalem.varlik => l.prmKullanimVarlik(e.sayi),
+        PremiumKalem.takip => l.prmKullanimTakip(e.sayi),
+        PremiumKalem.fiyatAlarmi => l.prmKullanimFiyatAlarmi(e.sayi),
+        PremiumKalem.gostergeAlarmi => l.prmKullanimGostergeAlarmi(e.sayi),
+        PremiumKalem.cizgiAlarmi => l.prmKullanimCizgiAlarmi(e.sayi),
+        PremiumKalem.portfoy => l.prmKullanimPortfoy(e.sayi),
+      },
+  ];
+  return l.prmKullanim(parcalar.join(' · '));
 }

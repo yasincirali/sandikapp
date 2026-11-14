@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr'),
+    Locale('tr')
   ];
 
   /// No description provided for @appName.
@@ -6901,11 +6901,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
   String chartOhlcLine(
-    String acilis,
-    String yuksek,
-    String dusuk,
-    String kapanis,
-  );
+      String acilis, String yuksek, String dusuk, String kapanis);
 
   /// No description provided for @whatsNewTitle.
   ///
@@ -9474,11 +9470,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  );
+      String date, String end, String change, String cpi);
 
   /// No description provided for @savingsRose.
   ///
@@ -10817,11 +10809,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
   String cryEventEvidence(
-    String amount,
-    String times,
-    String pct,
-    String share,
-  );
+      String amount, String times, String pct, String share);
 
   /// No description provided for @tekOnayGizlilikBaglanti.
   ///
@@ -11986,6 +11974,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Şimdi değil'**
   String get prmBittiSonra;
+
+  /// No description provided for @prmKullanim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'la kullandıkların: {liste}'**
+  String prmKullanim(String liste);
+
+  /// No description provided for @prmKullanimVarlik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} varlık}}'**
+  String prmKullanimVarlik(int sayi);
+
+  /// No description provided for @prmKullanimTakip.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} takip}}'**
+  String prmKullanimTakip(int sayi);
+
+  /// No description provided for @prmKullanimFiyatAlarmi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} fiyat alarmı}}'**
+  String prmKullanimFiyatAlarmi(int sayi);
+
+  /// No description provided for @prmKullanimGostergeAlarmi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} gösterge alarmı}}'**
+  String prmKullanimGostergeAlarmi(int sayi);
+
+  /// No description provided for @prmKullanimCizgiAlarmi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} çizgi alarmı}}'**
+  String prmKullanimCizgiAlarmi(int sayi);
+
+  /// No description provided for @prmKullanimPortfoy.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} portföy}}'**
+  String prmKullanimPortfoy(int sayi);
 
   /// No description provided for @prmAbonelikAylik.
   ///
@@ -15616,11 +15646,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{donem, select, hafta{Geçen hafta} other{Geçen ay}} portföyün {yuzde} {yon, select, artti{arttı} other{azaldı}}, en çok {varlik} etkiledi · nedenini yapay zekâ Premium\'da anlatır.'**
   String pyzKilitOzetEtkili(
-    String donem,
-    String yuzde,
-    String yon,
-    String varlik,
-  );
+      String donem, String yuzde, String yon, String varlik);
 
   /// No description provided for @pyzDonemSecici.
   ///
@@ -17229,10 +17255,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sıradaki kilometre taşı: {baslik}, yüzde {yuzde}, {kalan} kaldı'**
   String kilometreTasiSiradakiIlerlemeEtiket(
-    String baslik,
-    int yuzde,
-    String kalan,
-  );
+      String baslik, int yuzde, String kalan);
 
   /// No description provided for @kilometreTasiSiradakiYuzdeEtiket.
   ///
@@ -17743,12 +17766,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{baslik}: en düşük {dusuk}, en yüksek {yuksek}, bugün {bugun}. {cumle}'**
   String yaSemantik(
-    String baslik,
-    String dusuk,
-    String yuksek,
-    String bugun,
-    String cumle,
-  );
+      String baslik, String dusuk, String yuksek, String bugun, String cumle);
 
   /// No description provided for @noChangeBridgeToday.
   ///
@@ -18259,11 +18277,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'En iyi ay {iyiAy} {iyiDeger}, en zor {zorAy} {zorDeger}.'**
   String aylikGetiriOzetUclar(
-    String iyiAy,
-    String iyiDeger,
-    String zorAy,
-    String zorDeger,
-  );
+      String iyiAy, String iyiDeger, String zorAy, String zorDeger);
 
   /// Aylık getiri kartı: yalnız en iyi ay (aylar eşit)
   ///
@@ -18294,11 +18308,7 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{yil}: {getiri}. TÜFE yüzde {tufe}, reel getiri {reel}.'**
   String aylikGetiriYilReelOkunan(
-    String yil,
-    String getiri,
-    String tufe,
-    String reel,
-  );
+      String yil, String getiri, String tufe, String reel);
 
   /// Aylık getiri dipnot ayrıntısı: enflasyon kaynağı
   ///
@@ -18556,9 +18566,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

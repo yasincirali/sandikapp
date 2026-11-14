@@ -4503,6 +4503,48 @@
   },
   "prmBittiGor": "See Premium",
   "prmBittiSonra": "Not now",
+  "prmKullanim": "What you use with Premium: {liste}",
+  "@prmKullanim": {
+    "placeholders": {
+      "liste": {"type": "String"}
+    }
+  },
+  "prmKullanimVarlik": "{sayi, plural, =1{1 asset} other{{sayi} assets}}",
+  "@prmKullanimVarlik": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "prmKullanimTakip": "{sayi, plural, =1{1 watched item} other{{sayi} watched items}}",
+  "@prmKullanimTakip": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "prmKullanimFiyatAlarmi": "{sayi, plural, =1{1 price alert} other{{sayi} price alerts}}",
+  "@prmKullanimFiyatAlarmi": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "prmKullanimGostergeAlarmi": "{sayi, plural, =1{1 indicator alert} other{{sayi} indicator alerts}}",
+  "@prmKullanimGostergeAlarmi": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "prmKullanimCizgiAlarmi": "{sayi, plural, =1{1 line alert} other{{sayi} line alerts}}",
+  "@prmKullanimCizgiAlarmi": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "prmKullanimPortfoy": "{sayi, plural, =1{1 portfolio} other{{sayi} portfolios}}",
+  "@prmKullanimPortfoy": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
   "prmAbonelikAylik": "Premium · monthly",
   "prmAbonelikYillik": "Premium · yearly",
   "prmAbonelikHediye": "Premium · early-user gift",
