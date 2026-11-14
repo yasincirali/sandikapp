@@ -78,21 +78,27 @@ class PremiumHediyeSayfasi extends StatelessWidget {
   }
 }
 
-/// Hediye bittiğinde BİR kez açılan sayfa (paywall incelemesi, 2026-10-20).
+/// Premium bittiğinde BİR kez açılan sayfa (paywall incelemesi, 2026-10-20:
+/// hediye; Ar-Ge 14 Kas #1: ücretsiz deneme ve yenilenmeyen abonelik de).
 ///
-/// Hediye herkese aynı gün verildiği için aynı günlerde biter; sessiz
-/// bitiş "bir sabah kilit" hissi. Sayfa üç şeyi söyler: hiçbir veri
-/// silinmedi, ne ücretsiz kalır, Premium'la devam edilebilir. "Premium'u
-/// gör" paywall'u `hediye_bitti` kaynağıyla açar (huni analitiği); "Şimdi
-/// değil" kapatır ve bir daha sorulmaz (`premiumHediyeBittiSoylenen`).
-class PremiumHediyeBittiSayfasi extends StatelessWidget {
-  const PremiumHediyeBittiSayfasi({super.key});
+/// Sessiz bitiş "bir sabah kilit" hissi. Sayfa üç şeyi söyler: hiçbir veri
+/// silinmedi, temel özellikler ücretsiz kalır, Premium'la devam edilebilir.
+/// Metin kaynağa göre: hediyede 2026-10-20 metni birebir, deneme/abonelikte
+/// bitiş tarihi. Geri sayım, kırmızı, korku dili yok: bilgi, baskı değil.
+/// "Premium'u gör" paywall'u kaynağa göre `hediye_bitti` / `premium_bitti`
+/// ile açar (huni analitiği); "Şimdi değil" kapatır ve aynı bitiş için bir
+/// daha sorulmaz (`premiumBittiSoylenenProvider`).
+class PremiumBittiSayfasi extends StatelessWidget {
+  const PremiumBittiSayfasi({super.key, required this.bitis});
 
-  static Future<void> goster(BuildContext context) => showSandikSheet<void>(
+  final PremiumBitisi bitis;
+
+  static Future<void> goster(BuildContext context, PremiumBitisi bitis) =>
+      showSandikSheet<void>(
         context: context,
         shape:
             const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
-        builder: (_) => const PremiumHediyeBittiSayfasi(),
+        builder: (_) => PremiumBittiSayfasi(bitis: bitis),
       );
 
   @override
@@ -100,6 +106,9 @@ class PremiumHediyeBittiSayfasi extends StatelessWidget {
     final l10n = context.l10n;
     final c = context.c;
     final t = context.t;
+    final hediye = bitis.hediye;
+    final tarih =
+        DateFormat('d MMMM y', context.tarihDili).format(bitis.bitis.toLocal());
     return SafeArea(
       top: false,
       child: Padding(
@@ -112,14 +121,16 @@ class PremiumHediyeBittiSayfasi extends StatelessWidget {
             Icon(Icons.hourglass_bottom_rounded,
                 color: c.amberText, size: SandikSpace.xxl),
             const SizedBox(height: SandikSpace.md),
-            Text(l10n.prmHediyeBittiBaslik,
+            Text(hediye ? l10n.prmBittiHediyeBaslik : l10n.prmBittiBaslik,
                 textAlign: TextAlign.center,
                 style: t.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
             const SizedBox(height: SandikSpace.sm),
             Text(
-                l10n.prmHediyeBittiGovde(
-                    RemoteConfigService.instance.freeAssetLimit),
+                hediye
+                    ? l10n.prmBittiHediyeGovde(
+                        RemoteConfigService.instance.freeAssetLimit)
+                    : l10n.prmBittiGovde(tarih),
                 textAlign: TextAlign.center,
                 style: t.bodyMedium?.copyWith(color: c.text58)),
             const SizedBox(height: SandikSpace.lg),
@@ -131,16 +142,17 @@ class PremiumHediyeBittiSayfasi extends StatelessWidget {
               ),
               onPressed: () {
                 Navigator.of(context).pop();
-                PaywallScreen.show(context, source: 'hediye_bitti');
+                PaywallScreen.show(context,
+                    source: hediye ? 'hediye_bitti' : 'premium_bitti');
               },
-              child: Text(l10n.prmHediyeBittiGor),
+              child: Text(l10n.prmBittiGor),
             ),
             const SizedBox(height: SandikSpace.xs),
             TextButton(
               style: TextButton.styleFrom(
                   minimumSize: const Size.fromHeight(SandikTouch.min)),
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.prmHediyeBittiSonra),
+              child: Text(l10n.prmBittiSonra),
             ),
           ],
         ),

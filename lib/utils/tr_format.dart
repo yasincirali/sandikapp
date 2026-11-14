@@ -80,6 +80,14 @@ String fmtTRY(double value, {int digits = 0}) {
       .format(value);
 }
 
+/// Mağaza para biriminde tutar (`₺309,89`, `$29.99`): abonelik fiyatından
+/// HESAPLANAN tutarlar için (yıllık tasarruf, Ar-Ge 14 Kas #4). Mağazanın
+/// kendi fiyatı `priceString` ile gösterilir; hesaplanan tutarın
+/// `priceString`'i yoktur ve abonelik TRY dışında da olabilir, `fmtTRY`
+/// uymaz. Simge ve ayraç arayüz dilinden ([dil]: `tr_TR` / `en_US`).
+String fmtMagazaTutari(double value, String paraBirimi, {String dil = 'tr_TR'}) =>
+    NumberFormat.simpleCurrency(locale: dil, name: paraBirimi).format(value);
+
 /// Birim FİYAT (tutar değil): 1 ₺ ve üstünde 2 ondalık, altında en az 4
 /// anlamlı hane (en çok 8 ondalık). SHIB ~0,0004 ₺ `fmtTRY(digits: 2)` ile
 /// "₺0,00" okunurdu — sıfır fiyatlı gibi. Toplam/değer için `fmtTRY` kalır.

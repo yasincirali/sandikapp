@@ -1406,11 +1406,15 @@ class _PremiumDurumSatiri extends ConsumerWidget {
     // "Premium'a geç" satın alınan şeyin ne olduğunu söyleyemez. Satır
     // yalnız kilit gerçekten varken çıkar.
     if (!ref.watch(premiumKilitliProvider)) return const SizedBox.shrink();
-    // Hediyesi bitmiş kullanıcının kaynağı ayrı ki huni analitiğinde
-    // hediye sonrası dönüşüm görünsün.
-    final kaynak = ref.watch(hediyesiBitmisProvider) != null
-        ? 'hediye_bitti'
-        : 'profile_banner';
+    // Premium'u bitmiş kullanıcının kaynağı ayrı ki huni analitiğinde
+    // bitiş sonrası dönüşüm görünsün; hediye kaynağı 2026-10-20'den beri
+    // `hediye_bitti`, deneme/abonelik bitişi `premium_bitti` (Ar-Ge 14 Kas).
+    final bitis = ref.watch(premiumBitmisProvider);
+    final kaynak = bitis == null
+        ? 'profile_banner'
+        : bitis.hediye
+            ? 'hediye_bitti'
+            : 'premium_bitti';
     final metin = l10n.premiumDurumGec;
     return _satir(
       context,

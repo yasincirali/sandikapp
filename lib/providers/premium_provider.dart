@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/crash_reporter.dart';
+import '../services/deneme_hatirlatici.dart';
 import '../services/satin_alma_service.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
@@ -204,6 +205,34 @@ final abonelikDonemiProvider = FutureProvider<AbonelikDonemi?>((ref) async {
   return ref.read(satinAlmaServisiProvider).donem();
 });
 
+/// Aylık yerine yıllık ödenirse yılda ne kadar az ödenir (Ar-Ge 14 Kas #4).
+/// Saf: 12 × aylık − yıllık, kuruşa yuvarlanmış; fark yoksa ya da negatifse
+/// null (uydurma tasarruf yazılmaz).
+double? yillikFark(double aylik, double yillik) {
+  if (aylik <= 0 || yillik <= 0) return null;
+  final fark = ((aylik * 12 - yillik) * 100).round() / 100;
+  return fark > 0 ? fark : null;
+}
+
+/// Mağazanın aylık ve yıllık fiyatından yıllık tasarruf (mağaza para
+/// biriminde). Teklif okunamazsa, plan eksikse ya da iki planın para birimi
+/// farklıysa null: satır çıkmaz. Fiyat sabit yazılmaz, yalnız mağazadan.
+final yillikTasarrufProvider =
+    FutureProvider<({double tutar, String paraBirimi})?>((ref) async {
+  final t = await ref.read(satinAlmaServisiProvider).teklif();
+  final a = t?.aylik?.storeProduct;
+  final y = t?.yillik?.storeProduct;
+  if (a == null || y == null || a.currencyCode != y.currencyCode) return null;
+  final fark = yillikFark(a.price, y.price);
+  return fark == null ? null : (tutar: fark, paraBirimi: a.currencyCode);
+});
+
+/// Deneme bitiş hatırlatıcısı (Ar-Ge 14 Kas #3); testte sahte platformla
+/// geçersiz kılınır. `main.dart` [abonelikDonemiProvider]'ı dinleyip her
+/// yeni dönemde `guncelle` çağırır.
+final denemeHatirlaticiProvider = Provider<DenemeHatirlatici>(
+    (_) => const DenemeHatirlatici(BildirimServisiPlatformu()));
+
 /// Geçerli hak (abonelik önce, sonra hediye, sonra manuel); yoksa null.
 final gecerliPremiumHakkiProvider = Provider<PremiumHakki?>((ref) {
   final haklar = ref.watch(premiumHaklariProvider).valueOrNull ?? const [];
@@ -214,18 +243,57 @@ final gecerliPremiumHakkiProvider = Provider<PremiumHakki?>((ref) {
   return gecerli.isEmpty ? null : gecerli.first;
 });
 
-/// Hediyesi BİTMİŞ ve başka geçerli hakkı olmayan kullanıcı (paywall
-/// incelemesi, 2026-10-20). 90 günlük hediye herkese aynı gün verildiği için
-/// aynı günlerde biter; bitişi söylemeyen uygulama "bir sabah kilit"
-/// hissi yaratıyordu. Profil bandı ve açılıştaki tek seferlik sayfa bunu
-/// okur. Değer bitmiş hediyenin bitişidir (bir kez söyleme anahtarı).
-final hediyesiBitmisProvider = Provider<DateTime?>((ref) {
-  if (ref.watch(gecerliPremiumHakkiProvider) != null) return null;
-  final haklar = ref.watch(premiumHaklariProvider).valueOrNull ?? const [];
+/// Premium'u BİTMİŞ ve şu an geçerli hakkı olmayan kullanıcının son
+/// bitişi. Kaynaktan bağımsız: hediye, ücretsiz deneme ya da yenilenmeyen
+/// mağaza aboneliği (`revenuecat`), manuel.
+///
+/// Neden genellendi (Ar-Ge 14 Kas #1, #8): "bitti" sayfası yalnız hediyede
+/// vardı (paywall incelemesi, 2026-10-20: 90 günlük hediye herkese aynı gün
+/// bitiyor, sessiz bitiş "bir sabah kilit" hissi). Denemesi biten ya da
+/// aboneliği yenilenmeyen kullanıcı aynı sabahı sessizce yaşıyordu. Değer
+/// bir kez söyleme anahtarıdır ([PremiumBitisi.anahtar]); kaynak metni seçer.
+class PremiumBitisi {
+  const PremiumBitisi({required this.bitis, required this.kaynak});
+
+  final DateTime bitis;
+  final String kaynak;
+
+  bool get hediye => kaynak == 'erken_kullanici';
+
+  /// "Bu bitiş söylendi" anahtarı. Hediyede 2026-10-20'den beri yazılan
+  /// değerle AYNI biçim (UTC ISO): eski anahtar okununca hediye kullanıcısı
+  /// sayfayı ikinci kez görmez. Yeni hak alınıp yeniden biterse yeni bitiş =
+  /// yeni anahtar = bir kez daha söylenir.
+  String get anahtar => bitis.toUtc().toIso8601String();
+}
+
+/// Saf karar ([premiumBitmisProvider]): geçerli bir hak varsa null; yoksa
+/// bitişi bilinen haklardan EN SONUNCUSU (hediye bitip sonra abonelik de
+/// bittiyse anlatılacak olan abonelik). Hiç hakkı olmamış kullanıcıda null.
+PremiumBitisi? premiumBitisiBul(List<PremiumHakki> haklar, DateTime simdi) {
+  if (haklar.any((h) => h.gecerli(simdi))) return null;
+  PremiumHakki? son;
   for (final h in haklar) {
-    if (h.hediye && h.bitis != null) return h.bitis;
+    final b = h.bitis;
+    if (b == null) continue;
+    if (son == null || b.isAfter(son.bitis!)) son = h;
   }
-  return null;
+  return son == null
+      ? null
+      : PremiumBitisi(bitis: son.bitis!, kaynak: son.kaynak);
+}
+
+/// Profil bandı ve açılıştaki tek seferlik sayfa bunu okur. Paywall
+/// kapalıyken (Premium sistemi yok sayılır) ve herhangi bir geçerli hak
+/// varken null: sunucu hakkı, webhook'tan önce gelen mağaza hakkı,
+/// geliştirici anahtarı, admin ([effectivePremiumProvider]). Acil kapatma
+/// (kilitler askıda) bilerek hesaba katılmaz: hak yine bitmiştir, hediyede
+/// de öyleydi.
+final premiumBitmisProvider = Provider<PremiumBitisi?>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return null;
+  if (ref.watch(effectivePremiumProvider)) return null;
+  final haklar = ref.watch(premiumHaklariProvider).valueOrNull ?? const [];
+  return premiumBitisiBul(haklar, DateTime.now());
 });
 
 /// Hediyesi son günlerinde (≤ [esik] gün) olan kullanıcı; yoksa null.

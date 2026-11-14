@@ -273,15 +273,30 @@ class _StringPrefNotifier extends Notifier<String> {
   final String defaultValue;
   final bool perUser;
 
-  _StringPrefNotifier(this.key, this.defaultValue, {this.perUser = false});
+  /// Anahtar yeniden adlandırıldıysa eski adı: yeni anahtar hiç
+  /// yazılmamışken değer oradan okunur (kullanıcının tercihi sıfırlanmaz,
+  /// CLAUDE.md "kullanıcı verisini taşıyan değişiklik"). İlk [set] yeni
+  /// anahtara yazar; eski anahtar silinmez (eski build'e dönüşte de doğru).
+  final String? eskiKey;
 
-  String get _key => perUser ? _userKey(key) : key;
+  _StringPrefNotifier(this.key, this.defaultValue,
+      {this.perUser = false, this.eskiKey});
+
+  String _ad(String k) => perUser ? _userKey(k) : k;
+  String get _key => _ad(key);
+
+  String? _oku(SharedPreferences prefs) {
+    final v = prefs.getString(_key);
+    if (v != null) return v;
+    final eski = eskiKey;
+    return eski == null ? null : prefs.getString(_ad(eski));
+  }
 
   @override
   String build() {
     final prefs = _prefsSync;
     if (prefs != null) {
-      final v = prefs.getString(_key);
+      final v = _oku(prefs);
       if (v != null) return v;
     } else {
       _loadAsync();
@@ -292,7 +307,7 @@ class _StringPrefNotifier extends Notifier<String> {
   Future<void> _loadAsync() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final v = prefs.getString(_key);
+      final v = _oku(prefs);
       if (v != null) state = v;
     } catch (_) {}
   }
@@ -1694,14 +1709,17 @@ final premiumHediyeGosterildiProvider =
         PrefKeys.premiumHediyeGosterildi, false,
         perUser: true));
 
-/// Hangi bitiş tarihli hediyenin bittiği söylendi (ISO; boş = hiç).
+/// Hangi bitiş tarihli Premium'un bittiği söylendi (UTC ISO; boş = hiç).
 /// Paywall incelemesi (2026-10-20): 90 günlük hediye sessizce bitince
-/// kullanıcı bir sabah kilitlerle karşılaşıyordu; bitişte bir kez "hediyen
-/// bitti, verin yerinde, Premium'la devam" denir ve paywall teklif edilir.
-final premiumHediyeBittiSoylenenProvider =
+/// kullanıcı bir sabah kilitlerle karşılaşıyordu; bitişte bir kez "verin
+/// yerinde, Premium'la devam" denir ve paywall teklif edilir. Ar-Ge 14 Kas
+/// #1: deneme ve yenilenmeyen abonelik de aynı kural (`premiumBitmisProvider`);
+/// hediyenin eski anahtarı okunur ki hediyesi biten kullanıcı ikinci kez
+/// görmesin.
+final premiumBittiSoylenenProvider =
     NotifierProvider<_StringPrefNotifier, String>(() => _StringPrefNotifier(
-        PrefKeys.premiumHediyeBittiSoylenen, '',
-        perUser: true));
+        PrefKeys.premiumBittiSoylenen, '',
+        perUser: true, eskiKey: PrefKeys.premiumHediyeBittiSoylenen));
 
 // ─── Leaderboard opt-in ───────────────────────────────────────────────────────
 // Kullanıcı yarış (partner leaderboard) özelliğine katılmak için explicit
@@ -1811,6 +1829,9 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   radarKocuGorulduProvider,
   haftaSakinGosterProvider,
   premiumHediyeGosterildiProvider,
+  // Hesap değişiminde yeniden okunmazsa önceki hesabın "söylendi" değeri
+  // yeni hesapta kalıyordu (Ar-Ge 14 Kas, genelleme sırasında görüldü).
+  premiumBittiSoylenenProvider,
   gostergeParametreleriProvider,
   seciliPortfoyProvider,
   takipSirasiProvider,

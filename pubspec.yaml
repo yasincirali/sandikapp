@@ -20,6 +20,9 @@ dependencies:
   shared_preferences: ^2.3.2
   share_plus: ^10.0.0
   flutter_local_notifications: ^18.0.0
+  # Planlı yerel bildirimin zamanı (TZDateTime); flutter_local_notifications
+  # zaten çekiyordu, doğrudan bağımlılık oldu (deneme hatırlatması 2026-11-14).
+  timezone: ^0.10.1
   firebase_core: ^4.7.0
   firebase_messaging: ^16.2.0
   flutter_svg: ^2.0.10+1
