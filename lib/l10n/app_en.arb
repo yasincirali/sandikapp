@@ -3670,6 +3670,7 @@
   "cihazKaldirMesaj": "{ad} will need to be verified with an email code the next time it signs in.",
   "cihazKaldirildi": "Device removed",
   "cihazListesiBos": "No registered devices.",
+  "ePostaKesinHata": "The domain has a typo, fix it below",
   "ePostaOneriSoru": "Did you mean: ",
   "otpEpostayiDegistir": "Change email",
   "otpAdresKontrol": "Still nothing? Check the address: {eposta}",

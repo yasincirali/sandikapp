@@ -238,6 +238,23 @@ void main() {
           findsNothing);
     });
  
+    // Kesin hata (sunucu kapısı listesi): alan bırakılınca kırmızı, öneriye
+    // dokununca kalkar (yasin 2026-11-14: "inline textfield'ı kızartsak").
+    testWidgets('gmail.con alan bırakılınca kırmızı, öneriyle düzelir',
+        (tester) async {
+      await ac(tester);
+      await tester.enterText(alan(l.email), 'ahmet@gmail.con');
+      await tester.pump();
+      expect(find.text(l.ePostaKesinHata), findsNothing);
+      await tester.tap(alan(l.password));
+      await tester.pump();
+      expect(find.text(l.ePostaKesinHata), findsOneWidget);
+      await tester.tap(
+          find.textContaining('ahmet@gmail.com', findRichText: true));
+      await tester.pump();
+      expect(find.text(l.ePostaKesinHata), findsNothing);
+    });
+
     testWidgets('".con" uzantısı da önerilir', (tester) async {
       await ac(tester);
       await tester.enterText(alan(l.email), 'ahmet@gmail.con');

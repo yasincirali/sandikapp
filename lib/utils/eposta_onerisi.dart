@@ -136,3 +136,70 @@ int _osaMesafe(String a, String b) {
 /// öneri üretmez, ekran tek çağrıyla karar verir.
 String? ePostaYazimOnerisiGecerliyse(String eposta) =>
     AuthService.eMailGecerliMi(eposta) ? ePostaYazimOnerisi(eposta) : null;
+
+/// Sunucu kapısının (0185 `hook_before_user_created`) reddettiği alan
+/// adları — birebir aynı liste (`eposta_sunucu_kapisi_parite_test` kilitli).
+/// Bunlar "belki" değil kesin hata: kayıt ekranı alanı kırmızı yapar ve
+/// sunucuya gitmeden durur (yasin 2026-11-14: "ilerlediğinde direkt inline
+/// textfield'ı kızartsak"). Benzerlik tahmini ([ePostaYazimOnerisi]) yalnız
+/// öneri olarak kalır; gerçek ama az bilinen alan adını engellemesin.
+const kesinYazimHatalari = <String, String>{
+  'gmial.com': 'gmail.com',
+  'gmai.com': 'gmail.com',
+  'gmal.com': 'gmail.com',
+  'gamil.com': 'gmail.com',
+  'gnail.com': 'gmail.com',
+  'gmaill.com': 'gmail.com',
+  'gmali.com': 'gmail.com',
+  'gmil.com': 'gmail.com',
+  'gmail.co': 'gmail.com',
+  'gmail.cm': 'gmail.com',
+  'gmail.om': 'gmail.com',
+  'hotmial.com': 'hotmail.com',
+  'hotmai.com': 'hotmail.com',
+  'hotmal.com': 'hotmail.com',
+  'hotamil.com': 'hotmail.com',
+  'hotmil.com': 'hotmail.com',
+  'hotmail.co': 'hotmail.com',
+  'hotmail.cm': 'hotmail.com',
+  'hotmail.com.t': 'hotmail.com.tr',
+  'hotmial.com.tr': 'hotmail.com.tr',
+  'outlok.com': 'outlook.com',
+  'outllok.com': 'outlook.com',
+  'otlook.com': 'outlook.com',
+  'outlook.co': 'outlook.com',
+  'yahooo.com': 'yahoo.com',
+  'yaho.com': 'yahoo.com',
+  'iclod.com': 'icloud.com',
+  'icoud.com': 'icloud.com',
+  'icloud.co': 'icloud.com',
+  'icloud.cm': 'icloud.com',
+};
+
+/// Sunucunun reddettiği son ekler (`.con` …) — 0185 ile aynı.
+const kesinHataliSonEkler = <String>{
+  'con', 'cmo', 'cpm', 'vom', 'xom', 'cim', 'comm', 'coom', 'ocm',
+};
+
+/// Adres sunucu kapısına takılacaksa düzeltilmiş adres; değilse null.
+/// 0185'teki karar sırasının aynısı: önce harita, sonra son ek (son ek
+/// düzelince haritaya bir daha bakılır: gmial.con → gmail.com).
+String? ePostaKesinYazimHatasi(String eposta) {
+  final v = eposta.trim();
+  final at = v.lastIndexOf('@');
+  if (at <= 0 || at == v.length - 1) return null;
+  final yerel = v.substring(0, at);
+  final alan = v.substring(at + 1).toLowerCase();
+  var dogru = kesinYazimHatalari[alan];
+  final nokta = alan.lastIndexOf('.');
+  if (dogru == null && nokta > 0) {
+    final ek = alan.substring(nokta + 1);
+    if (kesinHataliSonEkler.contains(ek)) {
+      final d = '${alan.substring(0, nokta)}.com';
+      dogru = kesinYazimHatalari[d] ?? d;
+    } else if (ek == 'comtr') {
+      dogru = '${alan.substring(0, nokta)}.com.tr';
+    }
+  }
+  return dogru == null ? null : '$yerel@$dogru';
+}
