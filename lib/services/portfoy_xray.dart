@@ -106,6 +106,7 @@ class PortfoyXray {
     this.gorunen = const {},
     this.kaynaklar = const {},
     this.disiKaynaklar = const {},
+    this.kaynakPozisyonlari = const {},
   });
 
   /// X-Ray'e giren pozisyonların TL değeri (fiyatı bilinenler).
@@ -143,6 +144,12 @@ class PortfoyXray {
   /// X-Ray dışı payın kaynakları: dağılımı bulunamayan fonun tamamı ya da
   /// kaynak toplamı 100'ü tutmayan fondaki fark. Toplamı [xrayDisi].
   final Map<String, double> disiKaynaklar;
+
+  /// Kaynak adı → o adı veren TEK pozisyon (kaynak sayfasında satıra
+  /// dokununca varlık sayfası, Ar-Ge 14 Kas #2). Aynı adı iki farklı
+  /// pozisyon veriyorsa (iki "Gram altın" kaydı gibi) ad burada YOK:
+  /// yanlış varlığa götürmektense satır dokunulmaz kalır.
+  final Map<String, Position> kaynakPozisyonlari;
 
   bool get bos => toplam <= 0;
 
@@ -312,6 +319,18 @@ PortfoyXray portfoyXray({
   final kaynaklar = <XrayKova, Map<String, double>>{};
   final disiKaynaklar = <String, double>{};
   final disiFonlar = <XrayDisiFon>[];
+  final kaynakPoz = <String, Position>{};
+  final belirsizKaynak = <String>{};
+  void kaynakBagla(String ad, Position p) {
+    final o = kaynakPoz[ad];
+    if (o == null && !belirsizKaynak.contains(ad)) {
+      kaynakPoz[ad] = p;
+    } else if (o != null && o.key != p.key) {
+      kaynakPoz.remove(ad);
+      belirsizKaynak.add(ad);
+    }
+  }
+
   DateTime? enEski;
   DateTime? enYeni;
 
@@ -352,7 +371,9 @@ PortfoyXray portfoyXray({
       final ad = a.type == AssetType.hisse
           ? a.ticker.trim().toUpperCase().replaceFirst(RegExp(r'\.IS$'), '')
           : a.name;
-      ekle(kova, d, ad.isEmpty ? a.name : ad);
+      final kaynakAdi = ad.isEmpty ? a.name : ad;
+      ekle(kova, d, kaynakAdi);
+      kaynakBagla(kaynakAdi, p);
       if (a.type == AssetType.hisse) {
         // `ASELS.IS` → `ASELS`: KAP raporundaki kodla aynı biçim. ABD
         // hissesi raporda "AAPL US" yazar; doğrudan tutulan Apple ile fon
@@ -367,6 +388,7 @@ PortfoyXray portfoyXray({
     final fonKodu = fonKoduOf(tur: a.type, ticker: a.ticker);
     final dag = fonKodu == null ? null : dagilimlar[fonKodu];
     final fonAdi = fonKodu ?? a.name;
+    kaynakBagla(fonAdi, p);
     if (dag == null) {
       disiEkle(fonAdi, d);
       disiFonlar.add(XrayDisiFon(ad: a.name, kod: fonKodu, tutar: d));
@@ -418,5 +440,6 @@ PortfoyXray portfoyXray({
     gorunen: Map.unmodifiable(gorunen),
     kaynaklar: Map.unmodifiable(kaynaklar),
     disiKaynaklar: Map.unmodifiable(disiKaynaklar),
+    kaynakPozisyonlari: Map.unmodifiable(kaynakPoz),
   );
 }

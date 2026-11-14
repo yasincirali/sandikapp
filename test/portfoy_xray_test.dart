@@ -143,8 +143,7 @@ void main() {
 
     test('içgörü: farkı ≥3 puan olanlar, büyükten küçüğe, en çok iki', () {
       final i = ornek().icgoruler;
-      expect(i.map((e) => e.tur),
-          [XrayIcgoruTuru.faiz, XrayIcgoruTuru.hisse]);
+      expect(i.map((e) => e.tur), [XrayIcgoruTuru.faiz, XrayIcgoruTuru.hisse]);
       // Faiz getiren: görünen mevduat 0 → mevduat 3.000 + repo 5.000.
       expect(i.first.gorunenPay, 0);
       expect(i.first.gercekPay, closeTo(50, 1e-9));
@@ -418,6 +417,45 @@ void main() {
       await c.read(authProvider.future);
       await c.read(portfolioProvider.future);
       expect(c.read(xrayFonKodlariProvider), 'AAA,AEA,BBB');
+    });
+  });
+
+  // Ar-Ge 14 Kas #2: kaynak sayfasında satır → varlık sayfası.
+  group('kaynakPozisyonlari — kaynak adı → tek pozisyon', () {
+    test('fon kodu, hisse kodu ve doğrudan ad kendi pozisyonuna', () {
+      final x = _xray([
+        _lot('TEFAS:AAA', AssetType.fon, id: 'f1'),
+        _lot('THYAO.IS', AssetType.hisse, id: 'h1'),
+        _lot('ALTIN_GRAM', AssetType.altin, sub: 'a', id: 'g1'),
+        _lot('ALTIN_GRAM2', AssetType.altin, sub: 'b', id: 'g2'),
+      ], dag: {
+        'AAA': _dag('AAA', {'hs': 100}),
+      });
+      expect(x.kaynakPozisyonlari['AAA']?.representative.ticker, 'TEFAS:AAA');
+      expect(x.kaynakPozisyonlari['THYAO']?.representative.ticker, 'THYAO.IS');
+      // İki altın pozisyonu da kendi adıyla (farklı adlar) çözülür.
+      expect(x.kaynakPozisyonlari['ALTIN_GRAM adı'], isNotNull);
+    });
+
+    test('iki farklı pozisyon aynı kaynak adını verirse satır çözülmez', () {
+      final a = _lot('X1', AssetType.diger, id: 'd1');
+      final b = Asset(
+        id: 'd2',
+        userId: 'ben',
+        name: a.name,
+        ticker: 'X2',
+        type: AssetType.diger,
+        quantity: 1,
+        purchasePrice: 50,
+        currentPrice: 50,
+        currency: 'TRY',
+        notes: '',
+        isManualPrice: false,
+        addedDate: _gun,
+      );
+      final x = _xray([a, b]);
+      expect(x.kaynaklar[XrayKova.diger]?[a.name], 150);
+      expect(x.kaynakPozisyonlari.containsKey(a.name), isFalse);
     });
   });
 

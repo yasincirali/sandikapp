@@ -9488,6 +9488,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String xrKaynakAcEtiket(String ad, String tutar) {
+    return '$ad, $tutar. Varlık sayfasını aç.';
+  }
+
+  @override
   String get xrFonsuzNot =>
       'Fonun olmadığı için gerçek dağılımın tuttuklarınla aynı. Fon eklersen içi burada açılır.';
 

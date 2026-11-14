@@ -9621,6 +9621,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String xrKaynakAcEtiket(String ad, String tutar) {
+    return '$ad, $tutar. Open asset page.';
+  }
+
+  @override
   String get xrFonsuzNot =>
       'You have no funds, so your real allocation is the same as what you hold. Add a fund and its contents open up here.';
 
