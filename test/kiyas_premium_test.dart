@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:portfoy_takip/config/pref_keys.dart';
+import 'package:portfoy_takip/models/asset.dart';
+import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/comparison_screen.dart';
 import 'package:portfoy_takip/services/history_service.dart';
+import 'package:portfoy_takip/services/kiyas_seti.dart';
 import 'package:portfoy_takip/services/symbol_search_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Karşılaştır Premium turu (Ar-Ge 14 Kas 2026 22:03).
 ///
@@ -69,6 +74,101 @@ void main() {
     };
   });
   tearDown(() => ComparisonScreen.testSeriKaynagi = null);
+
+  /// Satır başlıklarının ekrandaki sırası (sembol metni, dikey konuma göre).
+  List<String> satirSirasi(WidgetTester tester, List<String> adaylar) {
+    final bulunan = [
+      for (final a in adaylar)
+        if (find.text(a).evaluate().isNotEmpty) a,
+    ];
+    bulunan.sort((a, b) => tester
+        .getTopLeft(find.text(a).first)
+        .dy
+        .compareTo(tester.getTopLeft(find.text(b).first).dy));
+    return bulunan;
+  }
+
+  group('kıyas seti hatırlanır (fikir 2)', () {
+    const kayitli = [
+      SymbolHit(ticker: 'ASELS.IS', name: 'Aselsan', source: 'BIST'),
+      SymbolHit(ticker: 'XU100.IS', name: 'BIST 100', source: 'Endeks'),
+      SymbolHit(ticker: 'USDTRY=X', name: 'Dolar', source: 'Döviz'),
+      SymbolHit(ticker: 'AKBNK.IS', name: 'Akbank', source: 'BIST'),
+      SymbolHit(ticker: 'GARAN.IS', name: 'Garanti', source: 'BIST'),
+    ];
+    const satirlar = [
+      'THYAO.IS', 'ASELS.IS', 'XU100.IS', 'USDTRY=X', 'AKBNK.IS', 'GARAN.IS',
+    ];
+
+    Future<void> kur(List<SymbolHit> set) async {
+      SharedPreferences.setMockInitialValues({
+        PrefKeys.karsilastirmaSeti: kiyasSetiKodla(set),
+      });
+      await initPreferencesCache();
+    }
+
+    testWidgets('Premium: set aynı sırayla geri gelir', (tester) async {
+      _uzunEkran(tester);
+      await kur(kayitli.take(3).toList());
+      await tester.pumpWidget(_ekran(sinir: kKarsilastirmaEnFazla));
+      await tester.pump();
+      expect(satirSirasi(tester, satirlar),
+          ['ASELS.IS', 'XU100.IS', 'USDTRY=X']);
+    });
+
+    testWidgets('varlık sayfasından: varlık başta, set arkasında, 5e kırpılır',
+        (tester) async {
+      _uzunEkran(tester);
+      await kur(kayitli);
+      final thy = Asset(
+        id: 'a1',
+        userId: 'u1',
+        name: 'THY',
+        ticker: 'THYAO.IS',
+        type: AssetType.hisse,
+        quantity: 1,
+        purchasePrice: 100,
+        currency: 'TRY',
+        notes: '',
+        isManualPrice: false,
+        currentPrice: 110,
+        addedDate: DateTime(2026, 1, 1),
+      );
+      getiri.clear(); // birim varlık yolu ağ ister; satır sırası yeter
+      await tester.pumpWidget(_ekran(
+          sinir: kKarsilastirmaEnFazla,
+          child: ComparisonScreen(baslangicVarligi: thy)));
+      await tester.pump();
+      expect(satirSirasi(tester, satirlar),
+          ['THYAO.IS', 'ASELS.IS', 'XU100.IS', 'USDTRY=X', 'AKBNK.IS']);
+    });
+
+    testWidgets('ücretsiz: set kurulmaz, kayıt silinmez', (tester) async {
+      _uzunEkran(tester);
+      await kur(kayitli.take(2).toList());
+      await tester.pumpWidget(_ekran(sinir: 2));
+      await tester.pump();
+      expect(satirSirasi(tester, satirlar), isEmpty);
+      await _ekle(tester, _thy);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getStringList(PrefKeys.karsilastirmaSeti),
+          kiyasSetiKodla(kayitli.take(2)));
+    });
+
+    testWidgets('Premium: ekleme ve çıkarma sete yazılır', (tester) async {
+      _uzunEkran(tester);
+      await kur(kayitli.take(1).toList());
+      await tester.pumpWidget(_ekran(sinir: kKarsilastirmaEnFazla));
+      await tester.pump();
+      await _ekle(tester, _thy);
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+          kiyasSetiCoz(prefs.getStringList(PrefKeys.karsilastirmaSeti),
+                  ortakIdleri: const {})
+              .map((h) => h.ticker),
+          ['ASELS.IS', 'THYAO.IS']);
+    });
+  });
 
   group('kilitli çip (fikir 1)', () {
     testWidgets('ücretsiz sınırda dolu: kilit ikonu, normal ton, Premium etiketi',

@@ -22,6 +22,7 @@ import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
 import '../services/kiyas_paylasimi.dart';
+import '../services/kiyas_seti.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/remote_config_service.dart';
 import '../services/symbol_search_service.dart';
@@ -219,12 +220,34 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     // gösterirdi. `_add` setState çağırdığı için burada alanlar doğrudan
     // yazılır, yükleme `_load` ile başlar.
     final varlik = widget.baslangicVarligi;
-    if (varlik != null) {
-      _selected.add(SymbolHit(
-          ticker: varlik.ticker, name: varlik.name, source: varlik.type.label));
-      _loading.add(varlik.ticker);
-      CrashReporter.arkaPlan(_load(varlik.ticker),
-          reason: 'comparison_screen.baslangicVarligi');
+    final baslangicHit = varlik == null
+        ? null
+        : SymbolHit(
+            ticker: varlik.ticker,
+            name: varlik.name,
+            source: varlik.type.label);
+    // Hatırlanan kıyas seti (Ar-Ge 14 Kas 22:03, YAP 2): Premium'da son set
+    // aynı sırayla geri gelir; varlık sayfasından gelinmişse o varlık başta,
+    // set arkasında, toplam sınıra kırpılır. Ön seçimli açılışta
+    // (`initialTickers`) set kurulmaz: çağıran ne istediğini söylemiştir.
+    final kayitli = _kiyasSetiHatirlanir && widget.initialTickers.isEmpty
+        ? kiyasSetiCoz(ref.read(karsilastirmaSetiProvider),
+            ortakIdleri: {
+              for (final o in ref.read(activePartnersProvider)) o.id,
+            })
+        : const <SymbolHit>[];
+    _kayitliBaslangicVar =
+        baslangicHit != null && kayitli.contains(baslangicHit);
+    for (final hit in kiyasSetiAcilisi(
+        baslangic: baslangicHit,
+        kayitli: kayitli,
+        sinir: ref.read(karsilastirmaSeriSiniriProvider))) {
+      _selected.add(hit);
+      _loading.add(hit.ticker);
+      CrashReporter.arkaPlan(_load(hit.ticker),
+          reason: hit == baslangicHit
+              ? 'comparison_screen.baslangicVarligi'
+              : 'comparison_screen.kiyasSeti');
     }
     // Detay ekranından gelen ön seçimler.
     if (widget.initialTickers.isNotEmpty) {
@@ -261,7 +284,28 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       _loading.add(hit.ticker);
       _failed.remove(hit.ticker);
     });
+    _kiyasSetiniKaydet();
     await _load(hit.ticker);
+  }
+
+  /// Kıyas seti hatırlanır mı: yalnız Premium sınırında (5 seri; paywall
+  /// kapalıyken herkes oradadır, 5 seri de herkese açıktır). Ücretsizde set
+  /// ne okunur ne yazılır — Premium'dan düşen kullanıcının kayıtlı beşlisi
+  /// silinmez, geri dönünce aynen gelir.
+  bool get _kiyasSetiHatirlanir =>
+      ref.read(karsilastirmaSeriSiniriProvider) >= kKarsilastirmaEnFazla;
+
+  /// Varlık sayfasından gelinen varlık kayıtlı sette de var mıydı. Yoksa o
+  /// satır sete YAZILMAZ: varlık sayfasının bağlamıdır (seri de birim varlık
+  /// motoruyla çekilir, bkz. [_fetch]); kullanıcının kendi kurduğu kıyas
+  /// değildir. Varsa seçimdeki yeriyle yazılır ki açılış onu setten silmesin.
+  bool _kayitliBaslangicVar = false;
+
+  void _kiyasSetiniKaydet() {
+    if (!_kiyasSetiHatirlanir) return;
+    final baslangic = widget.baslangicVarligi?.ticker;
+    ref.read(karsilastirmaSetiProvider.notifier).set(kiyasSetiKodla(
+        _selected.where((s) => s.ticker != baslangic || _kayitliBaslangicVar)));
   }
 
   /// Grafik Premium'un sınırında değil, ücretsiz sınırda mı dolu.
@@ -374,6 +418,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       // hiçbir çizgi tam renkte olmaz — hepsi soluk kalır.
       if (_focused == ticker) _focused = null;
     });
+    _kiyasSetiniKaydet();
   }
 
   /// Periyot değişince TÜM seriler yeniden çekilir — normalize referansı
