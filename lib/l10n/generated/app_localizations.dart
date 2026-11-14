@@ -12527,6 +12527,60 @@ abstract class AppLocalizations {
   /// **'En fazla 5 varlık'**
   String get cmpSinirDolu;
 
+  /// No description provided for @cmpSiraLider.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önde {ad}: {yuzde}.'**
+  String cmpSiraLider(String ad, String yuzde);
+
+  /// No description provided for @cmpSiraLiderPortfoy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önde portföyün: {yuzde}.'**
+  String cmpSiraLiderPortfoy(String yuzde);
+
+  /// No description provided for @cmpSiraListe.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıra: {liste}.'**
+  String cmpSiraListe(String liste);
+
+  /// No description provided for @cmpSiraPortfoy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün {sira}. sırada'**
+  String cmpSiraPortfoy(int sira);
+
+  /// No description provided for @cmpSiraOnde.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} karşısında {puan} puan önde'**
+  String cmpSiraOnde(String ad, String puan);
+
+  /// No description provided for @cmpSiraGeride.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} karşısında {puan} puan geride'**
+  String cmpSiraGeride(String ad, String puan);
+
+  /// No description provided for @cmpSiraBasabas.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} ile başa baş'**
+  String cmpSiraBasabas(String ad);
+
+  /// No description provided for @cmpSiraTufeUstunde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün TÜFE\'nin üstünde.'**
+  String get cmpSiraTufeUstunde;
+
+  /// No description provided for @cmpSiraTufeAltinda.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün TÜFE\'nin altında.'**
+  String get cmpSiraTufeAltinda;
+
   /// No description provided for @cmpCipKilitliSemantics.
   ///
   /// In tr, this message translates to:

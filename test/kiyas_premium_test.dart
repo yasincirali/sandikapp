@@ -208,4 +208,39 @@ void main() {
       expect(metin.style?.color, SandikPalette.dark.text36);
     });
   });
+
+  group('sıralama cümlesi (fikir 3)', () {
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await initPreferencesCache();
+    });
+
+    testWidgets('Premium, üç seri: cümle rozet sayılarıyla görünür',
+        (tester) async {
+      _uzunEkran(tester);
+      await tester.pumpWidget(_ekran(sinir: kKarsilastirmaEnFazla));
+      await tester.pump();
+      await _ekle(tester, _thy);
+      await _ekle(tester, _asel);
+      expect(find.textContaining('Önde'), findsNothing,
+          reason: 'iki seride cümle yok');
+      await _ekle(tester, const SymbolHit(
+          ticker: 'ALTIN_GRAM', name: 'Gram altın', source: 'Altın'));
+      expect(
+          find.text('Önde Gram altın: +%12,40. '
+              'Sıra: Gram altın, THYAO.IS, ASELS.IS.'),
+          findsOneWidget);
+    });
+
+    testWidgets('ücretsiz sınırda cümle yok', (tester) async {
+      _uzunEkran(tester);
+      await tester.pumpWidget(_ekran(sinir: 3));
+      await tester.pump();
+      await _ekle(tester, _thy);
+      await _ekle(tester, _asel);
+      await _ekle(tester, const SymbolHit(
+          ticker: 'ALTIN_GRAM', name: 'Gram altın', source: 'Altın'));
+      expect(find.textContaining('Önde'), findsNothing);
+    });
+  });
 }

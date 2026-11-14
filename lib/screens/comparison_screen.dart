@@ -23,6 +23,7 @@ import '../services/history_service.dart';
 import '../services/inflation_service.dart';
 import '../services/kiyas_paylasimi.dart';
 import '../services/kiyas_seti.dart';
+import '../services/kiyas_siralamasi.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/remote_config_service.dart';
 import '../services/symbol_search_service.dart';
@@ -511,6 +512,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                     padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 24),
                     children: [
                       _chartCard(p),
+                      _siralamaCumlesi(p),
                       const SizedBox(height: 16),
                       _selectionList(p),
                       const SizedBox(height: 12),
@@ -888,6 +890,40 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       ),
     );
   }
+
+  // ── Sıralama cümlesi ──────────────────────────────────────────────────────
+
+  /// "Bu dönemde sıralama" (Ar-Ge 14 Kas 22:03, YAP 3): grafiğin altında tek
+  /// cümle, Premium'da ve getirisi olan en az üç seride. Kural ve metin
+  /// `kiyas_siralamasi.dart`'ta; burada yalnız rozetlerle AYNI sayılar
+  /// (`_series`) verilir. Dönem değişirken eski dönemin sayısı yeni dönemin
+  /// seçicisi altında okunmasın diye cümle yeni seriler gelene kadar susar.
+  Widget _siralamaCumlesi(SandikPalette p) {
+    if (_donemBekliyor ||
+        ref.watch(karsilastirmaSeriSiniriProvider) < kKarsilastirmaEnFazla) {
+      return const SizedBox.shrink();
+    }
+    final siralama = kiyasSiralamasiKur([
+      for (final h in _selected)
+        if (_series[h.ticker] case final norm?)
+          (ticker: h.ticker, ad: _cumleAdi(h), pct: norm.totalReturnPct),
+    ]);
+    if (siralama == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.md),
+      child: Text(
+        siralama.cumle(context.l10n),
+        style: context.t.bodyMedium?.copyWith(color: p.text58),
+      ),
+    );
+  }
+
+  /// Cümledeki ad: hazır çiplerin okunur adı ("BIST 100", "Gram altın",
+  /// "TÜFE"), yoksa satır başlığı. Satırdaki "TÜFE (aylık)" ayracı cümlede
+  /// gürültü olurdu.
+  String _cumleAdi(SymbolHit hit) =>
+      _benchmarks.where((b) => b.ticker == hit.ticker).firstOrNull?.name ??
+      _displayTicker(hit);
 
   // ── Seçili varlık listesi ─────────────────────────────────────────────────
 
