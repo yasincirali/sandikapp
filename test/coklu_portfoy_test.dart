@@ -98,11 +98,15 @@ Asset _pozisyon(List<Asset> lots, String ticker) => aggregatePositions(lots)
     .asDisplayAsset();
 
 void main() {
+  // Varsayılan açık (2026-11-15); "bayrak kapalı" senaryoları için kapatılır,
+  // `testAcik` koyan test yine açar.
   setUp(() {
     RemoteConfigService.testAcik = {};
+    RemoteConfigService.testKapali = {'coklu_portfoy'};
   });
   tearDown(() {
     RemoteConfigService.testAcik = {};
+    RemoteConfigService.testKapali = {};
   });
 
   // Ana (NULL) + A + B; satış, temettü, silinmiş lot, mezar taşı, sözleşme.

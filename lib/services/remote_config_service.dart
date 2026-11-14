@@ -448,7 +448,10 @@ class RemoteConfigService {
     // `portfoy_id` hiçbir gövdeye yazılmaz (`Asset.toSupabase`). KAPALI
     // doğar: 0133 iki sunucuya ulaşmadan açılırsa her varlık yazımı
     // PGRST204 alır. Kapalıyken toplamlar, seriler ve ekranlar birebir eski.
-    'coklu_portfoy': false,
+    // AÇIK doğar (yasin 2026-11-15: "çoklu portföyü premium için aç zaten"):
+    // 0133/0135/0136 Frankfurt'ta; Premium kilidi `cokluPortfoyGorunur`
+    // içinde sürer. Console'da açık `false` varsa kodu ezer.
+    'coklu_portfoy': true,
     // Çoklu hesap (2026-10-10, yasin: "hesap ekleme ve aralarında session
     // switch, instagramdaki gibi"). Profil başlığında hesap seçici, giriş
     // ekranında cihazdaki hesaplar, iki seçenekli çıkış, pasif hesabın
@@ -631,7 +634,8 @@ class RemoteConfigService {
   bool _bayrak(String anahtar) =>
       testAcik.contains(anahtar) ||
       _yerelAcik.contains(anahtar) ||
-      (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool);
+      (!testKapali.contains(anahtar) &&
+          (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool));
 
   /// Adıyla bayrak (sürüm notu maddesi gibi veri tarafından anılan
   /// bayraklar için). Varsayılanlarda olmayan ad → kapalı.
