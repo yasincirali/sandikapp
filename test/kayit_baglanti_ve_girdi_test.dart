@@ -215,16 +215,17 @@ void main() {
     });
 
     // Yazım önerisi (2026-11-14): gmial.com biçimce geçerli ama kod hiç
-    // gelmez. Alan bırakılınca öneri çıkar, dokununca adres düzelir.
+    // gelmez. Öneri alan bırakılmayı BEKLEMEZ — ilk sürüm bekliyordu ve
+    // TestFlight'ta hiç görünmedi (yasin: "düzeltme önerisi gelmedi").
     testWidgets('yazım hatalı alan adına "Bunu mu demek istedin?" önerisi',
         (tester) async {
       await ac(tester);
-      await tester.enterText(alan(l.email), 'ahmet@gmial.com');
+      await tester.enterText(alan(l.email), 'ahmet@gm');
       await tester.pump();
-      // Alan dokunulmadan (odak bırakılmadan) öneri yazarken sözü kesmez.
+      // Yarım adres öneri üretmez.
       expect(find.textContaining(l.ePostaOneriSoru, findRichText: true),
           findsNothing);
-      await tester.testTextInput.receiveAction(TextInputAction.next);
+      await tester.enterText(alan(l.email), 'ahmet@gmial.com');
       await tester.pump();
       final oneri = find.textContaining('ahmet@gmail.com', findRichText: true);
       expect(oneri, findsOneWidget);
@@ -235,6 +236,14 @@ void main() {
       expect(alanMetni, 'ahmet@gmail.com');
       expect(find.textContaining(l.ePostaOneriSoru, findRichText: true),
           findsNothing);
+    });
+ 
+    testWidgets('".con" uzantısı da önerilir', (tester) async {
+      await ac(tester);
+      await tester.enterText(alan(l.email), 'ahmet@gmail.con');
+      await tester.pump();
+      expect(find.textContaining('ahmet@gmail.com', findRichText: true),
+          findsOneWidget);
     });
   });
 }

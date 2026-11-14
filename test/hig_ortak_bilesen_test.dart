@@ -16,6 +16,7 @@ import 'package:portfoy_takip/models/bes_sozlesme_pozisyonu.dart';
 import 'package:portfoy_takip/models/position.dart';
 import 'package:portfoy_takip/widgets/degisim_parlamasi.dart';
 import 'package:portfoy_takip/widgets/disclaimer_widget.dart';
+import 'package:portfoy_takip/widgets/eposta_oneri_satiri.dart';
 import 'package:portfoy_takip/widgets/bes_fon_satiri.dart';
 import 'package:portfoy_takip/widgets/bildirim_izni_uyarisi.dart';
 import 'package:portfoy_takip/widgets/bildirim_satiri.dart';
@@ -334,6 +335,10 @@ void main() {
                 // Performans dipnotunun kısa biçimi (2026-11-07): "Ayrıntı"
                 // bağlantısı 44 pt ve etiketli olmalı.
                 const DisclaimerWidget(kisa: true),
+                const SizedBox(height: SandikSpace.md),
+                // E-posta yazım önerisi (2026-11-14): tüm satır 44 pt hedef.
+                EPostaOneriSatiri(
+                    controller: TextEditingController(text: 'ahmet@gmial.com')),
                 const SizedBox(height: SandikSpace.md),
                 // "Takvime ekle" ikon düğmesi (2026-11-11): 44 pt, etiketli.
                 TakvimeEkleDugmesi(

@@ -30,6 +30,7 @@ import 'register_screen.dart';
 import '../services/hesap_gecisi.dart';
 import '../widgets/hesap_secici.dart' show CihazdakiHesaplar;
 import '../widgets/sandik_async_button.dart';
+import '../widgets/eposta_oneri_satiri.dart';
 import '../widgets/social_sign_in_buttons.dart';
 import '../l10n/l10n.dart';
 
@@ -245,6 +246,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? context.l10n.emailInvalid
                           : null,
                     ),
+                    EPostaOneriSatiri(controller: _emailCtrl),
                     const SizedBox(height: 14),
 
                     // Şifre

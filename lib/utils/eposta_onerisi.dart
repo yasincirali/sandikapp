@@ -16,6 +16,8 @@
 /// olduğundan kendi başına düzeltilmez.
 library;
 
+import '../services/auth_service.dart';
+
 /// Önerilebilen hedefler: Türkiye'de en çok görülen sağlayıcılar.
 const _hedefler = <String>[
   'gmail.com',
@@ -129,3 +131,8 @@ int _osaMesafe(String a, String b) {
   }
   return d[n][m];
 }
+
+/// Yalnız biçimce geçerli adreste öneri: yarım yazılmış adres ("ahmet@gm")
+/// öneri üretmez, ekran tek çağrıyla karar verir.
+String? ePostaYazimOnerisiGecerliyse(String eposta) =>
+    AuthService.eMailGecerliMi(eposta) ? ePostaYazimOnerisi(eposta) : null;
