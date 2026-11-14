@@ -4024,6 +4024,7 @@
   },
   "cihazKaldirildi": "Cihaz kaldırıldı",
   "cihazListesiBos": "Kayıtlı cihaz yok.",
+  "ePostaKesinHata": "Alan adında yazım hatası var, aşağıdan düzelt",
   "ePostaOneriSoru": "Bunu mu demek istedin? ",
   "otpEpostayiDegistir": "E-postayı değiştir",
   "otpAdresKontrol": "Kod hâlâ gelmediyse adresi kontrol et: {eposta}",

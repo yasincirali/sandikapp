@@ -31,6 +31,7 @@ import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'otp_verification_screen.dart';
+import '../utils/eposta_onerisi.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/eposta_oneri_satiri.dart';
 import '../widgets/sandik_async_button.dart';
@@ -150,7 +151,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   bool get _canSubmit =>
       _adDenetimi.kaydedilebilir &&
-      _isValidEmail(_emailCtrl.text) &&
+      _ePostaHatasi() == null &&
       AuthService.validatePassword(_passCtrl.text) == null &&
       _passCtrl.text == _passConfirmCtrl.text &&
       _plan.hepsiTamam(
@@ -168,6 +169,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final adRet = _adRetMetni();
     if (adRet != null) return adRet;
     if (!_isValidEmail(_emailCtrl.text)) return context.l10n.registerEmailInvalid;
+    if (_ePostaHatasi() != null) return context.l10n.ePostaKesinHata;
     final passError = AuthService.validatePassword(_passCtrl.text);
     if (passError != null) return passError;
     if (_passCtrl.text != _passConfirmCtrl.text) {
@@ -202,6 +204,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   // Kural serviste (sunucunun reddedeceği biçim); ekran yalnızca sorar.
   bool _isValidEmail(String v) => AuthService.eMailGecerliMi(v);
+
+  /// Alanın hata metni; geçerliyse null. Biçim hatasının yanında sunucu
+  /// kapısının (0185) kesin reddedeceği yazım hataları (gmail.con…) da
+  /// burada kırmızı olur: kullanıcı "Kayıt ol"a basıp sunucudan genel
+  /// "geçersiz" almadan, alanı bıraktığı an görür (yasin 2026-11-14).
+  /// Düzeltme alanın altındaki öneri satırında tek dokunuş.
+  String? _ePostaHatasi() {
+    final v = _emailCtrl.text;
+    if (!_isValidEmail(v)) return context.l10n.emailInvalid;
+    if (ePostaKesinYazimHatasi(v) != null) return context.l10n.ePostaKesinHata;
+    return null;
+  }
+
+  // Alan odağı kaybedince hata görünür. onTapOutside / "ileri" her yolu
+  // yakalamıyordu (kaydırma, klavyeyi kapatma, başka alana sekme).
+  void _ePostaOdakDegisti() {
+    if (!_emailFocus.hasFocus && !_emailTouched) {
+      setState(() => _emailTouched = true);
+    }
+  }
 
   /// Eksik formla basıldığında TÜM alanların hatasını birden aç: tek bir
   /// uyarı yalnız ilk eksiği söylüyordu, kullanıcı düzeltip tekrar basınca
@@ -251,6 +273,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _nameCtrl.addListener(() => _adDenetimi.metinDegisti(_nameCtrl.text));
     _nameCtrl.addListener(_rebuild);
     _emailCtrl.addListener(_rebuild);
+    _emailFocus.addListener(_ePostaOdakDegisti);
     _passCtrl.addListener(_rebuild);
     _passConfirmCtrl.addListener(_rebuild);
   }
@@ -553,16 +576,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 onTapOutside: (_) => setState(() => _emailTouched = true),
                 decoration: context.inputDecoration('',
                     labelText: context.l10n.email,
-                    errorText: (_emailTouched && _emailCtrl.text.isNotEmpty && !_isValidEmail(_emailCtrl.text))
-                        ? context.l10n.emailInvalid
+                    errorText: (_emailTouched && _emailCtrl.text.isNotEmpty)
+                        ? _ePostaHatasi()
                         : null,
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Icon(Icons.email_outlined,
                           color: context.c.text36, size: 20),
                     )),
-                validator: (v) =>
-                    (v == null || !_isValidEmail(v)) ? context.l10n.emailInvalid : null,
+                validator: (_) => _ePostaHatasi(),
               ),
               // Yazım önerisi (gmial → gmail); ortak bileşen, karar notu orada.
               EPostaOneriSatiri(controller: _emailCtrl),

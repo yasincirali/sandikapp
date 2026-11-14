@@ -5928,6 +5928,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cihazListesiBos => 'Kayıtlı cihaz yok.';
 
   @override
+  String get ePostaKesinHata => 'Alan adında yazım hatası var, aşağıdan düzelt';
+
+  @override
   String get ePostaOneriSoru => 'Bunu mu demek istedin? ';
 
   @override

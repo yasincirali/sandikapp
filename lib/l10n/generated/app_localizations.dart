@@ -9778,6 +9778,12 @@ abstract class AppLocalizations {
   /// **'Kayıtlı cihaz yok.'**
   String get cihazListesiBos;
 
+  /// No description provided for @ePostaKesinHata.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alan adında yazım hatası var, aşağıdan düzelt'**
+  String get ePostaKesinHata;
+
   /// No description provided for @ePostaOneriSoru.
   ///
   /// In tr, this message translates to:

@@ -6010,6 +6010,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cihazListesiBos => 'No registered devices.';
 
   @override
+  String get ePostaKesinHata => 'The domain has a typo, fix it below';
+
+  @override
   String get ePostaOneriSoru => 'Did you mean: ';
 
   @override
