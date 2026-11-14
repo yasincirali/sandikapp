@@ -26,6 +26,7 @@ import '../services/supabase_service.dart';
 import '../services/yasal_adim_plani.dart';
 import '../services/yasal_metin_katalogu.dart';
 import '../services/yasal_onay_service.dart';
+import '../utils/eposta_onerisi.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
@@ -65,6 +66,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   late final KullaniciAdiDenetimi _adDenetimi;
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  // Kod ekranındaki "E-postayı değiştir" geri dönünce imleç buraya gelir.
+  final _emailFocus = FocusNode();
   final _passConfirmCtrl = TextEditingController();
   bool _obscure = true;
 
@@ -138,6 +141,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       YasalKutuBaglantilari(_belgeyiAc);
 
   bool _emailTouched = false; // focus kaybedince hata göster
+
+  // Yazım önerisi (gmial → gmail): dinleyicide bir kez hesaplanır, build
+  // yalnız okur. Öneri kaydı ENGELLEMEZ; gerçek ama az bilinen alan adını
+  // reddetmek yanlış pozitifin bedelini kullanıcıya ödetirdi (2026-11-14).
+  String? _ePostaOnerisi;
   // "Kayıt ol"a eksik formla basıldı mı? Basıldıysa her alan kendi hatasını
   // gösterir (yalnızca ilk eksik bir uyarıda değil) ve şifre kuralları
   // karşılanmayanı kırmızıyla işaretler (kullanıcı kararı 2026-09-29).
@@ -247,18 +255,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     )..addListener(_rebuild);
     _nameCtrl.addListener(() => _adDenetimi.metinDegisti(_nameCtrl.text));
     _nameCtrl.addListener(_rebuild);
-    _emailCtrl.addListener(_rebuild);
+    _emailCtrl.addListener(_ePostaDegisti);
     _passCtrl.addListener(_rebuild);
     _passConfirmCtrl.addListener(_rebuild);
   }
 
   void _rebuild() => setState(() {});
 
+  void _ePostaDegisti() => setState(() {
+        _ePostaOnerisi = _isValidEmail(_emailCtrl.text)
+            ? ePostaYazimOnerisi(_emailCtrl.text)
+            : null;
+      });
+
+  void _oneriyiUygula() {
+    final o = _ePostaOnerisi;
+    if (o == null) return;
+    SandikHaptic.selection.perform();
+    _emailCtrl.value = TextEditingValue(
+      text: o,
+      selection: TextSelection.collapsed(offset: o.length),
+    );
+  }
+
   @override
   void dispose() {
     _adDenetimi.dispose();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
+    _emailFocus.dispose();
     _passCtrl.dispose();
     _passConfirmCtrl.dispose();
     _kutuBaglantilari.dispose();
@@ -351,9 +376,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       // Register success dialog → OTP ekranına push.
       // OTP ekranı verify sonrası authProvider'ı invalidate edip
       // popUntil first yapıyor; _AuthGate devralır.
-      await pushGuarded(
+      final degistir = await pushGuarded<bool>(
         context,
-        adaptiveRoute<void>(
+        adaptiveRoute<bool>(
           settings: const RouteSettings(name: 'otp_verification'),
           builder: (_) => OtpVerificationScreen(
             email: emailForOtp,
@@ -361,6 +386,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ),
         ),
       );
+      // Kod ekranında "E-postayı değiştir": form dolu kalır, adres seçili
+      // gelir ki kullanıcı doğrudan yazsın (yanlış adres kayıt hunisinin en
+      // sessiz kaybıydı — kod hiç gelmez, kullanıcı nedenini bilmez).
+      if (degistir == true && mounted) {
+        _emailFocus.requestFocus();
+        _emailCtrl.selection = TextSelection(
+            baseOffset: 0, extentOffset: _emailCtrl.text.length);
+      }
     } catch (e) {
       if (!mounted) return;
       showAppError(context, e);
@@ -373,6 +406,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// bağlantıdır. Okunacaklar eksikken "Kayıt ol"a basılırsa kart kırmızı
   /// çerçeve alır ve eksikler adıyla yazılır; okumalar tamamsa hata kutunun
   /// altındadır.
+  /// "Bunu mu demek istedin? ahmet@gmail.com" — tüm satır tek dokunma
+  /// hedefi (CupertinoButton, en az 44 pt), adres amber + w600 ile ayrışır
+  /// ki anlam yalnız renkte kalmasın. Sola yaslı: alanın hata satırıyla
+  /// aynı hizada okunur.
+  Widget _ePostaOneriSatiri(String oneri) {
+    final stil = context.t.bodyMedium?.copyWith(color: context.c.text58);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: CupertinoButton(
+        padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+        onPressed: _oneriyiUygula,
+        child: Text.rich(
+          TextSpan(style: stil, children: [
+            TextSpan(text: context.l10n.ePostaOneriSoru),
+            TextSpan(
+              text: oneri,
+              style: stil?.copyWith(
+                color: context.c.amberText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
   Widget _adimListesi(BuildContext context) {
     final l = context.l10n;
     final hata = _belgeHatasi && !_belgelerTamam
@@ -526,6 +586,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               // E-posta
               TextFormField(
                 controller: _emailCtrl,
+                focusNode: _emailFocus,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.email],
@@ -550,6 +611,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 validator: (v) =>
                     (v == null || !_isValidEmail(v)) ? context.l10n.emailInvalid : null,
               ),
+              if (_emailTouched && _ePostaOnerisi != null)
+                _ePostaOneriSatiri(_ePostaOnerisi!),
               const SizedBox(height: 14),
 
               // Şifre

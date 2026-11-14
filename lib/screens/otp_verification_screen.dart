@@ -350,6 +350,18 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 textAlign: TextAlign.center,
                 style: context.t.bodySmall?.copyWith(color: context.c.text58),
               ),
+              // İlk bekleme dolup kod hâlâ girilmediyse en olası neden yanlış
+              // adres (gmial.com gibi): adresi bir kez daha, düz cümleyle
+              // göster (2026-11-14). Cihaz kipinde adres hesabın kendisi,
+              // değiştirilemez; orada gösterilmez.
+              if (!_cihaz && (_cooldown <= 0 || _isExpired)) ...[
+                const SizedBox(height: SandikSpace.xs2),
+                Text(
+                  context.l10n.otpAdresKontrol(widget.email),
+                  textAlign: TextAlign.center,
+                  style: context.t.bodySmall?.copyWith(color: context.c.text58),
+                ),
+              ],
               const SizedBox(height: 24),
               _footerHint(),
               const SizedBox(height: 20),
@@ -669,13 +681,21 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         ],
       );
     }
+    // Eskiden soluk bir "Yanlış e-posta mı girdin? Geri dönüp tekrar
+    // deneyebilirsin." metniydi; dokunulamadığı için çoğu kullanıcı geri
+    // okunu aramak zorunda kalıyordu (yasin 2026-11-14). Artık gerçek bir
+    // düğme: `true` ile kapanır, kayıt ekranı formu dolu tutup e-posta
+    // alanını seçili açar. Giriş ekranından gelindiyse yalnız geri döner.
     return Center(
-      child: Text(
-        context.l10n.otpWrongEmail,
-        textAlign: TextAlign.center,
-        style: context.t.bodySmall?.copyWith(
-          color: context.c.text36,
-          height: 1.4,
+      child: TextButton(
+        onPressed: _isBusy ? null : () => Navigator.of(context).pop(true),
+        style: TextButton.styleFrom(
+          foregroundColor: context.c.amberText,
+          minimumSize: SandikTouch.minSize,
+        ),
+        child: Text(
+          context.l10n.otpEpostayiDegistir,
+          style: context.t.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
       ),
     );

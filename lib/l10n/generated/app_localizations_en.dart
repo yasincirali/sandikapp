@@ -229,9 +229,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get otpWrongEmail => 'Entered the wrong email? Go back and try again.';
-
-  @override
   String get settings => 'Settings';
 
   @override
@@ -6011,6 +6008,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cihazListesiBos => 'No registered devices.';
+
+  @override
+  String get ePostaOneriSoru => 'Did you mean: ';
+
+  @override
+  String get otpEpostayiDegistir => 'Change email';
+
+  @override
+  String otpAdresKontrol(String eposta) {
+    return 'Still nothing? Check the address: $eposta';
+  }
 
   @override
   String get otpSpamIpucu =>

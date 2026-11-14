@@ -512,12 +512,6 @@ abstract class AppLocalizations {
   /// **'Yeniden gönder ({seconds}s)'**
   String resendIn(int seconds);
 
-  /// No description provided for @otpWrongEmail.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yanlış e-posta mı girdin? Geri dönüp tekrar deneyebilirsin.'**
-  String get otpWrongEmail;
-
   /// No description provided for @settings.
   ///
   /// In tr, this message translates to:
@@ -9783,6 +9777,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kayıtlı cihaz yok.'**
   String get cihazListesiBos;
+
+  /// No description provided for @ePostaOneriSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bunu mu demek istedin? '**
+  String get ePostaOneriSoru;
+
+  /// No description provided for @otpEpostayiDegistir.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-postayı değiştir'**
+  String get otpEpostayiDegistir;
+
+  /// No description provided for @otpAdresKontrol.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kod hâlâ gelmediyse adresi kontrol et: {eposta}'**
+  String otpAdresKontrol(String eposta);
 
   /// No description provided for @otpSpamIpucu.
   ///

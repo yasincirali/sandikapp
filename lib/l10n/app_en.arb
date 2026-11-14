@@ -90,7 +90,6 @@
       }
     }
   },
-  "otpWrongEmail": "Entered the wrong email? Go back and try again.",
   "settings": "Settings",
   "settingsAppearance": "Appearance",
   "settingsNotifications": "Notifications",
@@ -3671,6 +3670,9 @@
   "cihazKaldirMesaj": "{ad} will need to be verified with an email code the next time it signs in.",
   "cihazKaldirildi": "Device removed",
   "cihazListesiBos": "No registered devices.",
+  "ePostaOneriSoru": "Did you mean: ",
+  "otpEpostayiDegistir": "Change email",
+  "otpAdresKontrol": "Still nothing? Check the address: {eposta}",
   "otpSpamIpucu": "Didn't get it? Check your Junk / Spam folder too.",
   "welcomeSkip": "Skip",
   "welcomeNext": "Continue",
