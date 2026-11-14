@@ -183,8 +183,9 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final typeRows = <({AssetType type, _BreakdownRow row})>[];
     final childrenOf = <AssetType, List<_BreakdownRow>>{};
 
-    double sumFirst = 0;
-    double sumLast = 0;
+    // Kalibrasyon girdisi: türün gösterilen uçları, üst kartın o tür için
+    // gördüğü uçlar ve kaynağı farklı mı (bkz. `tur_dokumu_kalibrasyonu.dart`).
+    final kalibrasyon = <AssetType, TurDokumuSatiri>{};
 
     // Lot'lar TEK geçişte türe ve pozisyona bölünür. Eskiden her tür ve
     // her pozisyon satırı tüm defteri yeniden süzüyordu — iki kez (akış ve
@@ -210,10 +211,16 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       // GÜNLÜK altın: baş ve son aynı kotasyondan — bkz.
       // `DailySummary.gunIciAltinUclari` (2026-11-10, ayarlar ayrışıyordu).
       final turUc = widget.gunIciUclar?.call(turLot);
-      final ep = turUc ?? _endpoints(e.value, turLot);
+      final seriUc = _endpoints(e.value, turLot);
+      final ep = turUc ?? seriUc;
       if (ep == null) continue;
-      sumFirst += ep.first;
-      sumLast += ep.last;
+      kalibrasyon[e.key] = TurDokumuSatiri(
+        (first: ep.first, last: ep.last),
+        toplamda: seriUc == null
+            ? null
+            : (first: seriUc.first, last: seriUc.last),
+        sabit: turUc != null,
+      );
       typeRows.add((
         type: e.key,
         row: _BreakdownRow(
@@ -269,7 +276,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     //
     // Doğrusu: artığı türlerin AĞIRLIĞINCA dağıtmak. Böylece
     // `Σ satır == üst kart` korunur ve fazladan kavram uydurulmaz.
-    _calibrate(typeRows, childrenOf, sumFirst, sumLast);
+    _calibrate(typeRows, childrenOf, kalibrasyon);
 
     // En çok kazandıran üstte — GÖSTERİLEN sayıya göre ([_pnl]).
     typeRows.sort((a, b) => _pnl(b.row).compareTo(_pnl(a.row)));
@@ -290,43 +297,51 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   void _calibrate(
     List<({AssetType type, _BreakdownRow row})> rows,
     Map<AssetType, List<_BreakdownRow>> childrenOf,
-    double sumFirst,
-    double sumLast,
+    Map<AssetType, TurDokumuSatiri> kalibrasyon,
   ) {
-    // Sıfıra bölünemez; seri yoksa kalibre edilecek bir şey de yok.
-    var kFirst = sumFirst.abs() > 0.01 ? widget.totalFirst / sumFirst : 1.0;
-    var kLast = sumLast.abs() > 0.01 ? widget.totalLast / sumLast : 1.0;
-
     // ⚠️ ÇAPRAZ BULAŞMA SINIRI.
     //
-    // Kalibrasyon TEK bir çarpanla çalışır: bir türdeki sapmayı tüm türlere
-    // yayar. Küçük artıklarda (üst kart `pState.toTRY` kurlarını, servis
-    // kendi kurunu kullanır — binde birkaç fark) bu zararsızdır ve toplamı
-    // tutturur. Ama çarpan 1'den belirgin uzaklaşırsa satırlar YALAN söyler:
-    // fiyatı hiç değişmemiş bir tür, başka bir tür oynadığı için oynamış
-    // görünür. Bu hata gün içi serisinde ölçüldü (fon 25.000 → 16.716) ve
-    // orada canlı değerleri tür bazında hesaplayarak kökten çözüldü.
+    // Kalibrasyon tek bir çarpanla çalışır: bir türdeki sapmayı diğer
+    // türlere yayar. Küçük artıklarda (üst kart `pState.toTRY` kurlarını,
+    // servis kendi kurunu kullanır — binde birkaç fark) bu zararsızdır ve
+    // toplamı tutturur. Ama çarpan 1'den belirgin uzaklaşırsa satırlar YALAN
+    // söyler: fiyatı hiç değişmemiş bir tür, başka bir tür oynadığı için
+    // oynamış görünür. Bu hata gün içi serisinde ölçüldü (fon 25.000 →
+    // 16.716) ve orada canlı değerleri tür bazında hesaplayarak kökten
+    // çözüldü; %2 sınırı bu yüzden durur.
     //
-    // Burada kalan artık küçük olmalı; büyükse kalibre ETME. Toplamda birkaç
-    // TL sapma göstermek, her satırı yanlış göstermekten iyidir.
-    const maxSapma = 0.02; // %2
-    if ((kFirst - 1).abs() > maxSapma) kFirst = 1.0;
-    if ((kLast - 1).abs() > maxSapma) kLast = 1.0;
+    // 2026-11-14 (kullanıcı bildirimi, Cumartesi Bugün): sınırın içinde
+    // kalan −%0,34 bile Fon/BES/Mevduat'ı zararda gösteriyordu. Artık
+    // fiyatı oynamayan satır ve üst karttan farklı kaynakla ölçülen satır
+    // (GÜNLÜK altın) hiç ölçeklenmez; kural ve testi
+    // `tur_dokumu_kalibrasyonu.dart`'ta. Toplamda birkaç TL sapma
+    // göstermek, her satırı yanlış göstermekten iyidir.
+    final k = turDokumuCarpanlari(kalibrasyon.values.toList(),
+        ustFirst: widget.totalFirst, ustLast: widget.totalLast);
+    final kFirst = k.kFirst;
+    final kLast = k.kLast;
 
     // Çarpan 1'e çok yakınsa dokunma — kayan nokta gürültüsüyle oynamayalım.
     if ((kFirst - 1).abs() < 1e-9 && (kLast - 1).abs() < 1e-9) return;
 
-    _BreakdownRow scaled(_BreakdownRow r) => _BreakdownRow(
-          label: r.label,
-          first: r.first * kFirst,
-          last: r.last * kLast,
-          flow: r.flow,
-        );
+    // Oynamayan satır olduğu gibi kalır; ürün satırı da kendi değerine
+    // bakar (türü oynasa bile fiyatı sabit kalan ürün oynamış görünmesin).
+    _BreakdownRow scaled(_BreakdownRow r) =>
+        !turDokumuOynadi((first: r.first, last: r.last))
+            ? r
+            : _BreakdownRow(
+                label: r.label,
+                first: r.first * kFirst,
+                last: r.last * kLast,
+                flow: r.flow,
+              );
 
     for (var i = 0; i < rows.length; i++) {
+      if (kalibrasyon[rows[i].type]?.sabit ?? false) continue;
       rows[i] = (type: rows[i].type, row: scaled(rows[i].row));
     }
     for (final e in childrenOf.entries) {
+      if (kalibrasyon[e.key]?.sabit ?? false) continue;
       childrenOf[e.key] = [for (final k in e.value) scaled(k)];
     }
   }

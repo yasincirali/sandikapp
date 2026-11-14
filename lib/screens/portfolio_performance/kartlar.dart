@@ -155,7 +155,17 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // Bugün: altın satırları serinin taban slotu yerine aynı kotasyonun
         // gün başı referansından ölçülür (2026-11-10). Simülasyonda akış
         // yok, eski yol kalır.
-        gunIciUclar: isIntraday && !_simulate
+        //
+        // Hafta sonu eski yol (kullanıcı bildirimi 2026-11-14): kotasyonun
+        // günlük yüzdesi hafta sonu son seansın hareketini taşıyabiliyor;
+        // üst kart ve "Günün en çok hareket edeni" ise gece yarısından beri
+        // olanı ölçüyor. Altın satırı Cumartesi Cuma'nın hareketini "bugün"
+        // diye yazıyor, üst kartla tutmuyordu. Hafta sonu üç yüzey aynı
+        // seriden okur.
+        gunIciUclar: isIntraday &&
+                !_simulate &&
+                endDate.weekday != DateTime.saturday &&
+                endDate.weekday != DateTime.sunday
             ? (lotlar) => DailySummary.gunIciAltinUclari(lotlar,
                 acilisMs: ep.firstTs!,
                 seansGunu: cizimBaslangici,
