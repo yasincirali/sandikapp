@@ -37,6 +37,7 @@ import 'providers/portfolio_provider.dart';
 import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
 import 'providers/sozlesme_provider.dart';
+import 'providers/portfoy_provider.dart';
 import 'providers/watchlist_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/karsilama_screen.dart';
@@ -124,16 +125,27 @@ final appNavigatorKey = GlobalKey<NavigatorState>();
 /// `_AuthGateState._acilisiIsit` ile ısıtır; hazır olmadan kapı açılırsa
 /// ana ekran DB'deki bayat fiyatla gelir ve Bugün kartı iskelet çizer.
 /// Servis uzarsa GIF uzar; emniyet supabı `_dataWaitTimer`.
+///
+/// [ustSeritHazir] sekmelerin ÜST şeritlerini besleyen listeler: portföy
+/// listesi (Portföy'deki "Tümü / + Yeni portföy" satırı) ve takip listesi
+/// (sekmedeki sayı rozeti). yasin 2026-11-14 ("işaretli bölge sayfa ilk
+/// açılışında sonradan çiziliyor, kademeli açılış anları olmamalı"):
+/// bunları kimse ısıtmıyordu; sekme ilk açıldığında istek O AN başlıyor,
+/// satır sayfanın geri kalanından sonra beliriyor ve altındaki her şeyi
+/// aşağı itiyordu. Splash zaten portföyü beklediği için iki küçük sorgu
+/// paralel gider, ek bekleme pratikte yoktur; ağ koparsa supap aynı.
 bool splashVeriHazir({
   required bool portfolioSettled,
   required bool partnerListSettled,
   required bool ortakVar,
   required bool partnerAssetsSettled,
   bool acilisHazir = true,
+  bool ustSeritHazir = true,
 }) {
   if (!partnerListSettled) return false;
   if (!portfolioSettled) return false;
   if (!acilisHazir) return false;
+  if (!ustSeritHazir) return false;
   if (!ortakVar) return true; // Ortak yoksa ortak varlığı da beklenmez.
   return partnerAssetsSettled;
 }
@@ -1159,6 +1171,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   // kapısı ortak varlıklarını beklemeden geçer, sonra liste dolunca HomeScreen
   // kendi loading'ini açardı. Çift loading'in kalan ayağı buydu.
   ProviderSubscription<AsyncValue<List<PartnerAccount>>>? _partnersWarmUp;
+  // Üst şerit listeleri (bkz. `splashVeriHazir.ustSeritHazir`).
+  ProviderSubscription<Object?>? _portfoylerWarmUp;
+  ProviderSubscription<Object?>? _takipWarmUp;
 
   /// Açılış turu + Bugün kartı ısıtması bitti mi (başarı/hata fark etmez).
   /// `false` iken splash sürer (bkz. `splashVeriHazir.acilisHazir`).
@@ -1218,6 +1233,16 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     );
     _partnerAssetsWarmUp ??= ref.listenManual(
       allPartnerAssetsProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    _portfoylerWarmUp ??= ref.listenManual(
+      portfoylerProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    _takipWarmUp ??= ref.listenManual(
+      watchlistProvider,
       (_, __) {},
       fireImmediately: true,
     );
@@ -1291,6 +1316,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _partnersWarmUp = null;
         _partnerAssetsWarmUp?.close();
         _partnerAssetsWarmUp = null;
+        _portfoylerWarmUp?.close();
+        _portfoylerWarmUp = null;
+        _takipWarmUp?.close();
+        _takipWarmUp = null;
         // Açılış ısıtması da sıfırlanır: sıradaki kullanıcı kendi turunu
         // ve Bugün serilerini bekler.
         _acilisIsitma = null;
@@ -1456,6 +1485,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     _portfolioWarmUp?.close();
     _partnersWarmUp?.close();
     _partnerAssetsWarmUp?.close();
+    _portfoylerWarmUp?.close();
+    _takipWarmUp?.close();
     PartnerInviteListenerService.instance.stop();
     IntradaySeriesCache.instance.surum.removeListener(_gunIciSeriGeldi);
     WidgetsBinding.instance.removeObserver(this);
@@ -2377,8 +2408,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     final partnerAssets =
         partners.isEmpty ? null : ref.watch(allPartnerAssetsProvider);
 
+    final portfoyler = ref.watch(portfoylerProvider);
+    final takip = ref.watch(watchlistProvider);
+    bool cozuldu(AsyncValue<Object?> v) => v.hasValue || v.hasError;
+
     return splashVeriHazir(
       portfolioSettled: portfolio.hasValue || portfolio.hasError,
+      ustSeritHazir: cozuldu(portfoyler) && cozuldu(takip),
       partnerListSettled: partnerListSettled,
       ortakVar: partners.isNotEmpty,
       acilisHazir: _acilisHazir,

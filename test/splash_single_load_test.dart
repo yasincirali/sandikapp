@@ -132,5 +132,28 @@ void main() {
         isTrue,
       );
     });
+      test('üst şerit listeleri (portföyler, takip) çözülmeden kapı açılmaz '
+        '(yasin 2026-11-14: sonradan çizilen "Tümü / + Yeni portföy")', () {
+      expect(
+        splashVeriHazir(
+          portfolioSettled: true,
+          partnerListSettled: true,
+          ortakVar: false,
+          partnerAssetsSettled: false,
+          ustSeritHazir: false,
+        ),
+        isFalse,
+      );
+      expect(
+        splashVeriHazir(
+          portfolioSettled: true,
+          partnerListSettled: true,
+          ortakVar: false,
+          partnerAssetsSettled: false,
+          ustSeritHazir: true,
+        ),
+        isTrue,
+      );
+    });
   });
 }
