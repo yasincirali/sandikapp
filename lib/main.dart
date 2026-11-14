@@ -1427,7 +1427,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         CrashReporter.arkaPlan(
             _yenilikleriKontrolEt()
                 .then((_) => _hediyeyiKontrolEt())
-                .then((_) => _hediyeBitisiniKontrolEt()),
+                .then((_) => _premiumBitisiniKontrolEt()),
             reason: 'main._yenilikleriKontrolEt');
         // Mevcut dövizli varlıklar için tarihsel kur migration'ı arka planda çalıştır
         FxRateMigrationService.instance.runFor(user.id);
@@ -1631,17 +1631,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     await PremiumHediyeSayfasi.goster(ctx, hak);
   }
 
-  /// Hediye bittiyse bir kez söyle (paywall incelemesi, 2026-10-20).
-  /// Hediye sayfasıyla aynı bekleme kuralları; aynı bitiş için ikinci kez
-  /// açılmaz, hediye yeniden verilirse (yeni bitiş) yeniden söylenir.
-  Future<void> _hediyeBitisiniKontrolEt() async {
+  /// Premium bittiyse bir kez söyle (paywall incelemesi, 2026-10-20:
+  /// hediye; Ar-Ge 14 Kas #1: deneme ve yenilenmeyen abonelik de). Hediye
+  /// sayfasıyla aynı bekleme kuralları; aynı bitiş için ikinci kez açılmaz,
+  /// yeni hak alınıp yeniden biterse (yeni bitiş) yeniden söylenir.
+  Future<void> _premiumBitisiniKontrolEt() async {
     if (!mounted || !ref.read(paywallVisibleProvider)) return;
     await ref.read(premiumHaklariProvider.future);
     if (!mounted) return;
-    final bitis = ref.read(hediyesiBitmisProvider);
+    final bitis = ref.read(premiumBitmisProvider);
     if (bitis == null) return;
-    final anahtar = bitis.toUtc().toIso8601String();
-    if (ref.read(premiumHediyeBittiSoylenenProvider) == anahtar) return;
+    if (ref.read(premiumBittiSoylenenProvider) == bitis.anahtar) return;
     for (var deneme = 0; deneme < 20; deneme++) {
       if (!mounted) return;
       if (_onboardingDone == true && _yasalKapilarGecildi && !_locked) break;
@@ -1655,9 +1655,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     }
     final ctx = appNavigatorKey.currentContext;
     if (ctx == null || !ctx.mounted) return;
-    await ref.read(premiumHediyeBittiSoylenenProvider.notifier).set(anahtar);
+    await ref.read(premiumBittiSoylenenProvider.notifier).set(bitis.anahtar);
     if (!ctx.mounted) return;
-    await PremiumHediyeBittiSayfasi.goster(ctx);
+    await PremiumBittiSayfasi.goster(ctx, bitis);
   }
 
   /// Kutlama sheet'inin açılabileceği TEK yer: ana ekran, üstünde hiçbir

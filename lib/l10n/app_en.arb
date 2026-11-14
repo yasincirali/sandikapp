@@ -4487,15 +4487,22 @@
     }
   },
   "prmHediyeDevam": "Continue with Premium",
-  "prmHediyeBittiBaslik": "Your gift period has ended",
-  "prmHediyeBittiGovde": "None of your data was deleted; {sayi} assets and the core features stay free. For reports, signals and unlimited assets you can pick up where you left off with Premium.",
-  "@prmHediyeBittiGovde": {
+  "prmBittiHediyeBaslik": "Your gift period has ended",
+  "prmBittiHediyeGovde": "None of your data was deleted; {sayi} assets and the core features stay free. For reports, signals and unlimited assets you can pick up where you left off with Premium.",
+  "@prmBittiHediyeGovde": {
     "placeholders": {
       "sayi": {"type": "int"}
     }
   },
-  "prmHediyeBittiGor": "See Premium",
-  "prmHediyeBittiSonra": "Not now",
+  "prmBittiBaslik": "Your Premium has ended",
+  "prmBittiGovde": "Your Premium ended on {tarih}. None of your data was deleted; the core features stay free.",
+  "@prmBittiGovde": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "prmBittiGor": "See Premium",
+  "prmBittiSonra": "Not now",
   "prmAbonelikAylik": "Premium · monthly",
   "prmAbonelikYillik": "Premium · yearly",
   "prmAbonelikHediye": "Premium · early-user gift",

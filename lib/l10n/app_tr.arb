@@ -4970,15 +4970,22 @@
     }
   },
   "prmHediyeDevam": "Premium'la devam et",
-  "prmHediyeBittiBaslik": "Hediye süren doldu",
-  "prmHediyeBittiGovde": "Verilerinden hiçbiri silinmedi; {sayi} varlık ve temel özellikler ücretsiz kalır. Raporlar, sinyaller ve sınırsız varlık için Premium'la kaldığın yerden devam edebilirsin.",
-  "@prmHediyeBittiGovde": {
+  "prmBittiHediyeBaslik": "Hediye süren doldu",
+  "prmBittiHediyeGovde": "Verilerinden hiçbiri silinmedi; {sayi} varlık ve temel özellikler ücretsiz kalır. Raporlar, sinyaller ve sınırsız varlık için Premium'la kaldığın yerden devam edebilirsin.",
+  "@prmBittiHediyeGovde": {
     "placeholders": {
       "sayi": {"type": "int"}
     }
   },
-  "prmHediyeBittiGor": "Premium'u gör",
-  "prmHediyeBittiSonra": "Şimdi değil",
+  "prmBittiBaslik": "Premium süren doldu",
+  "prmBittiGovde": "Premium'un {tarih} tarihinde bitti. Verilerinden hiçbiri silinmedi; temel özellikler ücretsiz kalır.",
+  "@prmBittiGovde": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "prmBittiGor": "Premium'u gör",
+  "prmBittiSonra": "Şimdi değil",
   "prmAbonelikAylik": "Premium · aylık",
   "prmAbonelikYillik": "Premium · yıllık",
   "prmAbonelikHediye": "Premium · erken kullanıcı hediyesi",
