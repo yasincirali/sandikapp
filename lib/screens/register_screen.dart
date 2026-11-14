@@ -26,13 +26,13 @@ import '../services/supabase_service.dart';
 import '../services/yasal_adim_plani.dart';
 import '../services/yasal_metin_katalogu.dart';
 import '../services/yasal_onay_service.dart';
-import '../utils/eposta_onerisi.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'otp_verification_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/eposta_oneri_satiri.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/social_sign_in_buttons.dart';
 import '../widgets/yasal_adimlar.dart';
@@ -141,11 +141,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       YasalKutuBaglantilari(_belgeyiAc);
 
   bool _emailTouched = false; // focus kaybedince hata göster
-
-  // Yazım önerisi (gmial → gmail): dinleyicide bir kez hesaplanır, build
-  // yalnız okur. Öneri kaydı ENGELLEMEZ; gerçek ama az bilinen alan adını
-  // reddetmek yanlış pozitifin bedelini kullanıcıya ödetirdi (2026-11-14).
-  String? _ePostaOnerisi;
   // "Kayıt ol"a eksik formla basıldı mı? Basıldıysa her alan kendi hatasını
   // gösterir (yalnızca ilk eksik bir uyarıda değil) ve şifre kuralları
   // karşılanmayanı kırmızıyla işaretler (kullanıcı kararı 2026-09-29).
@@ -255,28 +250,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     )..addListener(_rebuild);
     _nameCtrl.addListener(() => _adDenetimi.metinDegisti(_nameCtrl.text));
     _nameCtrl.addListener(_rebuild);
-    _emailCtrl.addListener(_ePostaDegisti);
+    _emailCtrl.addListener(_rebuild);
     _passCtrl.addListener(_rebuild);
     _passConfirmCtrl.addListener(_rebuild);
   }
 
   void _rebuild() => setState(() {});
 
-  void _ePostaDegisti() => setState(() {
-        _ePostaOnerisi = _isValidEmail(_emailCtrl.text)
-            ? ePostaYazimOnerisi(_emailCtrl.text)
-            : null;
-      });
-
-  void _oneriyiUygula() {
-    final o = _ePostaOnerisi;
-    if (o == null) return;
-    SandikHaptic.selection.perform();
-    _emailCtrl.value = TextEditingValue(
-      text: o,
-      selection: TextSelection.collapsed(offset: o.length),
-    );
-  }
 
   @override
   void dispose() {
@@ -406,33 +386,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// bağlantıdır. Okunacaklar eksikken "Kayıt ol"a basılırsa kart kırmızı
   /// çerçeve alır ve eksikler adıyla yazılır; okumalar tamamsa hata kutunun
   /// altındadır.
-  /// "Bunu mu demek istedin? ahmet@gmail.com" — tüm satır tek dokunma
-  /// hedefi (CupertinoButton, en az 44 pt), adres amber + w600 ile ayrışır
-  /// ki anlam yalnız renkte kalmasın. Sola yaslı: alanın hata satırıyla
-  /// aynı hizada okunur.
-  Widget _ePostaOneriSatiri(String oneri) {
-    final stil = context.t.bodyMedium?.copyWith(color: context.c.text58);
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: CupertinoButton(
-        padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
-        onPressed: _oneriyiUygula,
-        child: Text.rich(
-          TextSpan(style: stil, children: [
-            TextSpan(text: context.l10n.ePostaOneriSoru),
-            TextSpan(
-              text: oneri,
-              style: stil?.copyWith(
-                color: context.c.amberText,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-
   Widget _adimListesi(BuildContext context) {
     final l = context.l10n;
     final hata = _belgeHatasi && !_belgelerTamam
@@ -611,8 +564,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 validator: (v) =>
                     (v == null || !_isValidEmail(v)) ? context.l10n.emailInvalid : null,
               ),
-              if (_emailTouched && _ePostaOnerisi != null)
-                _ePostaOneriSatiri(_ePostaOnerisi!),
+              // Yazım önerisi (gmial → gmail); ortak bileşen, karar notu orada.
+              EPostaOneriSatiri(controller: _emailCtrl),
               const SizedBox(height: 14),
 
               // Şifre

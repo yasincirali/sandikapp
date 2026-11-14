@@ -18,6 +18,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/sandik_async_button.dart';
+import '../widgets/eposta_oneri_satiri.dart';
 import '../l10n/l10n.dart';
 
 /// Şifremi Unuttum — OTP tabanlı akış.
@@ -167,6 +168,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             validator: (v) =>
                 (v == null || !v.contains('@')) ? context.l10n.emailInvalid : null,
           ),
+          EPostaOneriSatiri(controller: _emailCtrl),
           const SizedBox(height: 24),
           _primaryButton(
             label: context.l10n.sendCode,
