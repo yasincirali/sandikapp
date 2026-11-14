@@ -37,6 +37,17 @@ import 'package:share_plus/share_plus.dart';
 /// (Crashlytics: `MethodChannelShare.share → _ShareSheetState._metin`).
 /// Artık her paylaşım bu sınıftan geçer; `paylasim_tek_kapi_test` başka
 /// dosyada `Share.` görürse kırılır.
+///
+/// ## Dikdörtgen yoksa yedek (2026-11-14, yasin: "portföyü dışa aktar pdf
+/// ve excel çalışmıyor, hata alıyor")
+/// Portföy dökümü 31 Ekim'de Ayarlar'dan Raporlar alt sayfasına taşınınca
+/// dokunulan satır sayfayla birlikte kapanıyordu; çağrı `origin: null` ile
+/// geliyordu. "iPhone'da popover yok" varsayımı da artık tutmuyor: iOS 26
+/// `UIActivityViewController`'a iPhone'da da `popoverPresentationController`
+/// veriyor ve share_plus aynı kontrolden hatayı döndürüyor. Kural tek
+/// kapıda: dikdörtgen gelmezse, boşsa ya da ekran dışına taşıyorsa
+/// [guvenliKaynak] ekranın ortasında küçük bir dikdörtgen verir. Çağıranın
+/// dikdörtgeni varsa popover oku yine dokunulan yere bakar.
 class ShareCardService {
   const ShareCardService._();
 
@@ -70,7 +81,7 @@ class ShareCardService {
         [XFile.fromData(png, mimeType: 'image/png', name: dosyaAdi)],
         text: text,
         subject: subject,
-        sharePositionOrigin: origin,
+        sharePositionOrigin: _kaynak(origin),
       );
 
   static Future<void> shareText(
@@ -78,7 +89,7 @@ class ShareCardService {
     required String subject,
     Rect? origin,
   }) =>
-      Share.share(text, subject: subject, sharePositionOrigin: origin);
+      Share.share(text, subject: subject, sharePositionOrigin: _kaynak(origin));
 
   /// Hazır bir dosyayı paylaşır (veri dışa aktarımı).
   ///
@@ -95,7 +106,7 @@ class ShareCardService {
         [XFile(path, mimeType: mimeType)],
         text: text,
         subject: subject,
-        sharePositionOrigin: origin,
+        sharePositionOrigin: _kaynak(origin),
       );
 
   /// Birden çok hazır dosyayı TEK paylaşım sayfasıyla paylaşır (yıllık
@@ -110,7 +121,7 @@ class ShareCardService {
         [for (final (yol, mime) in dosyalar) XFile(yol, mimeType: mime)],
         text: text,
         subject: subject,
-        sharePositionOrigin: origin,
+        sharePositionOrigin: _kaynak(origin),
       );
 
   /// Bir widget'ın ekrandaki dikdörtgeni — `sharePositionOrigin` için.
@@ -122,5 +133,27 @@ class ShareCardService {
     final obj = context?.findRenderObject();
     if (obj is! RenderBox || !obj.hasSize || obj.size.isEmpty) return null;
     return obj.localToGlobal(Offset.zero) & obj.size;
+  }
+
+  static Rect? _kaynak(Rect? origin) {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return origin;
+    final v = views.first;
+    return guvenliKaynak(origin, v.physicalSize / v.devicePixelRatio);
+  }
+
+  /// share_plus'a giden dikdörtgen: [origin] boş değilse ve [ekran]
+  /// içindeyse aynen, değilse ekranın ortasında 2×2 pt. Ekran ölçüsü
+  /// bilinmiyorsa (sıfır) [origin] olduğu gibi döner. Saf, test edilir.
+  static Rect? guvenliKaynak(Rect? origin, Size ekran) {
+    if (ekran.isEmpty) return origin;
+    final cerceve = Offset.zero & ekran;
+    if (origin != null &&
+        !origin.isEmpty &&
+        cerceve.contains(origin.topLeft) &&
+        cerceve.contains(origin.bottomRight - const Offset(0.01, 0.01))) {
+      return origin;
+    }
+    return Rect.fromCenter(center: cerceve.center, width: 2, height: 2);
   }
 }

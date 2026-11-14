@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/services/share_card_service.dart';
 
 /// Paylaşım çağrıları TEK kapıdan (`ShareCardService`) geçer.
 ///
@@ -48,14 +50,49 @@ void main() {
     final cagriSayisi =
         RegExp(r'\bShare\.(share|shareXFiles|shareUri)\(').allMatches(kaynak).length;
     final dikdortgenSayisi =
-        'sharePositionOrigin: origin'.allMatches(kaynak).length;
+        'sharePositionOrigin: _kaynak(origin)'.allMatches(kaynak).length;
     expect(cagriSayisi, greaterThanOrEqualTo(3),
         reason: 'metin, görsel ve dosya yolları');
     expect(
       dikdortgenSayisi,
       cagriSayisi,
-      reason: 'dikdörtgensiz kalan her çağrı iPad\'de fırlatır',
+      reason: 'dikdörtgensiz kalan her çağrı iPad\'de (ve iOS 26 iPhone\'da) '
+          'fırlatır; yedek `_kaynak` üzerinden gelir',
     );
+  });
+
+  // 2026-11-14: portföy dökümü Raporlar sayfasından `origin: null` geliyordu;
+  // iOS 26 iPhone'da da popover kontrolü var, PDF ve Excel hata veriyordu.
+  group('guvenliKaynak', () {
+    const ekran = Size(390, 844);
+    test('dikdörtgen yoksa ekran ortasında küçük, boş olmayan kutu', () {
+      final r = ShareCardService.guvenliKaynak(null, ekran)!;
+      expect(r.isEmpty, isFalse);
+      expect(r.center, const Offset(195, 422));
+      expect((Offset.zero & ekran).contains(r.topLeft), isTrue);
+    });
+    test('sıfır boyutlu dikdörtgen yedeğe düşer', () {
+      final r = ShareCardService.guvenliKaynak(Rect.zero, ekran)!;
+      expect(r.isEmpty, isFalse);
+    });
+    test('ekran dışına taşan dikdörtgen yedeğe düşer', () {
+      final r = ShareCardService.guvenliKaynak(
+          const Rect.fromLTWH(380, 10, 44, 44), ekran)!;
+      expect(r.center, const Offset(195, 422));
+    });
+    test('geçerli dikdörtgen aynen kalır', () {
+      const d = Rect.fromLTWH(300, 40, 44, 44);
+      expect(ShareCardService.guvenliKaynak(d, ekran), d);
+    });
+    test('ekran ölçüsü bilinmiyorsa dokunulmaz', () {
+      expect(ShareCardService.guvenliKaynak(null, Size.zero), isNull);
+    });
+  });
+
+  test('portföy dökümü Raporlar düğmesinin dikdörtgenini kullanır', () {
+    final src = File('lib/widgets/portfoy_dokumu.dart').readAsStringSync();
+    expect(src.contains('kaynak ??= ShareCardService.originOf(context)'),
+        isTrue);
   });
 
   test('paylaşımı başlatan EKRAN hatayı yakalar, raporlar ve söyler', () {
