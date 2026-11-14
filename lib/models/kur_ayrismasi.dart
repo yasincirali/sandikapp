@@ -43,6 +43,16 @@ import 'asset.dart';
 /// biriminde kâr), [dovizDeger] `q × P` (bugünkü döviz değeri), [sembol]
 /// o para biriminin işareti (yalnız USD/EUR/GBP buraya ulaşır), [kurFarki]
 /// `X − X0`, [toplam] iki etkinin toplamı (= kartın TL kârı).
+///
+/// ## Döviz bazında alış ortalaması (Ar-Ge 2026-11-15 #3)
+/// [alisOrtalamasi] a, [guncelFiyat] P (ikisi de varlığın kendi para
+/// biriminde), [dovizDegisimYuzde] `(P / a − 1) × 100`. a lot ağırlıklı
+/// ortalamadır (`Position.weightedPurchasePrice`, `aktifLotlar` süzgeci) —
+/// burada yeniden ortalanmaz, ayrışmanın kullandığı AYNI a. ABD hissesi ya
+/// da eurobond sahibi aklındaki "$182'den aldım" sayısını TL ortalamada
+/// bulamıyordu (Sharesight forumu, "NZ$1,32 görüyorum, oysa $1'dan aldım").
+/// Ayrışma `null` iken (alış kuru, fiyat ya da miktar eksik) bu sayılar da
+/// yok: sayfa açılmaz, uydurma ortalama yazılmaz.
 typedef KurAyrismasi = ({
   double fiyatEtkisi,
   double kurEtkisi,
@@ -53,6 +63,9 @@ typedef KurAyrismasi = ({
   String sembol,
   double kurFarki,
   double toplam,
+  double alisOrtalamasi,
+  double guncelFiyat,
+  double dovizDegisimYuzde,
 });
 
 KurAyrismasi? kurAyrismasi(Asset pozisyon, {required double? guncelKur}) {
@@ -79,6 +92,9 @@ KurAyrismasi? kurAyrismasi(Asset pozisyon, {required double? guncelKur}) {
     sembol: _sembol(pozisyon.currency),
     kurFarki: x - x0,
     toplam: fiyat + kur,
+    alisOrtalamasi: a,
+    guncelFiyat: p,
+    dovizDegisimYuzde: (p / a - 1) * 100,
   );
 }
 

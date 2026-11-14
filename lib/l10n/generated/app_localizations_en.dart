@@ -1144,6 +1144,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get fxSplitSheetAvg =>
+      'Your average purchase price in currency → today';
+
+  @override
+  String fxSplitSheetAvgChange(String pct) {
+    return 'Change in currency since purchase $pct';
+  }
+
+  @override
   String get fxSplitSheetTotal => 'Together: gain in TRY';
 
   @override

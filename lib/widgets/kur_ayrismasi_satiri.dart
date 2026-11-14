@@ -8,7 +8,8 @@ import '../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../theme/sandik.dart';
 import '../utils/money_format.dart';
-import '../utils/tr_format.dart' show fmtTRYFiyat, tryFormatter;
+import '../utils/tr_format.dart'
+    show fiyatBicimi, fmtPctIsaretli, fmtTRYFiyat, tryFormatter;
 import 'para_akisi_karti.dart' show KilitSatiri;
 
 /// "Fiyattan +₺X · Kurdan +₺Y" — varlık detayı pozisyon kartında enflasyon
@@ -157,6 +158,8 @@ class KurAyrismasiEksikSatiri extends ConsumerWidget {
 
 /// "Kâr nereden geldi" sayfası: [KurAyrismasi]'nın kaynak sayıları.
 ///
+/// İlk satır döviz bazında alış ortalaması → bugünkü fiyat (2026-11-15).
+///
 /// Sayfa hesap YAPMAZ; her sayı modelde üretildi (`kurAyrismasi`), burada
 /// yalnız biçimlenir. TL tutarları satırla aynı [baz]'dan geçer — bakiye
 /// gizliyken maskeli; döviz tutarları da aynı gizlilikle maskelenir (tutar
@@ -225,13 +228,34 @@ class KurAyrismasiSayfasi extends StatelessWidget {
           ),
         );
 
-    return Padding(
+    // Kaydırılabilir (2026-11-15): döviz ortalaması satırı eklenince içerik
+    // küçük ekranda ve büyük yazı boyutunda (Dynamic Type ×2) sheet'in
+    // azami yüksekliğini aşıyordu; kesilmek yerine kayar.
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
           SandikSpace.lg, 0, SandikSpace.lg, SandikSpace.lg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // İlk satır (Ar-Ge 2026-11-15 #3): kullanıcının aklındaki sayı
+          // döviz bazında alış fiyatı ("$182'den aldım"); TL ortalama onu
+          // söylemez. Birim fiyat, tutar değil — kartın "Alış fiyatın"
+          // satırı gibi bakiye gizliyken de açık. Sayılar modelden
+          // (`alisOrtalamasi` = ayrışmanın kullandığı ağırlıklı a); biri
+          // yoksa satır yok, uydurma ortalama yazılmaz.
+          if (ayrisma.alisOrtalamasi > 0 && ayrisma.guncelFiyat > 0) ...[
+            satir(
+                l.fxSplitSheetAvg,
+                l.fxSplitSheetRateValue(
+                    fiyatBicimi(ayrisma.alisOrtalamasi, symbol: s)
+                        .format(ayrisma.alisOrtalamasi),
+                    fiyatBicimi(ayrisma.guncelFiyat, symbol: s)
+                        .format(ayrisma.guncelFiyat)),
+                alt: l.fxSplitSheetAvgChange(
+                    fmtPctIsaretli(ayrisma.dovizDegisimYuzde, digits: 1))),
+            Divider(height: 1, thickness: 1, color: c.hairline),
+          ],
           satir(
               l.fxSplitSheetRate,
               l.fxSplitSheetRateValue(

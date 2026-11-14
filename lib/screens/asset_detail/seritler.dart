@@ -31,7 +31,14 @@ class _PozisyonKarti extends StatelessWidget {
     this.birimGizli = false,
     this.kabuksuz = false,
     this.portfoyPayi,
+    this.ekSatirlar,
   });
+
+  /// Enflasyon → kur ayrışması → başa baş ([PozisyonEkSatirlari], katmanlı
+  /// kartla aynı widget; 2026-11-15). Yalnız kabuklu kartta çizilir:
+  /// katmanlı düzende bu kart kabuksuz "Ayrıntı" olur ve grup orada özet
+  /// kartın kendisinde durur — iki kez çizilmesin.
+  final Widget? ekSatirlar;
 
   /// Pozisyonun portföydeki payı (0–1, `portfoyPayi`); `null` → satır yok
   /// (kapalı pozisyon, ortağın pozisyonu, toplam ≤ 0).
@@ -113,7 +120,12 @@ class _PozisyonKarti extends StatelessWidget {
     return SandikCard(
       padding: const EdgeInsets.symmetric(
           horizontal: SandikSpace.md, vertical: SandikSpace.xs),
-      child: satirlar,
+      child: ekSatirlar == null
+          ? satirlar
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [satirlar, ekSatirlar!],
+            ),
     );
   }
 }

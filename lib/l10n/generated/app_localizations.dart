@@ -1970,6 +1970,18 @@ abstract class AppLocalizations {
   /// **'Bugünkü döviz değeri {value} × kur farkı {diff}'**
   String fxSplitSheetFxBody(String value, String diff);
 
+  /// Kâr nereden geldi sayfasının ilk satırı: lot ağırlıklı alış fiyatı ile bugünkü fiyat, varlığın kendi para biriminde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz bazında alış ortalaman → bugün'**
+  String get fxSplitSheetAvg;
+
+  /// No description provided for @fxSplitSheetAvgChange.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alıştan beri döviz bazında {pct}'**
+  String fxSplitSheetAvgChange(String pct);
+
   /// No description provided for @fxSplitSheetTotal.
   ///
   /// In tr, this message translates to:

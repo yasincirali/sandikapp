@@ -90,6 +90,7 @@ import '../utils/chart_axis.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/fon_dagilimi_karti.dart';
+import '../widgets/basa_bas_satiri.dart';
 import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/sandik_acilir.dart';
@@ -2750,6 +2751,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   donem: _donemDegisimi(period.days, startDate, endDate,
                       pnl.currentUnitTRY),
                   portfoyPayi: _portfoyPayi(pnl, pState, isOwnAsset),
+                  // Premium satırları bayraktan bağımsız (Ar-Ge 15 Kas #1):
+                  // katmanlı kartla AYNI grup, kartın içinde, satırların
+                  // altında.
+                  ekSatirlar: _pozisyonEkSatirlari(
+                      baz: baz,
+                      pnl: pnl,
+                      isOwnAsset: isOwnAsset,
+                      pState: pState),
                 ),
                 _eurobondKarti(),
                 const SizedBox(height: SandikSpace.lg),
