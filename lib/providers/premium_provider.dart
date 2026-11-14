@@ -205,6 +205,28 @@ final abonelikDonemiProvider = FutureProvider<AbonelikDonemi?>((ref) async {
   return ref.read(satinAlmaServisiProvider).donem();
 });
 
+/// Aylık yerine yıllık ödenirse yılda ne kadar az ödenir (Ar-Ge 14 Kas #4).
+/// Saf: 12 × aylık − yıllık, kuruşa yuvarlanmış; fark yoksa ya da negatifse
+/// null (uydurma tasarruf yazılmaz).
+double? yillikFark(double aylik, double yillik) {
+  if (aylik <= 0 || yillik <= 0) return null;
+  final fark = ((aylik * 12 - yillik) * 100).round() / 100;
+  return fark > 0 ? fark : null;
+}
+
+/// Mağazanın aylık ve yıllık fiyatından yıllık tasarruf (mağaza para
+/// biriminde). Teklif okunamazsa, plan eksikse ya da iki planın para birimi
+/// farklıysa null: satır çıkmaz. Fiyat sabit yazılmaz, yalnız mağazadan.
+final yillikTasarrufProvider =
+    FutureProvider<({double tutar, String paraBirimi})?>((ref) async {
+  final t = await ref.read(satinAlmaServisiProvider).teklif();
+  final a = t?.aylik?.storeProduct;
+  final y = t?.yillik?.storeProduct;
+  if (a == null || y == null || a.currencyCode != y.currencyCode) return null;
+  final fark = yillikFark(a.price, y.price);
+  return fark == null ? null : (tutar: fark, paraBirimi: a.currencyCode);
+});
+
 /// Deneme bitiş hatırlatıcısı (Ar-Ge 14 Kas #3); testte sahte platformla
 /// geçersiz kılınır. `main.dart` [abonelikDonemiProvider]'ı dinleyip her
 /// yeni dönemde `guncelle` çağırır.

@@ -4559,6 +4559,12 @@
       "tarih": {"type": "String"}
     }
   },
+  "prmYillikGecTasarruf": "Switch to yearly and pay {tutar} less a year",
+  "@prmYillikGecTasarruf": {
+    "placeholders": {
+      "tutar": {"type": "String"}
+    }
+  },
   "prmAbonelikAylik": "Premium · monthly",
   "prmAbonelikYillik": "Premium · yearly",
   "prmAbonelikHediye": "Premium · early-user gift",

@@ -5042,6 +5042,12 @@
       "tarih": {"type": "String"}
     }
   },
+  "prmYillikGecTasarruf": "Yıllığa geçersen yılda {tutar} az ödersin",
+  "@prmYillikGecTasarruf": {
+    "placeholders": {
+      "tutar": {"type": "String"}
+    }
+  },
   "prmAbonelikAylik": "Premium · aylık",
   "prmAbonelikYillik": "Premium · yıllık",
   "prmAbonelikHediye": "Premium · erken kullanıcı hediyesi",

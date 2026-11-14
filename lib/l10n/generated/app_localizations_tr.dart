@@ -7354,6 +7354,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String prmYillikGecTasarruf(String tutar) {
+    return 'Yıllığa geçersen yılda $tutar az ödersin';
+  }
+
+  @override
   String get prmAbonelikAylik => 'Premium · aylık';
 
   @override

@@ -8,6 +8,7 @@ import '../providers/premium_provider.dart';
 import '../screens/paywall_screen.dart';
 import '../services/abonelik_yonetimi.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart' show fmtMagazaTutari;
 import 'sandik_async_button.dart';
 import 'satin_alim_geri_yukleme.dart';
 
@@ -87,6 +88,16 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
     // sağlayıcıda; hiçbir kalem yoksa satır yok.
     final kullanim =
         premiumKullanimMetni(l10n, ref.watch(premiumKullanimProvider));
+    // Yıllığa geçiş tasarrufu (Ar-Ge 14 Kas #4): yalnız aylık ve iptal
+    // edilmemiş mağaza abonesinde. İptal etmiş birine "yıllığa geç" demek
+    // kararını yok saymaktır. Tutar mağazanın iki fiyatından hesaplanır;
+    // mağaza yoksa satır yok. Teklif yalnız bu kişide okunur.
+    final aylikAbone = hak != null &&
+        hak.kaynak == 'revenuecat' &&
+        !hak.yillik &&
+        !hak.iptalEdildi;
+    final tasarruf =
+        aylikAbone ? ref.watch(yillikTasarrufProvider).valueOrNull : null;
 
     return SandikCard(
       // `min`: kart alt sayfada açılır (Profil › Premium satırı). Varsayılan
@@ -118,6 +129,12 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
               ),
             ],
           ),
+          if (tasarruf != null)
+            _YillikTasarrufSatiri(
+              metin: l10n.prmYillikGecTasarruf(fmtMagazaTutari(
+                  tasarruf.tutar, tasarruf.paraBirimi,
+                  dil: context.tarihDili)),
+            ),
           Wrap(
             alignment: WrapAlignment.end,
             spacing: SandikSpace.xs,
@@ -150,6 +167,44 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
             Text(l10n.prmIptalIpucu,
                 style: t.bodySmall?.copyWith(color: c.text58)),
         ],
+      ),
+    );
+  }
+}
+
+/// "Yıllığa geçersen yılda ₺309,89 az ödersin": dokununca paywall yıllık
+/// seçili açılır (`profil_yillik_tasarruf`). Tek semantik düğüm, düğme
+/// rolü, en az 44 pt. Renk vurgu rengi, uyarı değil: bilgi, baskı yok.
+class _YillikTasarrufSatiri extends StatelessWidget {
+  const _YillikTasarrufSatiri({required this.metin});
+
+  final String metin;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(SandikRadius.sm),
+          onTap: () => PaywallScreen.show(context,
+              source: 'profil_yillik_tasarruf', yillikSecili: true),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SandikTouch.min),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(metin,
+                      style: context.t.bodySmall?.copyWith(
+                          color: c.amberText, fontWeight: FontWeight.w600)),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    size: SandikSpace.md2, color: c.amberText),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

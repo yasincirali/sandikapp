@@ -12035,6 +12035,12 @@ abstract class AppLocalizations {
   /// **'Ücretsiz denemen {tarih} tarihinde bitiyor; sonra abonelik ücreti başlar. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.'**
   String denemeHatirlatmaGovdeTutarsiz(String tarih);
 
+  /// No description provided for @prmYillikGecTasarruf.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllığa geçersen yılda {tutar} az ödersin'**
+  String prmYillikGecTasarruf(String tutar);
+
   /// No description provided for @prmAbonelikAylik.
   ///
   /// In tr, this message translates to:
