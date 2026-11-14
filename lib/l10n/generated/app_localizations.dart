@@ -12527,6 +12527,12 @@ abstract class AppLocalizations {
   /// **'En fazla 5 varlık'**
   String get cmpSinirDolu;
 
+  /// No description provided for @cmpKilitliOnizleme.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} bu dönemde {yuzde}. Çizgisini ve sıralamayı Premium\'da görürsün.'**
+  String cmpKilitliOnizleme(String ad, String yuzde);
+
   /// No description provided for @cmpSiraLider.
   ///
   /// In tr, this message translates to:

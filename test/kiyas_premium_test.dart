@@ -243,4 +243,66 @@ void main() {
       expect(find.textContaining('Önde'), findsNothing);
     });
   });
+
+  group('kilitli çipin yarım sonucu (fikir 4)', () {
+    var cekim = 0;
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      await initPreferencesCache();
+      ComparisonScreen.kilitliOnizlemeyiSifirla();
+      cekim = 0;
+      final asil = ComparisonScreen.testSeriKaynagi!;
+      ComparisonScreen.testSeriKaynagi = (t, d) {
+        cekim++;
+        return asil(t, d);
+      };
+    });
+
+    Future<void> doluUcretsiz(WidgetTester tester) async {
+      _uzunEkran(tester);
+      await tester.pumpWidget(_ekran(sinir: 2));
+      await tester.pump();
+      await _ekle(tester, _thy);
+      await _ekle(tester, _asel);
+      cekim = 0;
+    }
+
+    const satir = 'Gram altın bu dönemde +%12,40. '
+        "Çizgisini ve sıralamayı Premium'da görürsün.";
+
+    testWidgets('ilk dokunuş: seri çekilir, çizilmez, tek satır çıkar',
+        (tester) async {
+      await doluUcretsiz(tester);
+      await tester.tap(find.text('Gram altın'));
+      await tester.pump();
+      await tester.pump();
+      expect(cekim, 1);
+      expect(find.text(satir), findsOneWidget);
+      // Çizilmedi: seçim listesinde satırı yok.
+      expect(find.text('ALTIN_GRAM'), findsNothing);
+      // Satır ≥44 pt dokunma hedefi.
+      expect(tester.getSize(find.ancestor(
+              of: find.text(satir), matching: find.byType(Container)).first)
+          .height, greaterThanOrEqualTo(44));
+
+      // Aynı oturumda ikinci kilitli dokunuş seri çekmez (paywall yolu).
+      await tester.tap(find.text('Dolar'));
+      await tester.pump();
+      expect(cekim, 1);
+      expect(find.textContaining('Dolar bu dönemde'), findsNothing);
+    });
+
+    testWidgets('veri yoksa satır çıkmaz (doğrudan paywall)', (tester) async {
+      await doluUcretsiz(tester);
+      await tester.tap(find.text('TÜFE'));
+      await tester.pump();
+      await tester.pump();
+      expect(cekim, 1);
+      expect(find.textContaining('bu dönemde'), findsNothing);
+      // Hak harcandı: sonraki dokunuş da çekmez.
+      await tester.tap(find.text('Gram altın'));
+      await tester.pump();
+      expect(cekim, 1);
+    });
+  });
 }

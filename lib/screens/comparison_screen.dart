@@ -58,6 +58,12 @@ import '../widgets/share_card.dart' show KiyasPaylasKarti, kSandikMarka, showSha
 /// eskiden üçü ayrı ayrı uzun tire yazıyordu (taste-skill, 2026-10-01).
 const _ortakAdAyraci = ' · ';
 
+/// Kilitli çipin yarım sonucu bu oturumda gösterildi mi (Ar-Ge 14 Kas 22:03,
+/// YAP 4). Ekran ömrü değil UYGULAMA oturumu: Karşılaştır'ı kapatıp açan
+/// ücretsiz kullanıcı aynı teşviki ikinci kez görmesin; sonraki kilitli
+/// dokunuşlar bugünkü gibi doğrudan paywall'u açar.
+bool _kilitliOnizlemeGosterildi = false;
+
 /// Varlık karşılaştırma — "almadığım şey ne yapardı?"
 ///
 /// Uygulamanın geri kalanı *"bende ne var"* sorusunu yanıtlar; bu ekran
@@ -111,6 +117,10 @@ class ComparisonScreen extends ConsumerStatefulWidget {
   static Future<NormalizedSeries?> Function(String ticker, int days)?
       testSeriKaynagi;
 
+  /// Test kancası: kilitli çip önizlemesinin oturum işaretini sıfırlar.
+  @visibleForTesting
+  static void kilitliOnizlemeyiSifirla() => _kilitliOnizlemeGosterildi = false;
+
   static bool varligiAcabilir(Asset a) =>
       !a.type.sozlesmeli && !a.isManualPrice && a.type != AssetType.diger;
 
@@ -124,6 +134,10 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
   /// Her sembolün normalize serisi. Sembol eklendiğinde doldurulur.
   final Map<String, NormalizedSeries> _series = {};
+
+  /// Kilitli çipe ilk dokunuşta çekilen serinin dönem getirisi; çizilmez,
+  /// çip satırının altında tek satır olur. Dönem değişince düşer.
+  ({String ad, double pct})? _kilitliOnizleme;
 
   /// Odaklanılan serinin anahtarı — `null` ise odak yok.
   ///
@@ -313,6 +327,37 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   bool get _premiumSiniri =>
       ref.read(karsilastirmaSeriSiniriProvider) < kKarsilastirmaEnFazla;
 
+  /// Ücretsiz sınırda kilitli çipe dokunuş (Ar-Ge 14 Kas 22:03, YAP 4).
+  ///
+  /// Oturumdaki İLK dokunuşta paywall'dan önce gerçek veri: seri bu dönem
+  /// için çekilir ama ÇİZİLMEZ, çip satırının altında "Gram altın bu dönemde
+  /// +%9,80…" satırı çıkar (satır paywall'u açar). Seri gelmezse (ağ hatası,
+  /// iki noktadan az veri) satır yok, bugünkü gibi doğrudan paywall: uydurma
+  /// sayı yerine kilit. Sonraki dokunuşlar doğrudan paywall.
+  Future<void> _kilitliCipeDokun(SymbolHit hit) async {
+    if (_kilitliOnizlemeGosterildi) {
+      _paywallAc();
+      return;
+    }
+    _kilitliOnizlemeGosterildi = true;
+    final days = _periods[_periodIdx].days;
+    NormalizedSeries? norm;
+    try {
+      norm = await _fetch(hit.ticker, days);
+    } catch (_) {
+      // `_changePeriod` ile aynı: çekilemeyen seri "veri yok"tur; servis
+      // katmanı kendi hatasını zaten bildiriyor.
+      norm = null;
+    }
+    if (!mounted) return;
+    final pct = norm?.totalReturnPct;
+    if (pct == null || !pct.isFinite || days != _periods[_periodIdx].days) {
+      _paywallAc();
+      return;
+    }
+    setState(() => _kilitliOnizleme = (ad: hit.name, pct: pct));
+  }
+
   void _paywallAc() {
     AnalyticsService.instance.logPremiumGateShown(feature: 'compare_series');
     PaywallScreen.show(context, source: 'compare_series');
@@ -448,6 +493,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     setState(() {
       _periodIdx = idx;
       _loading.addAll(hedefler);
+      // Önizleme eski dönemin sayısıdır; yeni dönemde yanlış okunurdu.
+      _kilitliOnizleme = null;
     });
     final sonuclar = await Future.wait(hedefler.map((t) async {
       try {
@@ -1331,6 +1378,46 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     final sinir = ref.watch(karsilastirmaSeriSiniriProvider);
     final full = _selected.length >= sinir;
     final kilitli = full && sinir < kKarsilastirmaEnFazla;
+    final onizleme = kilitli ? _kilitliOnizleme : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _cipSatiri(p, full: full, kilitli: kilitli),
+        if (onizleme != null) _kilitliOnizlemeSatiri(p, onizleme),
+      ],
+    );
+  }
+
+  /// Kilitli çipin yarım sonucu: tek satır, dokununca paywall. Satırın
+  /// tamamı hedef (≥44 pt); sağdaki ok dokunulabilir olduğunu söyler.
+  Widget _kilitliOnizlemeSatiri(
+      SandikPalette p, ({String ad, double pct}) o) {
+    final metin =
+        context.l10n.cmpKilitliOnizleme(o.ad, fmtPctIsaretli(o.pct));
+    return SandikTappable(
+      semanticLabel: metin,
+      onTap: _paywallAc,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.only(top: SandikSpace.sm),
+        alignment: Alignment.centerLeft,
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 16, color: p.amberText),
+            const SizedBox(width: SandikSpace.sm),
+            Expanded(
+              child: Text(metin,
+                  style: context.t.bodyMedium?.copyWith(color: p.text90)),
+            ),
+            Icon(Icons.chevron_right_rounded, size: 18, color: p.text58),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _cipSatiri(SandikPalette p,
+      {required bool full, required bool kilitli}) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -1355,7 +1442,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
               onTap: on
                   ? null
                   : kilitli
-                      ? _paywallAc
+                      ? () => CrashReporter.arkaPlan(_kilitliCipeDokun(b),
+                          reason: 'comparison_screen.kilitliCip')
                       : full
                           ? null
                           : () => _add(b),

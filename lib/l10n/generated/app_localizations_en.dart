@@ -7782,6 +7782,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmpSinirDolu => 'At most 5 assets';
 
   @override
+  String cmpKilitliOnizleme(String ad, String yuzde) {
+    return '$ad is $yuzde this period. See its line and the ranking with Premium.';
+  }
+
+  @override
   String cmpSiraLider(String ad, String yuzde) {
     return '$ad leads: $yuzde.';
   }

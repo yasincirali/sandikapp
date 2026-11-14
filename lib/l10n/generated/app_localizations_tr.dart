@@ -7671,6 +7671,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cmpSinirDolu => 'En fazla 5 varlık';
 
   @override
+  String cmpKilitliOnizleme(String ad, String yuzde) {
+    return '$ad bu dönemde $yuzde. Çizgisini ve sıralamayı Premium\'da görürsün.';
+  }
+
+  @override
   String cmpSiraLider(String ad, String yuzde) {
     return 'Önde $ad: $yuzde.';
   }

@@ -4800,6 +4800,8 @@
   "sgnPremiumGec": "Go Premium",
   "cmpSinirPremium": "Up to 5 series with Premium",
   "cmpSinirDolu": "At most 5 assets",
+  "cmpKilitliOnizleme": "{ad} is {yuzde} this period. See its line and the ranking with Premium.",
+  "@cmpKilitliOnizleme": {"placeholders": {"ad": {"type": "String"}, "yuzde": {"type": "String"}}},
   "cmpSiraLider": "{ad} leads: {yuzde}.",
   "@cmpSiraLider": {"placeholders": {"ad": {"type": "String"}, "yuzde": {"type": "String"}}},
   "cmpSiraLiderPortfoy": "Your portfolio leads: {yuzde}.",

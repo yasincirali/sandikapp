@@ -5284,6 +5284,8 @@
   "sgnPremiumGec": "Premium'a geç",
   "cmpSinirPremium": "Premium ile 5 seriye kadar",
   "cmpSinirDolu": "En fazla 5 varlık",
+  "cmpKilitliOnizleme": "{ad} bu dönemde {yuzde}. Çizgisini ve sıralamayı Premium'da görürsün.",
+  "@cmpKilitliOnizleme": {"placeholders": {"ad": {"type": "String"}, "yuzde": {"type": "String"}}},
   "cmpSiraLider": "Önde {ad}: {yuzde}.",
   "@cmpSiraLider": {"placeholders": {"ad": {"type": "String"}, "yuzde": {"type": "String"}}},
   "cmpSiraLiderPortfoy": "Önde portföyün: {yuzde}.",
