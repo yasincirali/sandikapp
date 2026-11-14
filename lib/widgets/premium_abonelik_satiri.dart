@@ -186,8 +186,9 @@ class _YillikTasarrufSatiri extends StatelessWidget {
     return MergeSemantics(
       child: Semantics(
         button: true,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(SandikRadius.sm),
+        // Ortak dokunma yüzeyi (inkwell_ratchet): basınca hafif küçülme,
+        // haptic; çıplak InkWell eklenmez.
+        child: SandikTappable(
           onTap: () => PaywallScreen.show(context,
               source: 'profil_yillik_tasarruf', yillikSecili: true),
           child: ConstrainedBox(

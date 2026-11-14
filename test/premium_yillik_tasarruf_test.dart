@@ -79,7 +79,7 @@ void main() {
       await kur(t, hak());
       expect(find.text(metin), findsOneWidget);
       final kutu = find.ancestor(
-          of: find.text(metin), matching: find.byType(InkWell));
+          of: find.text(metin), matching: find.byType(SandikTappable));
       expect(t.getSize(kutu.first).height,
           greaterThanOrEqualTo(SandikTouch.min));
       expect(
