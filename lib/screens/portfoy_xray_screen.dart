@@ -4,18 +4,21 @@ import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
 import '../models/asset_type.dart';
+import '../models/position.dart' show Position;
 import '../providers/fon_xray_provider.dart';
 import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../services/portfoy_xray.dart';
 import '../services/fon_dagilimi.dart' show XrayKova;
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart' show trSayiIyelikEki;
 import '../widgets/fon_dagilimi_karti.dart';
 import '../widgets/premium_kilit_karti.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/sandik_skeleton.dart';
+import 'pozisyona_git.dart' show lotunPozisyonunuAc;
 
 /// Portföy X-Ray (Premium, yasin 2026-10-10): bugünkü portföyün, fonların
 /// içi açılarak, varlık sınıflarına gerçek dağılımı.
@@ -35,7 +38,8 @@ import '../widgets/sandik_skeleton.dart';
 /// ("Hisse payın %24 görünüyor, fonlarınla birlikte %47,8"). Sınıf
 /// satırına dokununca o paranın hangi fondan / pozisyondan geldiği alt
 /// sayfada açılır; kaynakların toplamı satırdaki tutardır. Fon yoksa iki
-/// görünüm aynı şeydir: karşılaştırma ve cümle çizilmez. Premium ekranı
+/// görünüm aynı şeydir: karşılaştırma ve cümle çizilmez, yerine bunun
+/// nedenini söyleyen tek cümle durur (Ar-Ge 14 Kas #1). Premium ekranı
 /// (mağazada kapalı), bu yüzden bayraksız.
 class PortfoyXrayScreen extends ConsumerWidget {
   const PortfoyXrayScreen({super.key});
@@ -53,6 +57,7 @@ class PortfoyXrayScreen extends ConsumerWidget {
             govde: l.xrEkranKilitGovde,
             kilitMetni: l.xrEkranKilitSatir,
             kaynak: 'portfoy_xray',
+            kisisel: xrayKilitSatiri(l, ref.watch(xrayFonPayiProvider)),
           ),
         ),
       );
@@ -77,6 +82,23 @@ class PortfoyXrayScreen extends ConsumerWidget {
   }
 }
 
+/// Kilit kartının kişisel satırı (Ar-Ge 14 Kas #4): fonu olan ücretsiz
+/// kullanıcıya "4 fonun var, portföyünün %38'i. İçlerinde ne olduğu
+/// Premium'da." Sayılar kullanıcının zaten gördüğü pozisyon değerlerinden
+/// ([XrayFonPayi]); kilitli sonuç (sınıflar, oranlar) verilmez. Fon yoksa,
+/// pay sıfıra yuvarlanıyorsa ya da durum bilinmiyorsa `null` → kart eski
+/// hâliyle. Kart bu satırı paragrafın ALTINA koyar (`PremiumKilitKarti`
+/// deseni, öteki kilit kartlarıyla aynı yer); ayrı bir "ilk satır" yuvası
+/// açmak tek bileşen kuralını bozardı.
+///
+/// Yüzde eki okunuşa göre ("%38'i", "%40'ı", "%50'si"): `trSayiIyelikEki`.
+String? xrayKilitSatiri(AppLocalizations l, XrayFonPayi? f) {
+  final pay = f?.yuvarlakPay;
+  if (f == null || pay == null) return null;
+  return l.xrKilitKisisel(f.fonSayisi, fmtPct(pay.toDouble(), digits: 0),
+      trSayiIyelikEki(pay));
+}
+
 class _Govde extends StatelessWidget {
   const _Govde({required this.x});
 
@@ -91,6 +113,7 @@ class _Govde extends StatelessWidget {
     final kovalar = x.siraliKovalar;
     final gorunen = x.siraliGorunen;
     final icgoruler = x.icgoruler;
+    final tlDisi = tlDisiPayi(x);
     final notStili = context.t.bodySmall?.copyWith(color: c.text58);
     final kaynakStili = context.t.bodySmall?.copyWith(color: c.text36);
     final enBuyuk = kovalar.isEmpty ? 0.0 : kovalar.first.value;
@@ -123,6 +146,19 @@ class _Govde extends StatelessWidget {
               Text(fmtTRY(x.toplam),
                   style: context.t.numLarge
                       .copyWith(fontWeight: FontWeight.w600, color: c.text90)),
+              // TL dışı pay (Ar-Ge 14 Kas #3): nötr renk, yalnız durum —
+              // "risk/korunmasız" gibi korku dili yok. Fon varsa fonların
+              // katkısı da görünür; toplam 0 ise satır yok.
+              if (tlDisi != null) ...[
+                const SizedBox(height: SandikSpace.xs),
+                Text(
+                  x.fonVar
+                      ? l.xrTlDisi(fmtPct(tlDisi.fonlarla, digits: 0),
+                          fmtPct(tlDisi.fonsuz, digits: 0))
+                      : l.xrTlDisiTek(fmtPct(tlDisi.fonlarla, digits: 0)),
+                  style: notStili,
+                ),
+              ],
               const SizedBox(height: SandikSpace.md),
               if (x.fonVar) ...[
                 cubukUstu(l.xrTuttuklarin, l.xrTurSayisi(gorunen.length)),
@@ -134,6 +170,13 @@ class _Govde extends StatelessWidget {
                       size: SandikSpace.md, color: c.text36),
                 ),
                 cubukUstu(l.xrIcAcilinca, l.xrSinifSayisi(sinifSayisi)),
+              ] else ...[
+                // Fonsuz kullanıcı (Ar-Ge 14 Kas #1): karşılaştırma yok, ama
+                // nedeni söylenir. Söylenmezse tek çubuk "Premium'un bu
+                // kısmı bozuk" diye okunuyordu; cümle neyin ne zaman
+                // açılacağını da söyler.
+                Text(l.xrFonsuzNot, style: notStili),
+                const SizedBox(height: SandikSpace.sm),
               ],
               XrayCubugu(
                 paylar: [for (final e in kovalar) (e.key, e.value)],
@@ -306,7 +349,7 @@ class _IcgoruKarti extends StatelessWidget {
 
 /// Gerçek dağılım satırı: ad, yüzde · tutar, en büyük sınıfa göre çubuk.
 /// Dokununca o sınıfın kaynakları alt sayfada (fon, doğrudan pozisyon).
-class _SinifSatiri extends StatelessWidget {
+class _SinifSatiri extends ConsumerWidget {
   const _SinifSatiri({
     required this.x,
     required this.kova,
@@ -326,7 +369,7 @@ class _SinifSatiri extends StatelessWidget {
   final double oran;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final c = context.c;
     final pay = fmtPct(x.pay(tutar), digits: 1);
@@ -337,8 +380,21 @@ class _SinifSatiri extends StatelessWidget {
         showSandikSheet<void>(
           context: context,
           isScrollControlled: true,
-          builder: (_) => _KaynakSayfasi(
-              x: x, kova: kova, ad: ad, renk: renk, tutar: tutar),
+          builder: (sayfaCtx) => _KaynakSayfasi(
+            x: x,
+            kova: kova,
+            ad: ad,
+            renk: renk,
+            tutar: tutar,
+            // Raporlar kapısıyla aynı desen: önce sayfa kapanır, varlık
+            // sayfası X-Ray ekranının (bu satırın) bağlamına itilir —
+            // sayfanın bağlamı kapanınca geçersizdir. Geri gelince
+            // kullanıcı X-Ray'dedir; sheet'i yeniden açmak tek dokunuş.
+            ac: (p) {
+              Navigator.of(sayfaCtx).pop();
+              lotunPozisyonunuAc(context, ref, p.representative);
+            },
+          ),
         );
       },
       child: ExcludeSemantics(
@@ -401,6 +457,14 @@ class _Ray extends StatelessWidget {
 
 /// Bir sınıfın kaynakları: hangi fondan, hangi doğrudan pozisyondan; toplamı
 /// satırdaki tutar.
+///
+/// ## Satır = gezinme (Ar-Ge 14 Kas #2, #5)
+/// "Hisse payımın yarısı AFT'den geliyormuş" diyen kullanıcı o fona gitmek
+/// için sayfayı kapatıp arıyordu; fonun sayfasında Fon X-Ray kartı zaten
+/// var, zincir yarımdı. Pozisyonu çözülebilen satır (fon ya da doğrudan)
+/// dokunulabilir: 44 pt, sağda ok, etiket "AFT, ₺12.400. Varlık sayfasını
+/// aç". Çözülemeyen (aynı adı iki pozisyon veriyor, X-Ray dışı fark) düz
+/// kalır, ok taşımaz — ok sözü tutulamayacak yerde verilmez.
 class _KaynakSayfasi extends StatelessWidget {
   const _KaynakSayfasi({
     required this.x,
@@ -408,6 +472,7 @@ class _KaynakSayfasi extends StatelessWidget {
     required this.ad,
     required this.renk,
     required this.tutar,
+    required this.ac,
   });
 
   final PortfoyXray x;
@@ -415,6 +480,7 @@ class _KaynakSayfasi extends StatelessWidget {
   final String ad;
   final Color renk;
   final double tutar;
+  final void Function(Position p) ac;
 
   @override
   Widget build(BuildContext context) {
@@ -439,7 +505,7 @@ class _KaynakSayfasi extends StatelessWidget {
                 Expanded(
                   child: Text(ad,
                       style: context.t.titleMedium?.copyWith(
-                          color: c.text90, fontWeight: FontWeight.w700)),
+                          color: c.text90, fontWeight: FontWeight.w600)),
                 ),
                 Text(
                     '${fmtPct(x.pay(tutar), digits: 1)} · ${fmtTRY(tutar)}',
@@ -451,32 +517,15 @@ class _KaynakSayfasi extends StatelessWidget {
                 style: context.t.bodySmall?.copyWith(color: c.text36)),
             const SizedBox(height: SandikSpace.sm),
             for (final e in kaynaklar)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(e.key,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.t.bodyMedium
-                                  ?.copyWith(color: c.text90)),
-                        ),
-                        const SizedBox(width: SandikSpace.sm),
-                        Text(fmtTRY(e.value),
-                            style: context.t.bodyMedium?.copyWith(
-                                color: c.text90, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    const SizedBox(height: SandikSpace.xs),
-                    _Ray(
-                        oran: enBuyuk > 0 ? e.value / enBuyuk : 0,
-                        renk: renk),
-                  ],
-                ),
+              _KaynakSatiri(
+                ad: e.key,
+                tutar: e.value,
+                oran: enBuyuk > 0 ? e.value / enBuyuk : 0,
+                renk: renk,
+                // X-Ray dışı satırı (kova null) fon payı farkıdır, bir
+                // pozisyonun tamamı değil: gezinme yok.
+                pozisyon: kova == null ? null : x.kaynakPozisyonlari[e.key],
+                ac: ac,
               ),
             const SizedBox(height: SandikSpace.sm),
             Text(l.xrKaynakNot,
@@ -484,6 +533,71 @@ class _KaynakSayfasi extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _KaynakSatiri extends StatelessWidget {
+  const _KaynakSatiri({
+    required this.ad,
+    required this.tutar,
+    required this.oran,
+    required this.renk,
+    required this.pozisyon,
+    required this.ac,
+  });
+
+  final String ad;
+  final double tutar;
+  final double oran;
+  final Color renk;
+
+  /// `null` → satır dokunulmaz (bkz. [_KaynakSayfasi]).
+  final Position? pozisyon;
+  final void Function(Position p) ac;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final p = pozisyon;
+    final govde = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SandikTouch.min),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(ad,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.bodyMedium?.copyWith(color: c.text90)),
+                ),
+                const SizedBox(width: SandikSpace.sm),
+                Text(fmtTRY(tutar),
+                    style: context.t.bodyMedium?.copyWith(
+                        color: c.text90, fontWeight: FontWeight.w600)),
+                if (p != null) ...[
+                  const SizedBox(width: SandikSpace.xs),
+                  Icon(Icons.chevron_right_rounded,
+                      size: SandikSpace.lg, color: c.text36),
+                ],
+              ],
+            ),
+            const SizedBox(height: SandikSpace.xs),
+            _Ray(oran: oran, renk: renk),
+          ],
+        ),
+      ),
+    );
+    if (p == null) return govde;
+    return SandikTappable(
+      semanticLabel: context.l10n.xrKaynakAcEtiket(ad, fmtTRY(tutar)),
+      onTap: () => ac(p),
+      child: ExcludeSemantics(child: govde),
     );
   }
 }

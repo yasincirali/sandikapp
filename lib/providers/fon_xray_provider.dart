@@ -147,19 +147,41 @@ final portfoyXrayProvider =
   final veri = ref.watch(xrayFonVerisiProvider);
   final pozisyonlar = ref.watch(xrayPozisyonlariProvider);
   final durum = ref.watch(portfolioProvider).valueOrNull;
-  final toTRY = durum?.toTRY ?? identityToTRY;
-  final sonFiyat = PriceService.instance.sonBilinenFiyat;
   return veri.whenData((v) => portfoyXray(
         pozisyonlar: pozisyonlar,
         dagilimlar: v.dagilimlar,
         kalemler: v.kalemler,
-        deger: (p) {
-          final a = p.asDisplayAsset();
-          if (a.currentPrice > 0) return toTRY(a.totalValue, a.currency);
-          final f = sonFiyat(a.ticker.trim());
-          return f == null || f <= 0 ? null : toTRY(a.quantity * f, a.currency);
-        },
+        deger: _xrayDegeri(durum),
       ));
+});
+
+/// X-Ray'in pozisyon değeri — [portfoyXrayProvider] ve [xrayFonPayiProvider]
+/// AYNI fonksiyonu kullanır ki kilit kartındaki "portföyünün %38'i" ile
+/// açılınca görülen toplam aynı kuralla hesaplansın.
+PozisyonDegeri _xrayDegeri(PortfolioState? durum) {
+  final toTRY = durum?.toTRY ?? identityToTRY;
+  final sonFiyat = PriceService.instance.sonBilinenFiyat;
+  return (p) {
+    final a = p.asDisplayAsset();
+    if (a.currentPrice > 0) return toTRY(a.totalValue, a.currency);
+    final f = sonFiyat(a.ticker.trim());
+    return f == null || f <= 0 ? null : toTRY(a.quantity * f, a.currency);
+  };
+}
+
+/// Fon ayağı (Ar-Ge 14 Kas #1, #4): Raporlar satırının alt metni ve X-Ray
+/// kilit kartının kişisel satırı. Sunucuya GİTMEZ (kilitli kullanıcıda da
+/// güvenle izlenir). `null` = bilinmiyor (oturum ya da portföy henüz yok);
+/// çağıran o zaman genel metni korur — yüklenirken "fonun yok" demek yanlış
+/// olurdu.
+final xrayFonPayiProvider = Provider.autoDispose<XrayFonPayi?>((ref) {
+  final uid = ref.watch(authProvider).valueOrNull?.id;
+  final durum = ref.watch(portfolioProvider).valueOrNull;
+  if (uid == null || durum == null) return null;
+  return fonPayi(
+    pozisyonlar: ref.watch(xrayPozisyonlariProvider),
+    deger: _xrayDegeri(durum),
+  );
 });
 
 /// Zirvedeki bir portföyün fon ve BES kodlarının TEFAS dağılımları

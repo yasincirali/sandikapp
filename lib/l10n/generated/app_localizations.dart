@@ -15491,6 +15491,48 @@ abstract class AppLocalizations {
   /// **'{ad}, {pay}, {tutar}. Kaynakları göster.'**
   String xrSinifEtiket(String ad, String pay, String tutar);
 
+  /// No description provided for @xrKilitKisisel.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} fonun var, portföyünün {pay}\'{ek}. İçlerinde ne olduğu Premium\'da.'**
+  String xrKilitKisisel(int n, String pay, String ek);
+
+  /// No description provided for @xrRaporAltKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} fonun · portföyünün {pay}\'{ek}'**
+  String xrRaporAltKilitli(int n, String pay, String ek);
+
+  /// No description provided for @xrTlDisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'TL dışı payın {fonlarla} · fonların olmadan {fonsuz}'**
+  String xrTlDisi(String fonlarla, String fonsuz);
+
+  /// No description provided for @xrTlDisiTek.
+  ///
+  /// In tr, this message translates to:
+  /// **'TL dışı payın {pay}'**
+  String xrTlDisiTek(String pay);
+
+  /// No description provided for @xrKaynakAcEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad}, {tutar}. Varlık sayfasını aç.'**
+  String xrKaynakAcEtiket(String ad, String tutar);
+
+  /// No description provided for @xrFonsuzNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonun olmadığı için gerçek dağılımın tuttuklarınla aynı. Fon eklersen içi burada açılır.'**
+  String get xrFonsuzNot;
+
+  /// No description provided for @xrRaporAltFonsuz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık sınıflarına göre dağılımın'**
+  String get xrRaporAltFonsuz;
+
   /// No description provided for @pyzBaslik.
   ///
   /// In tr, this message translates to:

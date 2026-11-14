@@ -9621,6 +9621,50 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String xrKilitKisisel(int n, String pay, String ek) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'You hold $n funds',
+      one: 'You hold 1 fund',
+    );
+    return '$_temp0, $pay of your portfolio. What\'s inside them is in Premium.';
+  }
+
+  @override
+  String xrRaporAltKilitli(int n, String pay, String ek) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n funds',
+      one: '1 fund',
+    );
+    return '$_temp0 · $pay of your portfolio';
+  }
+
+  @override
+  String xrTlDisi(String fonlarla, String fonsuz) {
+    return 'Non-TRY share $fonlarla · $fonsuz without your funds';
+  }
+
+  @override
+  String xrTlDisiTek(String pay) {
+    return 'Non-TRY share $pay';
+  }
+
+  @override
+  String xrKaynakAcEtiket(String ad, String tutar) {
+    return '$ad, $tutar. Open asset page.';
+  }
+
+  @override
+  String get xrFonsuzNot =>
+      'You have no funds, so your real allocation is the same as what you hold. Add a fund and its contents open up here.';
+
+  @override
+  String get xrRaporAltFonsuz => 'Your allocation by asset class';
+
+  @override
   String get pyzBaslik => 'AI commentary';
 
   @override

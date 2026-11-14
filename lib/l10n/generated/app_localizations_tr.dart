@@ -9488,6 +9488,38 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String xrKilitKisisel(int n, String pay, String ek) {
+    return '$n fonun var, portföyünün $pay\'$ek. İçlerinde ne olduğu Premium\'da.';
+  }
+
+  @override
+  String xrRaporAltKilitli(int n, String pay, String ek) {
+    return '$n fonun · portföyünün $pay\'$ek';
+  }
+
+  @override
+  String xrTlDisi(String fonlarla, String fonsuz) {
+    return 'TL dışı payın $fonlarla · fonların olmadan $fonsuz';
+  }
+
+  @override
+  String xrTlDisiTek(String pay) {
+    return 'TL dışı payın $pay';
+  }
+
+  @override
+  String xrKaynakAcEtiket(String ad, String tutar) {
+    return '$ad, $tutar. Varlık sayfasını aç.';
+  }
+
+  @override
+  String get xrFonsuzNot =>
+      'Fonun olmadığı için gerçek dağılımın tuttuklarınla aynı. Fon eklersen içi burada açılır.';
+
+  @override
+  String get xrRaporAltFonsuz => 'Varlık sınıflarına göre dağılımın';
+
+  @override
   String get pyzBaslik => 'Yapay zekâ yorumu';
 
   @override

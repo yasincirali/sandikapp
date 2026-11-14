@@ -47,9 +47,17 @@ Asset? _eslesenLot(List<Asset>? assets, VarlikKimligi kimlik) {
 /// Portföydeki pozisyonun detayını açar — portföy listesiyle AYNI nesne
 /// (`pozisyonGorunumu`), aynı rota (`adaptiveRoute` + `pushGuarded`).
 void pozisyonuAc(BuildContext context, WidgetRef ref, VarlikKimligi kimlik) {
-  final assets = ref.read(portfolioProvider).valueOrNull?.assets;
-  final lot = _eslesenLot(assets, kimlik);
-  if (assets == null || lot == null) return;
+  final lot = _eslesenLot(
+      ref.read(portfolioProvider).valueOrNull?.assets, kimlik);
+  if (lot == null) return;
+  lotunPozisyonunuAc(context, ref, lot);
+}
+
+/// Elde gerçek bir lot varken (Portföy X-Ray kaynak sayfası, Ar-Ge 14 Kas
+/// #2) aynı geçiş: pozisyon görünümü defterin tamamından kurulur ki varlık
+/// sayfası portföy listesinden açılanla AYNI nesneyi alsın.
+void lotunPozisyonunuAc(BuildContext context, WidgetRef ref, Asset lot) {
+  final assets = ref.read(portfolioProvider).valueOrNull?.assets ?? [lot];
   final gorunum = pozisyonGorunumu(assets, lot);
   pushGuarded(
     context,

@@ -69,6 +69,7 @@ Future<void> _kur(
   FonDagilimi? dag,
   bool kalemAcik = false,
   FonKalemleri? kalemler,
+  XrayFonPayi? fonPayi,
   List<Override> ek = const [],
 }) async {
   _okuma = 0;
@@ -89,6 +90,8 @@ Future<void> _kur(
       }),
       fonKalemleriProvider
           .overrideWith((ref, kod) async => kalemAcik ? kalemler : null),
+      // Fon ayağı (Ar-Ge 14 Kas): varsayılan "bilinmiyor" — genel metin.
+      xrayFonPayiProvider.overrideWithValue(fonPayi),
       ...ek,
     ],
     child: MaterialApp(
@@ -269,7 +272,8 @@ void main() {
   });
 
   group('Raporlar kapısı satırı', () {
-    Future<void> sayfa(WidgetTester t, {required bool kilitli}) async {
+    Future<void> sayfa(WidgetTester t,
+        {required bool kilitli, XrayFonPayi? fonPayi}) async {
       await _kur(
         t,
         Builder(
@@ -284,6 +288,7 @@ void main() {
         ),
         gorunur: true,
         kilitli: kilitli,
+        fonPayi: fonPayi,
         ek: [
           balinaRadariAcikProvider.overrideWithValue(false),
           aylikRaporDonemiProvider.overrideWithValue(null),
@@ -313,6 +318,40 @@ void main() {
       expect(find.text('Temettü tahmini'), findsOneWidget);
       // Portföy dökümü 2026-10-31'de Ayarlar'dan buraya taşındı.
       expect(find.text('Portföyü dışa aktar'), findsOneWidget);
+    });
+
+    testWidgets('fonsuz Premium: alt metin boş vaat değil, ne göreceği',
+        (t) async {
+      RemoteConfigService.instance.yonetici = true;
+      await sayfa(t,
+          kilitli: false, fonPayi: const XrayFonPayi(fonSayisi: 0, pay: 0));
+      expect(find.text('Varlık sınıflarına göre dağılımın'), findsOneWidget);
+      expect(find.text('Fonlarının içi dahil, paran gerçekte nerede'),
+          findsNothing);
+    });
+
+    testWidgets('fonlu Premium: genel alt metin', (t) async {
+      RemoteConfigService.instance.yonetici = true;
+      await sayfa(t,
+          kilitli: false, fonPayi: const XrayFonPayi(fonSayisi: 2, pay: 40));
+      expect(find.text('Fonlarının içi dahil, paran gerçekte nerede'),
+          findsOneWidget);
+    });
+
+    // Ar-Ge 14 Kas #4: kilitliyken fonu olana kendi sayısı, kısa hâliyle.
+    testWidgets('kilitli + fonlu: "n fonun · portföyünün %x\'i"', (t) async {
+      RemoteConfigService.testAcik = {'paywall_enabled'};
+      await sayfa(t,
+          kilitli: true, fonPayi: const XrayFonPayi(fonSayisi: 4, pay: 37.6));
+      expect(find.text("4 fonun · portföyünün %38'i"), findsOneWidget);
+    });
+
+    testWidgets('kilitli + fonsuz: genel metin', (t) async {
+      RemoteConfigService.testAcik = {'paywall_enabled'};
+      await sayfa(t,
+          kilitli: true, fonPayi: const XrayFonPayi(fonSayisi: 0, pay: 0));
+      expect(find.text('Fonlarının içi dahil, paran gerçekte nerede'),
+          findsOneWidget);
     });
 
     testWidgets('paywall açık + ücretsiz: satır kilit simgesiyle', (t) async {
@@ -349,10 +388,13 @@ void main() {
     );
 
     Future<void> ekran(WidgetTester t,
-        {bool kilitli = false, AsyncValue<PortfoyXray>? deger}) async {
+        {bool kilitli = false,
+        AsyncValue<PortfoyXray>? deger,
+        XrayFonPayi? fonPayi}) async {
       await _kur(t, const PortfoyXrayScreen(),
           gorunur: true,
           kilitli: kilitli,
+          fonPayi: fonPayi,
           ek: [
             portfoyXrayProvider
                 .overrideWithValue(deger ?? AsyncValue.data(ornek)),
@@ -364,6 +406,39 @@ void main() {
       expect(find.byType(PremiumKilitKarti), findsOneWidget);
       expect(find.text("Portföy X-Ray Premium'da"), findsOneWidget);
       expect(_sayiVar(), isFalse);
+    });
+
+    testWidgets('kilitli + fonlu: kişisel satır, X-Ray sonucu yok', (t) async {
+      await ekran(t,
+          kilitli: true, fonPayi: const XrayFonPayi(fonSayisi: 4, pay: 38.2));
+      expect(find.byType(PremiumKilitKarti), findsOneWidget);
+      expect(
+          find.text("4 fonun var, portföyünün %38'i. İçlerinde ne olduğu "
+              "Premium'da."),
+          findsOneWidget);
+      // Kilitli içerik sızmaz: tutar ve sınıf yok.
+      expect(find.textContaining('₺'), findsNothing);
+      expect(find.text('BIST hisse'), findsNothing);
+    });
+
+    testWidgets('kilitli + fonsuz: kart eski hâliyle', (t) async {
+      await ekran(t,
+          kilitli: true, fonPayi: const XrayFonPayi(fonSayisi: 0, pay: 0));
+      expect(find.textContaining('fonun var'), findsNothing);
+      expect(_sayiVar(), isFalse);
+    });
+
+    test('yüzde eki okunuşa göre', () {
+      final l = lookupAppLocalizations(const Locale('tr'));
+      String s(double p) =>
+          xrayKilitSatiri(l, XrayFonPayi(fonSayisi: 1, pay: p))!;
+      expect(s(40), startsWith("1 fonun var, portföyünün %40'ı."));
+      expect(s(50), startsWith("1 fonun var, portföyünün %50'si."));
+      expect(s(6), startsWith("1 fonun var, portföyünün %6'sı."));
+      expect(s(100), startsWith("1 fonun var, portföyünün %100'ü."));
+      expect(xrayKilitSatiri(l, const XrayFonPayi(fonSayisi: 1, pay: 0.3)),
+          isNull);
+      expect(xrayKilitSatiri(l, null), isNull);
     });
 
     testWidgets('dağılım, X-Ray dışı, örtüşme ve kaynak satırları', (t) async {
@@ -429,8 +504,7 @@ void main() {
               'Faiz getiren payın %0,0 görünüyor, fonlarınla birlikte %50,0.'),
           findsOneWidget);
       expect(
-          find.text(
-              'Hisse payın %6,3 görünüyor, fonlarınla birlikte %18,8.'),
+          find.text('Hisse payın %6,3 görünüyor, fonlarınla birlikte %18,8.'),
           findsOneWidget);
 
       await t.tap(find.text('BIST hisse'));
@@ -456,6 +530,51 @@ void main() {
           )));
       expect(find.text('Tuttukların'), findsNothing);
       expect(find.textContaining('görünüyor'), findsNothing);
+      // Ar-Ge 14 Kas #1: neden tek çubuk olduğu söylenir.
+      expect(
+          find.text('Fonun olmadığı için gerçek dağılımın tuttuklarınla '
+              'aynı. Fon eklersen içi burada açılır.'),
+          findsOneWidget);
+    });
+
+    // Ar-Ge 14 Kas #3: toplamın altında tek satır, nötr.
+    testWidgets('TL dışı pay: fon varsa iki değer, yoksa tek', (t) async {
+      await ekran(t,
+          deger: AsyncValue.data(PortfoyXray(
+            toplam: 1000,
+            kovalar: const {
+              XrayKova.doviz: 180,
+              XrayKova.dovizBorclanma: 130,
+              XrayKova.bistHisse: 690,
+            },
+            xrayDisi: 0,
+            xrayDisiFonlar: const [],
+            fonTarihleri: null,
+            ortusmeler: const [],
+            kalemDonemi: null,
+            gorunen: const {AssetType.doviz: 180, AssetType.fon: 820},
+            dogrudanKovalar: const {XrayKova.doviz: 180},
+          )));
+      expect(find.text('TL dışı payın %31 · fonların olmadan %18'),
+          findsOneWidget);
+
+      await ekran(t,
+          deger: AsyncValue.data(PortfoyXray(
+            toplam: 1000,
+            kovalar: const {XrayKova.doviz: 180, XrayKova.bistHisse: 820},
+            xrayDisi: 0,
+            xrayDisiFonlar: const [],
+            fonTarihleri: null,
+            ortusmeler: const [],
+            kalemDonemi: null,
+            gorunen: const {AssetType.doviz: 180, AssetType.hisse: 820},
+            dogrudanKovalar: const {
+              XrayKova.doviz: 180,
+              XrayKova.bistHisse: 820
+            },
+          )));
+      expect(find.text('TL dışı payın %18'), findsOneWidget);
+      expect(find.textContaining('fonların olmadan'), findsNothing);
     });
 
     testWidgets('örtüşme yoksa bölüm yok', (t) async {
