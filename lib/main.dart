@@ -2030,6 +2030,21 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       RemoteConfigService.instance.yonetici = next.valueOrNull == true;
     });
 
+    // Deneme bitiş hatırlatması (Ar-Ge 14 Kas #3): dönem her okunduğunda
+    // (açılış, satın alma, geri yükleme, hak tazelemesi) yeniden kurulur ya
+    // da kaldırılır; karar `DenemeHatirlatici`'de. Dil arayüzünkü: navigator
+    // henüz yoksa Türkçe (ana dil).
+    ref.listen<AsyncValue<AbonelikDonemi?>>(abonelikDonemiProvider, (_, next) {
+      if (next.isLoading || !next.hasValue) return;
+      final ctx = appNavigatorKey.currentContext;
+      final l10n = ctx != null && ctx.mounted
+          ? ctx.l10n
+          : lookupAppLocalizations(const Locale('tr'));
+      CrashReporter.arkaPlan(
+          ref.read(denemeHatirlaticiProvider).guncelle(next.value, l10n: l10n),
+          reason: 'main.denemeHatirlatici');
+    });
+
     // Tek aktif cihaz (0098): hesap başka cihazda açıldı → bu cihaz çıkar.
     // Dinleyici burada çünkü `_AuthGate` uygulama boyunca mount'tur; kapı
     // kararı hangi ekran açıkken değişirse değişsin buraya düşer. Çıkış

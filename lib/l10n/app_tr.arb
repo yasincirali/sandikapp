@@ -5028,6 +5028,20 @@
       "sayi": {"type": "int"}
     }
   },
+  "denemeHatirlatmaBaslik": "Ücretsiz deneme hatırlatması",
+  "denemeHatirlatmaGovde": "Ücretsiz denemen {tarih} tarihinde bitiyor; sonra {tutar}. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.",
+  "@denemeHatirlatmaGovde": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "denemeHatirlatmaGovdeTutarsiz": "Ücretsiz denemen {tarih} tarihinde bitiyor; sonra abonelik ücreti başlar. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.",
+  "@denemeHatirlatmaGovdeTutarsiz": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
   "prmAbonelikAylik": "Premium · aylık",
   "prmAbonelikYillik": "Premium · yıllık",
   "prmAbonelikHediye": "Premium · erken kullanıcı hediyesi",
@@ -5683,6 +5697,7 @@
       "gun": {"type": "int"}
     }
   },
+  "pwdHatirlatiriz": "Hatırlatırız",
   "pwdIlkOdeme": "İlk ödeme",
   "pwdGuvenTakip": "{sayi} varlığın her zaman ücretsiz takipte; verilerin hiç silinmez",
   "@pwdGuvenTakip": {

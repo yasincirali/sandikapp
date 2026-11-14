@@ -12017,6 +12017,24 @@ abstract class AppLocalizations {
   /// **'{sayi, plural, other{{sayi} portföy}}'**
   String prmKullanimPortfoy(int sayi);
 
+  /// No description provided for @denemeHatirlatmaBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz deneme hatırlatması'**
+  String get denemeHatirlatmaBaslik;
+
+  /// No description provided for @denemeHatirlatmaGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz denemen {tarih} tarihinde bitiyor; sonra {tutar}. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.'**
+  String denemeHatirlatmaGovde(String tarih, String tutar);
+
+  /// No description provided for @denemeHatirlatmaGovdeTutarsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz denemen {tarih} tarihinde bitiyor; sonra abonelik ücreti başlar. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.'**
+  String denemeHatirlatmaGovdeTutarsiz(String tarih);
+
   /// No description provided for @prmAbonelikAylik.
   ///
   /// In tr, this message translates to:
@@ -13600,6 +13618,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{gun}. gün'**
   String pwdGun(int gun);
+
+  /// No description provided for @pwdHatirlatiriz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hatırlatırız'**
+  String get pwdHatirlatiriz;
 
   /// No description provided for @pwdIlkOdeme.
   ///

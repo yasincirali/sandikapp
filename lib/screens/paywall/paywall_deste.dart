@@ -21,8 +21,9 @@ part of '../paywall_screen.dart';
 //    alarmları", "Yıllık vergi PDF raporu", "5 yıl grafik") kilidi
 //    yazılmadan geri gelmez.
 //  - Ödenecek tutar ekrandaki en büyük metindir; deneme yalnız mağaza bir
-//    deneme döndürdüyse gösterilir ve hatırlatma vaat edilmez (gönderen
-//    bir servis yok).
+//    deneme döndürdüyse gösterilir. "Hatırlatırız" düğümü 2026-11-14'ten
+//    beri var: hatırlatmayı `DenemeHatirlatici` gönderir (bitişten 2 gün
+//    önce yerel bildirim). Önce gönderen servis yoktu, vaat edilmiyordu.
 
 /// Destedeki Premium kartları, varsayılan sırasıyla.
 ///
@@ -578,7 +579,7 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
                               ?.copyWith(color: c.text58, height: 1.4)),
                       if (deneme != null) ...[
                         const SizedBox(height: SandikSpace.md2),
-                        _DenemeCizelgesi(gun: deneme),
+                        DenemeCizelgesi(gun: deneme),
                       ],
                       const SizedBox(height: SandikSpace.md2),
                       // Varlık kartındaki "N varlık ücretsiz" ile aynı sayı:
@@ -799,11 +800,20 @@ class _PlanSekmeleri extends StatelessWidget {
   }
 }
 
-/// Deneme zaman çizelgesi: bugün her şey açık, N. gün ilk ödeme. Yalnız
-/// mağaza bir deneme döndürdüyse çizilir. "Hatırlatırız" satırı bilerek
-/// yok: hatırlatmayı gönderen bir servis olmadan vaat edilmez.
-class _DenemeCizelgesi extends StatelessWidget {
-  const _DenemeCizelgesi({required this.gun});
+/// Deneme zaman çizelgesi: bugün her şey açık, (N−2). gün hatırlatırız,
+/// N. gün ilk ödeme. Yalnız mağaza bir deneme döndürdüyse çizilir.
+///
+/// Hatırlatma düğümü (Ar-Ge 14 Kas #3, #5): `DenemeHatirlatici` bitişten
+/// [denemeHatirlatmaOnce] önce yerel bildirim kurar; gün sabit "5" değil,
+/// deneme süresinden türetilir. Süre hatırlatmaya yer bırakmıyorsa
+/// (≤ 2 gün) düğüm yok: kurulmayacak hatırlatma vaat edilmez.
+///
+/// Büyük yazıda (Dynamic Type) üç hücre yan yana sığmaz, "Hatırlatırız"
+/// harf harf kırılırdı: ölçek eşiği aşılınca hücreler alt alta dizilir.
+/// Açık (public) çünkü paywall teklifi mağazadan gelir ve testte yoktur;
+/// çizelge doğrudan test edilir.
+class DenemeCizelgesi extends StatelessWidget {
+  const DenemeCizelgesi({super.key, required this.gun});
 
   final int gun;
 
@@ -812,39 +822,55 @@ class _DenemeCizelgesi extends StatelessWidget {
     final c = context.c;
     final t = context.t;
     final l = context.l10n;
-    Widget hucre(String ust, String alt) => Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: SandikSpace.smd, vertical: SandikSpace.sm2),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(ust,
-                    style: t.labelMedium?.copyWith(
-                        color: c.amberText, fontWeight: FontWeight.w600)),
-                const SizedBox(height: SandikSpace.xxs),
-                Text(alt,
-                    style: t.bodyMedium?.copyWith(
-                        color: c.text90, fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-        );
+    final hatirlatmaGunu = gun - denemeHatirlatmaOnce.inDays;
+    final dikey = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    Widget hucre(String ust, String alt) {
+      final icerik = Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: SandikSpace.smd, vertical: SandikSpace.sm2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(ust,
+                style: t.labelMedium?.copyWith(
+                    color: c.amberText, fontWeight: FontWeight.w600)),
+            const SizedBox(height: SandikSpace.xxs),
+            Text(alt,
+                style: t.bodyMedium
+                    ?.copyWith(color: c.text90, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+      return dikey ? icerik : Expanded(child: icerik);
+    }
+
+    final hucreler = [
+      hucre(l.pwdBugun, l.pwdHerSeyAcik),
+      if (hatirlatmaGunu >= 1) hucre(l.pwdGun(hatirlatmaGunu), l.pwdHatirlatiriz),
+      hucre(l.pwdGun(gun), l.pwdIlkOdeme),
+    ];
+    final ayrac = dikey
+        ? Divider(height: 1, thickness: 1, color: c.hairline)
+        : VerticalDivider(width: 1, thickness: 1, color: c.hairline);
+    final dizili = [
+      for (var i = 0; i < hucreler.length; i++) ...[
+        if (i > 0) ayrac,
+        hucreler[i],
+      ],
+    ];
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: c.hairline),
       ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            hucre(l.pwdBugun, l.pwdHerSeyAcik),
-            VerticalDivider(width: 1, thickness: 1, color: c.hairline),
-            hucre(l.pwdGun(gun), l.pwdIlkOdeme),
-          ],
-        ),
-      ),
+      child: dikey
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch, children: dizili)
+          : IntrinsicHeight(
+              child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: dizili),
+            ),
     );
   }
 }

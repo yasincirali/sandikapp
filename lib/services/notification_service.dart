@@ -8,6 +8,7 @@ import 'package:flutter/material.dart'
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import '../models/asset.dart';
 import '../models/position.dart' show pozisyonGorunumu;
@@ -104,7 +105,17 @@ class NotificationService {
     'summary_channel': 'Dönem özeti',
     'signal_channel': 'Teknik sinyal bildirimleri',
     'partner_invite_channel': 'Ortaklık bildirimleri',
+    aboneliKanali: 'Abonelik hatırlatmaları',
   };
+
+  /// Abonelik hatırlatmalarının kanalı (deneme bitişi, Ar-Ge 14 Kas #3).
+  /// Kullanıcının kendi aboneliği hakkında, sunucudan gelmez; ayrı kanal ki
+  /// kapatılırsa brifing ya da alarm susmasın.
+  static const aboneliKanali = 'subscription_channel';
+
+  /// Deneme hatırlatmasının payload'ı: dokununca Profil sekmesi (abonelik
+  /// satırı orada).
+  static const denemeHatirlatmaPayload = 'deneme_hatirlatma';
 
   /// Navigator/portföy hazır değilken yeniden deneme aralığı.
   ///
@@ -654,6 +665,64 @@ class NotificationService {
     );
   }
 
+  /// Bildirim izni şu an açık mı (diyalog göstermez). Okunamazsa false:
+  /// izinsiz kullanıcıya planlı bildirim kurulmaz, sessiz kalınır.
+  Future<bool> bildirimIzniVar() async {
+    if (!_initialized) return false;
+    try {
+      final ios = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (ios != null) return (await ios.checkPermissions())?.isEnabled ?? false;
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) return await android.areNotificationsEnabled() ?? false;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'notification.bildirimIzniVar');
+    }
+    return false;
+  }
+
+  /// [zaman]'da tek seferlik yerel bildirim. Aynı [id] öncekinin yerine
+  /// geçer (yeniden kurmak idempotent). Zaman UTC'de verilir: cihaz saat
+  /// dilimi veritabanı gerekmez, an aynı andır. Android'de kesin alarm izni
+  /// istenmez (`inexactAllowWhileIdle`): birkaç dakikalık kayma hatırlatmada
+  /// önemsiz, SCHEDULE_EXACT_ALARM izni ise gereksiz bir sistem sorusu.
+  Future<void> planliBildirimKur({
+    required int id,
+    required DateTime zaman,
+    required String baslik,
+    required String govde,
+    required String payload,
+  }) async {
+    if (!_initialized) return;
+    await _plugin.zonedSchedule(
+      id,
+      baslik,
+      govde,
+      tz.TZDateTime.from(zaman.toUtc(), tz.UTC),
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          aboneliKanali,
+          _kanalAdlari[aboneliKanali]!,
+          icon: 'ic_stat_sandik',
+          color: Sandik.amber,
+          styleInformation: BigTextStyleInformation(govde),
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      payload: payload,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  /// Planlı bildirimi kaldırır (yoksa bir şey yapmaz).
+  Future<void> planliBildirimIptal(int id) async {
+    if (!_initialized) return;
+    await _plugin.cancel(id);
+  }
+
   /// Uzak bildirime dokunulduğunda çalışır.
   ///
   /// [fromColdStart] uygulamanın bu bildirimle SIFIRDAN açıldığını söyler
@@ -816,6 +885,14 @@ class NotificationService {
       } catch (e, st) {
         CrashReporter.report(e, st, reason: 'notification.pushDataPayload');
       }
+      return;
+    }
+
+    // Deneme hatırlatması → Profil (abonelik satırı ve iptal yolu orada).
+    if (payload == denemeHatirlatmaPayload) {
+      AnalyticsService.instance.logPushOpened(type: denemeHatirlatmaPayload);
+      MainNavigationScreen.sekmeIstegi.value =
+          MainNavigationScreen.profilSekmesi;
       return;
     }
 

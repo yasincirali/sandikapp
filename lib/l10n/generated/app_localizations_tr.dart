@@ -7341,6 +7341,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get denemeHatirlatmaBaslik => 'Ücretsiz deneme hatırlatması';
+
+  @override
+  String denemeHatirlatmaGovde(String tarih, String tutar) {
+    return 'Ücretsiz denemen $tarih tarihinde bitiyor; sonra $tutar. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.';
+  }
+
+  @override
+  String denemeHatirlatmaGovdeTutarsiz(String tarih) {
+    return 'Ücretsiz denemen $tarih tarihinde bitiyor; sonra abonelik ücreti başlar. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.';
+  }
+
+  @override
   String get prmAbonelikAylik => 'Premium · aylık';
 
   @override
@@ -8300,6 +8313,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String pwdGun(int gun) {
     return '$gun. gün';
   }
+
+  @override
+  String get pwdHatirlatiriz => 'Hatırlatırız';
 
   @override
   String get pwdIlkOdeme => 'İlk ödeme';

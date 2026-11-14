@@ -7446,6 +7446,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get denemeHatirlatmaBaslik => 'Free trial reminder';
+
+  @override
+  String denemeHatirlatmaGovde(String tarih, String tutar) {
+    return 'Your free trial ends on $tarih; after that it\'s $tutar. If you don\'t want to continue, you can cancel on your store\'s subscriptions page.';
+  }
+
+  @override
+  String denemeHatirlatmaGovdeTutarsiz(String tarih) {
+    return 'Your free trial ends on $tarih; after that the subscription fee starts. If you don\'t want to continue, you can cancel on your store\'s subscriptions page.';
+  }
+
+  @override
   String get prmAbonelikAylik => 'Premium · monthly';
 
   @override
@@ -8421,6 +8434,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String pwdGun(int gun) {
     return 'Day $gun';
   }
+
+  @override
+  String get pwdHatirlatiriz => 'We remind you';
 
   @override
   String get pwdIlkOdeme => 'First payment';

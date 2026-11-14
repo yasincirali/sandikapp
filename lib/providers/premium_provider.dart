@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/crash_reporter.dart';
+import '../services/deneme_hatirlatici.dart';
 import '../services/satin_alma_service.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
@@ -203,6 +204,12 @@ final abonelikDonemiProvider = FutureProvider<AbonelikDonemi?>((ref) async {
   ref.watch(premiumHaklariProvider);
   return ref.read(satinAlmaServisiProvider).donem();
 });
+
+/// Deneme bitiş hatırlatıcısı (Ar-Ge 14 Kas #3); testte sahte platformla
+/// geçersiz kılınır. `main.dart` [abonelikDonemiProvider]'ı dinleyip her
+/// yeni dönemde `guncelle` çağırır.
+final denemeHatirlaticiProvider = Provider<DenemeHatirlatici>(
+    (_) => const DenemeHatirlatici(BildirimServisiPlatformu()));
 
 /// Geçerli hak (abonelik önce, sonra hediye, sonra manuel); yoksa null.
 final gecerliPremiumHakkiProvider = Provider<PremiumHakki?>((ref) {

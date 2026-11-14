@@ -15,6 +15,7 @@ import '../providers/preferences_provider.dart'
 import '../providers/signal_provider.dart' show activeSignalsProvider;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
+import '../services/deneme_hatirlatici.dart' show denemeHatirlatmaOnce;
 import '../services/remote_config_service.dart';
 import '../widgets/sandik_segment.dart';
 import '../services/satin_alma_service.dart';

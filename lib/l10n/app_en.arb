@@ -4545,6 +4545,20 @@
       "sayi": {"type": "int"}
     }
   },
+  "denemeHatirlatmaBaslik": "Free trial reminder",
+  "denemeHatirlatmaGovde": "Your free trial ends on {tarih}; after that it's {tutar}. If you don't want to continue, you can cancel on your store's subscriptions page.",
+  "@denemeHatirlatmaGovde": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "denemeHatirlatmaGovdeTutarsiz": "Your free trial ends on {tarih}; after that the subscription fee starts. If you don't want to continue, you can cancel on your store's subscriptions page.",
+  "@denemeHatirlatmaGovdeTutarsiz": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
   "prmAbonelikAylik": "Premium · monthly",
   "prmAbonelikYillik": "Premium · yearly",
   "prmAbonelikHediye": "Premium · early-user gift",
@@ -5016,6 +5030,7 @@
   "pwdBugun": "Today",
   "pwdHerSeyAcik": "Everything unlocked",
   "pwdGun": "Day {gun}",
+  "pwdHatirlatiriz": "We remind you",
   "pwdIlkOdeme": "First payment",
   "pwdGuvenTakip": "{sayi} assets stay free to track; your data is never deleted",
   "@pwdGuvenTakip": {

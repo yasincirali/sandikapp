@@ -228,9 +228,21 @@ class MagazaTeklifi {
 /// Etkin aboneliğin dönemi. [ilkOdemeTutari] yalnız denemede ve tutar
 /// mağazadan güvenilir biçimde biliniyorsa dolu.
 class AbonelikDonemi {
-  const AbonelikDonemi({required this.deneme, this.ilkOdemeTutari});
+  const AbonelikDonemi({
+    required this.deneme,
+    this.ilkOdemeTutari,
+    this.bitis,
+    this.yenilenecek = false,
+  });
   final bool deneme;
   final String? ilkOdemeTutari;
+
+  /// Dönemin (denemede: denemenin) bitişi; mağaza vermediyse null.
+  final DateTime? bitis;
+
+  /// Dönem sonunda yenilenecek mi (iptal edilmemiş). Bilinmiyorsa false:
+  /// deneme hatırlatması yalnız yenileneceği BİLİNEN denemede kurulur.
+  final bool yenilenecek;
 }
 
 /// Saf: hak + mevcut teklifin ürünlerinden dönem.
@@ -242,17 +254,26 @@ class AbonelikDonemi {
 AbonelikDonemi abonelikDonemi(EntitlementInfo hak, List<StoreProduct?> urunler) {
   final deneme = hak.periodType == PeriodType.trial;
   if (!deneme) return const AbonelikDonemi(deneme: false);
+  // Deneme hatırlatması (Ar-Ge 14 Kas #3) bitişi ve iptal durumunu buradan
+  // okur; ikisi de mağazanın kendi alanı, kurulum kanalı değil.
+  final bitis = DateTime.tryParse(hak.expirationDate ?? '');
+  final yenilenecek = hak.willRenew;
   final plan = hak.productPlanIdentifier;
   final eslesen = urunler.nonNulls.where((u) =>
       u.identifier == hak.productIdentifier ||
       (plan != null && u.identifier == '${hak.productIdentifier}:$plan'));
-  if (eslesen.length != 1) return const AbonelikDonemi(deneme: true);
+  if (eslesen.length != 1) {
+    return AbonelikDonemi(
+        deneme: true, bitis: bitis, yenilenecek: yenilenecek);
+  }
   final urun = eslesen.single;
   final ucretliGiris = (urun.introductoryPrice?.price ?? 0) > 0 ||
       urun.defaultOption?.introPhase != null;
   return AbonelikDonemi(
     deneme: true,
     ilkOdemeTutari: ucretliGiris ? null : urun.priceString,
+    bitis: bitis,
+    yenilenecek: yenilenecek,
   );
 }
 
