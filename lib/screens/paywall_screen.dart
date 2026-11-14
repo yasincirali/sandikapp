@@ -15,6 +15,7 @@ import '../providers/preferences_provider.dart'
 import '../providers/signal_provider.dart' show activeSignalsProvider;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
+import '../services/deneme_hatirlatici.dart' show denemeHatirlatmaOnce;
 import '../services/remote_config_service.dart';
 import '../widgets/sandik_segment.dart';
 import '../services/satin_alma_service.dart';
@@ -58,9 +59,17 @@ bool ortakSiniriPaywalliActi(BuildContext context, WidgetRef ref) {
 
 class PaywallScreen extends ConsumerStatefulWidget {
   final String source;
-  const PaywallScreen({super.key, required this.source});
 
-  static Future<bool?> show(BuildContext context, {required String source}) {
+  /// Açılışta seçili plan. Varsayılan yıllık (bugünkü davranış); çağıran
+  /// planı açıkça isteyebilir: Profil'deki "Yıllığa geçersen …" satırı
+  /// yıllığı ister (Ar-Ge 14 Kas #4), varsayılan değişse de o satır doğru
+  /// planı açsın.
+  final bool yillikSecili;
+  const PaywallScreen(
+      {super.key, required this.source, this.yillikSecili = true});
+
+  static Future<bool?> show(BuildContext context,
+      {required String source, bool yillikSecili = true}) {
     // Güvenlik ağı: master switch kapalıyken paywall açılmasın. UI trigger'lar
     // zaten gate'leniyor ama merkezi bir noktada da tut.
     if (!RemoteConfigService.instance.paywallEnabled) {
@@ -71,7 +80,8 @@ class PaywallScreen extends ConsumerStatefulWidget {
       adaptiveRoute(
         settings: const RouteSettings(name: 'paywall'),
         fullscreenDialog: true,
-        builder: (_) => PaywallScreen(source: source),
+        builder: (_) =>
+            PaywallScreen(source: source, yillikSecili: yillikSecili),
       ),
     );
   }
@@ -130,7 +140,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     super.dispose();
   }
 
-  _Plan _selected = _Plan.yearly;
+  late _Plan _selected = widget.yillikSecili ? _Plan.yearly : _Plan.monthly;
   bool _busy = false;
   MagazaTeklifi? _teklif;
 

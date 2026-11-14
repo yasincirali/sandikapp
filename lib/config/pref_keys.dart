@@ -183,9 +183,15 @@ class PrefKeys {
   static const premiumHediyeGosterildi = 'pref_premium_hediye_gosterildi';
 
   /// Hediyenin bittiği bir kez söylendi (kişiye özel; bitiş tarihine
-  /// bağlı: yeni hediye = yeni bitiş = yeniden söylenir).
+  /// bağlı: yeni hediye = yeni bitiş = yeniden söylenir). 2026-11-14'ten
+  /// beri YAZILMAZ, yalnız [premiumBittiSoylenen]'e taşınmak için okunur
+  /// (silinirse hediyesi biten kullanıcı sayfayı ikinci kez görür).
   static const premiumHediyeBittiSoylenen =
       'pref_premium_hediye_bitti_soylenen';
+
+  /// Premium'un (hediye, deneme, abonelik) bittiği bir kez söylendi;
+  /// değer bitişin UTC ISO'su (Ar-Ge 14 Kas #1). Kişiye özel.
+  static const premiumBittiSoylenen = 'pref_premium_bitti_soylenen';
 
   /// Portföy ve Performans'ta seçili portföy (çoklu portföy, 0133): `''`
   /// Tümü, `ana` Ana, uuid adlandırılmış portföy. Kişiye özel (`perUser`):

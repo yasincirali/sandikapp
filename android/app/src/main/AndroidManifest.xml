@@ -89,6 +89,14 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="signal_channel" />
+        <!-- Planlı yerel bildirim (deneme bitiş hatırlatması, Ar-Ge 14 Kas
+             #3): flutter_local_notifications zonedSchedule'ı bu alıcıyla
+             gösterir; yoksa bildirim hiç düşmez. Açılış (boot) alıcısı ve
+             RECEIVE_BOOT_COMPLETED bilerek yok: yeniden başlatmada silinen
+             hatırlatma uygulama açılınca hak tazelemesiyle yeniden kurulur. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <service
             android:name="com.google.firebase.messaging.FirebaseMessagingService"
             android:exported="false">

@@ -11951,29 +11951,107 @@ abstract class AppLocalizations {
   /// **'Premium\'la devam et'**
   String get prmHediyeDevam;
 
-  /// No description provided for @prmHediyeBittiBaslik.
+  /// No description provided for @prmBittiHediyeBaslik.
   ///
   /// In tr, this message translates to:
   /// **'Hediye süren doldu'**
-  String get prmHediyeBittiBaslik;
+  String get prmBittiHediyeBaslik;
 
-  /// No description provided for @prmHediyeBittiGovde.
+  /// No description provided for @prmBittiHediyeGovde.
   ///
   /// In tr, this message translates to:
   /// **'Verilerinden hiçbiri silinmedi; {sayi} varlık ve temel özellikler ücretsiz kalır. Raporlar, sinyaller ve sınırsız varlık için Premium\'la kaldığın yerden devam edebilirsin.'**
-  String prmHediyeBittiGovde(int sayi);
+  String prmBittiHediyeGovde(int sayi);
 
-  /// No description provided for @prmHediyeBittiGor.
+  /// No description provided for @prmBittiBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium süren doldu'**
+  String get prmBittiBaslik;
+
+  /// No description provided for @prmBittiGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'un {tarih} tarihinde bitti. Verilerinden hiçbiri silinmedi; temel özellikler ücretsiz kalır.'**
+  String prmBittiGovde(String tarih);
+
+  /// No description provided for @prmBittiGor.
   ///
   /// In tr, this message translates to:
   /// **'Premium\'u gör'**
-  String get prmHediyeBittiGor;
+  String get prmBittiGor;
 
-  /// No description provided for @prmHediyeBittiSonra.
+  /// No description provided for @prmBittiSonra.
   ///
   /// In tr, this message translates to:
   /// **'Şimdi değil'**
-  String get prmHediyeBittiSonra;
+  String get prmBittiSonra;
+
+  /// No description provided for @prmKullanim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'la kullandıkların: {liste}'**
+  String prmKullanim(String liste);
+
+  /// No description provided for @prmKullanimVarlik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} varlık}}'**
+  String prmKullanimVarlik(int sayi);
+
+  /// No description provided for @prmKullanimTakip.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} takip}}'**
+  String prmKullanimTakip(int sayi);
+
+  /// No description provided for @prmKullanimFiyatAlarmi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} fiyat alarmı}}'**
+  String prmKullanimFiyatAlarmi(int sayi);
+
+  /// No description provided for @prmKullanimGostergeAlarmi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} gösterge alarmı}}'**
+  String prmKullanimGostergeAlarmi(int sayi);
+
+  /// No description provided for @prmKullanimCizgiAlarmi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} çizgi alarmı}}'**
+  String prmKullanimCizgiAlarmi(int sayi);
+
+  /// No description provided for @prmKullanimPortfoy.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi, plural, other{{sayi} portföy}}'**
+  String prmKullanimPortfoy(int sayi);
+
+  /// No description provided for @denemeHatirlatmaBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz deneme hatırlatması'**
+  String get denemeHatirlatmaBaslik;
+
+  /// No description provided for @denemeHatirlatmaGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz denemen {tarih} tarihinde bitiyor; sonra {tutar}. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.'**
+  String denemeHatirlatmaGovde(String tarih, String tutar);
+
+  /// No description provided for @denemeHatirlatmaGovdeTutarsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz denemen {tarih} tarihinde bitiyor; sonra abonelik ücreti başlar. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.'**
+  String denemeHatirlatmaGovdeTutarsiz(String tarih);
+
+  /// No description provided for @prmYillikGecTasarruf.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllığa geçersen yılda {tutar} az ödersin'**
+  String prmYillikGecTasarruf(String tutar);
 
   /// No description provided for @prmAbonelikAylik.
   ///
@@ -13558,6 +13636,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{gun}. gün'**
   String pwdGun(int gun);
+
+  /// No description provided for @pwdHatirlatiriz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hatırlatırız'**
+  String get pwdHatirlatiriz;
 
   /// No description provided for @pwdIlkOdeme.
   ///

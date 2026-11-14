@@ -7261,18 +7261,109 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmHediyeDevam => 'Premium\'la devam et';
 
   @override
-  String get prmHediyeBittiBaslik => 'Hediye süren doldu';
+  String get prmBittiHediyeBaslik => 'Hediye süren doldu';
 
   @override
-  String prmHediyeBittiGovde(int sayi) {
+  String prmBittiHediyeGovde(int sayi) {
     return 'Verilerinden hiçbiri silinmedi; $sayi varlık ve temel özellikler ücretsiz kalır. Raporlar, sinyaller ve sınırsız varlık için Premium\'la kaldığın yerden devam edebilirsin.';
   }
 
   @override
-  String get prmHediyeBittiGor => 'Premium\'u gör';
+  String get prmBittiBaslik => 'Premium süren doldu';
 
   @override
-  String get prmHediyeBittiSonra => 'Şimdi değil';
+  String prmBittiGovde(String tarih) {
+    return 'Premium\'un $tarih tarihinde bitti. Verilerinden hiçbiri silinmedi; temel özellikler ücretsiz kalır.';
+  }
+
+  @override
+  String get prmBittiGor => 'Premium\'u gör';
+
+  @override
+  String get prmBittiSonra => 'Şimdi değil';
+
+  @override
+  String prmKullanim(String liste) {
+    return 'Premium\'la kullandıkların: $liste';
+  }
+
+  @override
+  String prmKullanimVarlik(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi varlık',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKullanimTakip(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi takip',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKullanimFiyatAlarmi(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi fiyat alarmı',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKullanimGostergeAlarmi(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi gösterge alarmı',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKullanimCizgiAlarmi(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi çizgi alarmı',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String prmKullanimPortfoy(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi portföy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get denemeHatirlatmaBaslik => 'Ücretsiz deneme hatırlatması';
+
+  @override
+  String denemeHatirlatmaGovde(String tarih, String tutar) {
+    return 'Ücretsiz denemen $tarih tarihinde bitiyor; sonra $tutar. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.';
+  }
+
+  @override
+  String denemeHatirlatmaGovdeTutarsiz(String tarih) {
+    return 'Ücretsiz denemen $tarih tarihinde bitiyor; sonra abonelik ücreti başlar. Devam etmek istemezsen mağazanın abonelik sayfasından iptal edebilirsin.';
+  }
+
+  @override
+  String prmYillikGecTasarruf(String tutar) {
+    return 'Yıllığa geçersen yılda $tutar az ödersin';
+  }
 
   @override
   String get prmAbonelikAylik => 'Premium · aylık';
@@ -8234,6 +8325,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String pwdGun(int gun) {
     return '$gun. gün';
   }
+
+  @override
+  String get pwdHatirlatiriz => 'Hatırlatırız';
 
   @override
   String get pwdIlkOdeme => 'İlk ödeme';

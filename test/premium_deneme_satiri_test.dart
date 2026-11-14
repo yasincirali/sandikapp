@@ -129,6 +129,17 @@ void main() {
       expect(d.ilkOdemeTutari, isNull);
     });
 
+    test('denemenin bitişi ve yenilenmesi mağazadan okunur (hatırlatma)', () {
+      const iptal = EntitlementInfo('premium', true, false,
+          '2026-11-12T00:00:00Z', '2026-11-12T00:00:00Z', 'sandik_yillik', false,
+          periodType: PeriodType.trial, expirationDate: '2026-11-19T00:00:00Z');
+      final d = abonelikDonemi(iptal, const []);
+      expect(d.bitis, DateTime.utc(2026, 11, 19));
+      expect(d.yenilenecek, isFalse);
+      final y = abonelikDonemi(hakBilgisi(PeriodType.trial), const []);
+      expect(y.yenilenecek, isTrue);
+    });
+
     test('ücretli giriş fazı varsa ilk ödeme liste fiyatı değil: tutar yok',
         () {
       final d = abonelikDonemi(hakBilgisi(PeriodType.trial),

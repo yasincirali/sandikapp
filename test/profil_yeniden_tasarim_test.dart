@@ -111,7 +111,7 @@ Future<void> _profil(
       effectivePremiumProvider.overrideWithValue(premium),
       premiumKilitliProvider.overrideWithValue(kilitli),
       gecerliPremiumHakkiProvider.overrideWithValue(hak),
-      hediyesiBitmisProvider.overrideWithValue(null),
+      premiumBitmisProvider.overrideWithValue(null),
       kilometreTaslariProvider.overrideWithValue(_taslar),
     ],
     child: MaterialApp(
