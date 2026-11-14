@@ -6108,6 +6108,8 @@
   "xrKaynakNot": "Fon payları TEFAS dağılımından. Toplam, yukarıdaki tutarın aynısı.",
   "xrSinifEtiket": "{ad}, {pay}, {tutar}. Kaynakları göster.",
   "@xrSinifEtiket": {"placeholders": {"ad": {"type": "String"}, "pay": {"type": "String"}, "tutar": {"type": "String"}}},
+  "xrFonsuzNot": "Fonun olmadığı için gerçek dağılımın tuttuklarınla aynı. Fon eklersen içi burada açılır.",
+  "xrRaporAltFonsuz": "Varlık sınıflarına göre dağılımın",
   "pyzBaslik": "Yapay zekâ yorumu",
   "pyzGecenHafta": "Geçen hafta",
   "pyzGecenAy": "Geçen ay",

@@ -420,6 +420,68 @@ void main() {
       expect(c.read(xrayFonKodlariProvider), 'AAA,AEA,BBB');
     });
   });
+
+  // Ar-Ge 14 Kas #1, #4: Raporlar alt metni ve kilit kartı fon ayağını
+  // sunucuya gitmeden, pozisyon değerlerinden okur.
+  group('fonPayi — fon sayısı ve payı', () {
+    test('fon + BES ayrı fon sayılır; pay toplamdan; fiyatsız girmez', () {
+      final f = fonPayi(
+        pozisyonlar: aggregatePositions([
+          _lot('TEFAS:AAA', AssetType.fon, fiyat: 300, id: 'a1'),
+          _lot('AAA', AssetType.fon, fiyat: 100, id: 'a2'),
+          _lot('AEA', AssetType.bes, fiyat: 100, id: 'e1'),
+          _lot('THYAO.IS', AssetType.hisse, fiyat: 500, id: 't1'),
+          _lot('BBB', AssetType.fon, fiyat: 0, id: 'b1'),
+        ]),
+        deger: _try,
+      );
+      // AAA (önekli ve öneksiz aynı kod) + AEA; fiyatsız BBB yok.
+      expect(f.fonSayisi, 2);
+      expect(f.pay, closeTo(500 / 1000 * 100, 1e-9));
+      expect(f.fonVar, isTrue);
+      expect(f.yuvarlakPay, 50);
+    });
+
+    test('fon yoksa fonVar false, yuvarlak pay yok', () {
+      final f = fonPayi(
+          pozisyonlar: aggregatePositions([_lot('THYAO.IS', AssetType.hisse)]),
+          deger: _try);
+      expect(f.fonVar, isFalse);
+      expect(f.yuvarlakPay, isNull);
+    });
+
+    test('pay yuvarlanınca sıfırsa yuvarlak pay yok (uydurma %1 yok)', () {
+      expect(const XrayFonPayi(fonSayisi: 1, pay: 0.4).yuvarlakPay, isNull);
+      expect(const XrayFonPayi(fonSayisi: 1, pay: 37.6).yuvarlakPay, 38);
+      expect(const XrayFonPayi(fonSayisi: 1, pay: 100).yuvarlakPay, 100);
+    });
+
+    test('sağlayıcı: oturum ve portföy yoksa null; ortağın fonu girmez',
+        () async {
+      final yok = ProviderContainer(overrides: [
+        authProvider.overrideWith(_OturumYok.new),
+        portfolioProvider.overrideWith(() => _Portfoy(const [])),
+      ]);
+      addTearDown(yok.dispose);
+      await yok.read(authProvider.future);
+      await yok.read(portfolioProvider.future);
+      expect(yok.read(xrayFonPayiProvider), isNull);
+
+      final c = ProviderContainer(overrides: [
+        authProvider.overrideWith(_Oturum.new),
+        portfolioProvider.overrideWith(() => _Portfoy([
+              _lot('THYAO.IS', AssetType.hisse, fiyat: 300),
+              _lot('AAA', AssetType.fon, fiyat: 100),
+              _lot('BBB', AssetType.fon, user: 'ortak'),
+            ])),
+      ]);
+      addTearDown(c.dispose);
+      await c.read(authProvider.future);
+      await c.read(portfolioProvider.future);
+      expect(c.read(xrayFonPayiProvider),
+          const XrayFonPayi(fonSayisi: 1, pay: 25));
+    });
+  });
 }
 
 class _Oturum extends AuthNotifier {

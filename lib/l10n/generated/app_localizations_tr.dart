@@ -9488,6 +9488,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get xrFonsuzNot =>
+      'Fonun olmadığı için gerçek dağılımın tuttuklarınla aynı. Fon eklersen içi burada açılır.';
+
+  @override
+  String get xrRaporAltFonsuz => 'Varlık sınıflarına göre dağılımın';
+
+  @override
   String get pyzBaslik => 'Yapay zekâ yorumu';
 
   @override

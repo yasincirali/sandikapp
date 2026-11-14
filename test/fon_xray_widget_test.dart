@@ -69,6 +69,7 @@ Future<void> _kur(
   FonDagilimi? dag,
   bool kalemAcik = false,
   FonKalemleri? kalemler,
+  XrayFonPayi? fonPayi,
   List<Override> ek = const [],
 }) async {
   _okuma = 0;
@@ -89,6 +90,8 @@ Future<void> _kur(
       }),
       fonKalemleriProvider
           .overrideWith((ref, kod) async => kalemAcik ? kalemler : null),
+      // Fon ayağı (Ar-Ge 14 Kas): varsayılan "bilinmiyor" — genel metin.
+      xrayFonPayiProvider.overrideWithValue(fonPayi),
       ...ek,
     ],
     child: MaterialApp(
@@ -269,7 +272,8 @@ void main() {
   });
 
   group('Raporlar kapısı satırı', () {
-    Future<void> sayfa(WidgetTester t, {required bool kilitli}) async {
+    Future<void> sayfa(WidgetTester t,
+        {required bool kilitli, XrayFonPayi? fonPayi}) async {
       await _kur(
         t,
         Builder(
@@ -284,6 +288,7 @@ void main() {
         ),
         gorunur: true,
         kilitli: kilitli,
+        fonPayi: fonPayi,
         ek: [
           balinaRadariAcikProvider.overrideWithValue(false),
           aylikRaporDonemiProvider.overrideWithValue(null),
@@ -313,6 +318,26 @@ void main() {
       expect(find.text('Temettü tahmini'), findsOneWidget);
       // Portföy dökümü 2026-10-31'de Ayarlar'dan buraya taşındı.
       expect(find.text('Portföyü dışa aktar'), findsOneWidget);
+    });
+
+    testWidgets('fonsuz Premium: alt metin boş vaat değil, ne göreceği',
+        (t) async {
+      RemoteConfigService.instance.yonetici = true;
+      await sayfa(t,
+          kilitli: false,
+          fonPayi: const XrayFonPayi(fonSayisi: 0, pay: 0));
+      expect(find.text('Varlık sınıflarına göre dağılımın'), findsOneWidget);
+      expect(find.text('Fonlarının içi dahil, paran gerçekte nerede'),
+          findsNothing);
+    });
+
+    testWidgets('fonlu Premium: genel alt metin', (t) async {
+      RemoteConfigService.instance.yonetici = true;
+      await sayfa(t,
+          kilitli: false,
+          fonPayi: const XrayFonPayi(fonSayisi: 2, pay: 40));
+      expect(find.text('Fonlarının içi dahil, paran gerçekte nerede'),
+          findsOneWidget);
     });
 
     testWidgets('paywall açık + ücretsiz: satır kilit simgesiyle', (t) async {
@@ -456,6 +481,11 @@ void main() {
           )));
       expect(find.text('Tuttukların'), findsNothing);
       expect(find.textContaining('görünüyor'), findsNothing);
+      // Ar-Ge 14 Kas #1: neden tek çubuk olduğu söylenir.
+      expect(
+          find.text('Fonun olmadığı için gerçek dağılımın tuttuklarınla '
+              'aynı. Fon eklersen içi burada açılır.'),
+          findsOneWidget);
     });
 
     testWidgets('örtüşme yoksa bölüm yok', (t) async {

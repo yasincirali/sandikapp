@@ -232,6 +232,72 @@ class XrayIcgoru {
   double get fark => gercekPay - gorunenPay;
 }
 
+/// Kullanıcının fon (ve BES) ayağı: kaç ayrı fon, portföyün yüzde kaçı.
+///
+/// ## Neden ayrı (Ar-Ge 14 Kas #1, #4)
+/// X-Ray'in kendisi fonların sunucu satırlarını (TEFAS dağılımı) ister;
+/// Raporlar satırının alt metni ve kilit kartı ise yalnız "fonun var mı,
+/// ne kadar" sorusunu sorar. Kilitli kullanıcıda sunucu okunmaz (Premium
+/// verisi RLS ardında, `fon_xray_widget_test` "veri okunmaz"), bu yüzden
+/// sayı yalnız kullanıcının ZATEN gördüğü pozisyon değerlerinden çıkar:
+/// uydurma yok, kilitli sonuç sızmaz.
+///
+/// BES de sayılır: [PortfoyXray.fonVar] ile aynı kural (ikisi de içi
+/// açılan fon). Fiyatı bilinmeyen pozisyon sayılmaz — X-Ray toplamıyla
+/// aynı süzgeç ([PozisyonDegeri] `null`).
+@immutable
+class XrayFonPayi {
+  const XrayFonPayi({required this.fonSayisi, required this.pay});
+
+  /// Ayrı fon sayısı (fon kodu; kodsuzsa pozisyon).
+  final int fonSayisi;
+
+  /// Fonların portföy toplamındaki payı (0–100).
+  final double pay;
+
+  bool get fonVar => fonSayisi > 0;
+
+  /// Metinde gösterilen tam sayı yüzde. Fon yoksa ya da pay yuvarlanınca
+  /// sıfıra iniyorsa `null`: "%0'ı" yazmak fonu yok saymak olur, "%1"
+  /// yazmak sayı uydurmak — o durumda kişisel satır hiç çıkmaz.
+  int? get yuvarlakPay {
+    if (!fonVar) return null;
+    final r = pay.round();
+    return r < 1 ? null : r.clamp(1, 100);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is XrayFonPayi &&
+      other.fonSayisi == fonSayisi &&
+      other.pay == pay;
+
+  @override
+  int get hashCode => Object.hash(fonSayisi, pay);
+}
+
+/// [XrayFonPayi] hesabı. Saf; çağıran X-Ray'le aynı pozisyonları ve aynı
+/// değer fonksiyonunu verir (`xrayFonPayiProvider`).
+XrayFonPayi fonPayi({
+  required List<Position> pozisyonlar,
+  required PozisyonDegeri deger,
+}) {
+  var toplam = 0.0;
+  var fon = 0.0;
+  final fonlar = <String>{};
+  for (final p in pozisyonlar) {
+    final d = deger(p);
+    if (d == null || !d.isFinite || d <= 0) continue;
+    toplam += d;
+    final a = p.representative;
+    if (a.type != AssetType.fon && a.type != AssetType.bes) continue;
+    fon += d;
+    fonlar.add(fonKoduOf(tur: a.type, ticker: a.ticker) ?? p.key);
+  }
+  return XrayFonPayi(
+      fonSayisi: fonlar.length, pay: toplam > 0 ? fon / toplam * 100 : 0);
+}
+
 /// Hesap. [dagilimlar] ve [kalemler] fon koduna göre (`fonKoduOf`).
 PortfoyXray portfoyXray({
   required List<Position> pozisyonlar,

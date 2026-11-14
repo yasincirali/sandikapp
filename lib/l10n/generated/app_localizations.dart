@@ -15491,6 +15491,18 @@ abstract class AppLocalizations {
   /// **'{ad}, {pay}, {tutar}. Kaynakları göster.'**
   String xrSinifEtiket(String ad, String pay, String tutar);
 
+  /// No description provided for @xrFonsuzNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonun olmadığı için gerçek dağılımın tuttuklarınla aynı. Fon eklersen içi burada açılır.'**
+  String get xrFonsuzNot;
+
+  /// No description provided for @xrRaporAltFonsuz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık sınıflarına göre dağılımın'**
+  String get xrRaporAltFonsuz;
+
   /// No description provided for @pyzBaslik.
   ///
   /// In tr, this message translates to:

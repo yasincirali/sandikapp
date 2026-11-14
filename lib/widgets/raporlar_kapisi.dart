@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../providers/fon_akisi_provider.dart' show balinaRadariAcikProvider;
+import '../providers/fon_xray_provider.dart' show xrayFonPayiProvider;
 import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../providers/raporlar_provider.dart';
 import '../screens/aylik_rapor_screen.dart';
@@ -16,6 +17,7 @@ import '../screens/siralama_screen.dart' show yarisGirisEkrani;
 import '../screens/temettu_tahmini_screen.dart';
 import '../screens/yillik_rapor_screen.dart';
 import '../services/recap_service.dart';
+import '../services/portfoy_xray.dart' show XrayFonPayi;
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import 'portfoy_dokumu.dart';
@@ -173,10 +175,12 @@ class _RaporlarSayfasi extends ConsumerWidget {
         ),
         // Portföy X-Ray (Premium, 2026-10-10): aynı kural — yalnız bu
         // kapıdan açılır, kilitliyken satır var, ekran kilit kartı çizer.
+        // Alt metin kullanıcının fon durumuna göre ([xrayRaporAlti]).
         _RaporSatiri(
           ikon: Icons.donut_large_rounded,
           baslik: l.xrEkranBaslik,
-          alt: l.xrRaporAlt,
+          alt: xrayRaporAlti(l, ref.watch(xrayFonPayiProvider),
+              kilitli: kilitli),
           kilitli: kilitli,
           onTap: () => ac((ekran) => pushGuarded(
               ekran,
@@ -256,6 +260,19 @@ class _RaporlarSayfasi extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Raporlar'daki Portföy X-Ray satırının alt metni (Ar-Ge 14 Kas #1).
+///
+/// Genel metin "Fonlarının içi dahil, paran gerçekte nerede" fonu olmayan
+/// kullanıcıya boş bir vaatti: ekran ona tek çubuk çiziyordu. Fon yoksa
+/// (portföy yüklü, açık) satır ne göreceğini söyler. Fon durumu
+/// bilinmiyorsa (`null`, yükleniyor) ya da kilitliyse genel metin kalır.
+String xrayRaporAlti(AppLocalizations l, XrayFonPayi? f,
+    {required bool kilitli}) {
+  if (f == null) return l.xrRaporAlt;
+  if (!kilitli && !f.fonVar) return l.xrRaporAltFonsuz;
+  return l.xrRaporAlt;
 }
 
 /// Performans › 1A özetinin altındaki aylık rapor satırı (Ar-Ge 2 Kas

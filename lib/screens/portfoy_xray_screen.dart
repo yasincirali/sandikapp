@@ -35,7 +35,8 @@ import '../widgets/sandik_skeleton.dart';
 /// ("Hisse payın %24 görünüyor, fonlarınla birlikte %47,8"). Sınıf
 /// satırına dokununca o paranın hangi fondan / pozisyondan geldiği alt
 /// sayfada açılır; kaynakların toplamı satırdaki tutardır. Fon yoksa iki
-/// görünüm aynı şeydir: karşılaştırma ve cümle çizilmez. Premium ekranı
+/// görünüm aynı şeydir: karşılaştırma ve cümle çizilmez, yerine bunun
+/// nedenini söyleyen tek cümle durur (Ar-Ge 14 Kas #1). Premium ekranı
 /// (mağazada kapalı), bu yüzden bayraksız.
 class PortfoyXrayScreen extends ConsumerWidget {
   const PortfoyXrayScreen({super.key});
@@ -134,6 +135,13 @@ class _Govde extends StatelessWidget {
                       size: SandikSpace.md, color: c.text36),
                 ),
                 cubukUstu(l.xrIcAcilinca, l.xrSinifSayisi(sinifSayisi)),
+              ] else ...[
+                // Fonsuz kullanıcı (Ar-Ge 14 Kas #1): karşılaştırma yok, ama
+                // nedeni söylenir. Söylenmezse tek çubuk "Premium'un bu
+                // kısmı bozuk" diye okunuyordu; cümle neyin ne zaman
+                // açılacağını da söyler.
+                Text(l.xrFonsuzNot, style: notStili),
+                const SizedBox(height: SandikSpace.sm),
               ],
               XrayCubugu(
                 paylar: [for (final e in kovalar) (e.key, e.value)],

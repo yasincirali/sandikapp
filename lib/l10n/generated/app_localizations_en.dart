@@ -9621,6 +9621,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get xrFonsuzNot =>
+      'You have no funds, so your real allocation is the same as what you hold. Add a fund and its contents open up here.';
+
+  @override
+  String get xrRaporAltFonsuz => 'Your allocation by asset class';
+
+  @override
   String get pyzBaslik => 'AI commentary';
 
   @override
