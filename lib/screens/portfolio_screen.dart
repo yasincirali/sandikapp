@@ -3830,7 +3830,9 @@ class _AssetDetailsPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (basaBas)
-                      Expanded(child: BasaBasSatiri(oran: basaBasOrani!)),
+                      Expanded(
+                          child: BasaBasSatiri(
+                              oran: basaBasOrani!, kaynak: 'basa_bas')),
                     // Temettü gerekçesi aşağıdaki mevduat satırında.
                     if (temettuVar) Expanded(child: temettuSatiri),
                   ],

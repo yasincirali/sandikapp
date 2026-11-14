@@ -1127,6 +1127,14 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get fxSplitSheetAvg => 'Döviz bazında alış ortalaman → bugün';
+
+  @override
+  String fxSplitSheetAvgChange(String pct) {
+    return 'Alıştan beri döviz bazında $pct';
+  }
+
+  @override
   String get fxSplitSheetTotal => 'İkisinin toplamı: TL kâr';
 
   @override

@@ -40,14 +40,6 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
     final ileri =
         ref.watch(yatirimciSeviyesiProvider) == YatirimciSeviyesi.ileri;
     final birimGizli = widget.asset.type == AssetType.mevduat;
-    // Kur ayrışmasının ortak kapısı: bugünkü kur (portföyün `toTRY`'siyle
-    // aynı) ve bilinen maliyet. `null` → ne ayrışma ne "alış kurunu ekle".
-    final kurKapisi = pState == null || alarmMaliyeti(_canli.lots) == null
-        ? null
-        : pozisyonKuru(_canli.asset.currency,
-            usdTry: pState.usdTry,
-            eurTry: pState.eurTry,
-            gbpTry: pState.gbpTry);
 
     return [
       // ── 2. Pozisyonun ──
@@ -71,21 +63,11 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
             : (alarmMaliyeti(_canli.lots) == null || pnl.anchorUnitTRY <= 0
                 ? '—'
                 : _birimBicimi(pnl.anchorUnitTRY).format(pnl.anchorUnitTRY)),
-        // Yalnız kendi varlığında: soru "benim param enflasyonu yendi mi?".
-        enflasyon: isOwnAsset ? _enflasyonIsiAl() : null,
-        // Kur ayrışması (Ar-Ge 2026-11-07 #1): kartın yazdığı TL kârıyla
-        // AYNI görünüm varlığı ve AYNI kur (`_pnlOzeti` → `pState.toTRY`);
-        // iki etkinin toplamı o kâra eşit. Hesaplanamıyorsa satır yok;
-        // maliyeti bilinmeyen lotta da ("—" yazan ortalama maliyetle aynı
-        // kural, `alarmMaliyeti`) fiyat etkisi uydurma olurdu.
-        kurAyrismasi: kurKapisi == null
-            ? null
-            : kurAyrismasi(_canli.asset, guncelKur: kurKapisi),
-        // Ayrışma yalnız alış kuru eksik olduğu için çıkmıyorsa (2026-11-13)
-        // satır sessizce kaybolmaz; Premium'a nedenini söyleyen tek satır.
-        // Aynı kapı (`kurKapisi`): satırın zaten çıkmayacağı yerde söylenmez.
-        kurAlisKuruEksik: kurKapisi != null &&
-            kurAyrismasiAlisKuruEksik(_canli.asset, guncelKur: kurKapisi),
+        // Enflasyon → kur ayrışması → başa baş: iki düzenin ortak grubu
+        // (`_pozisyonEkSatirlari`, 2026-11-15); eskiden yalnız burada
+        // çiziliyordu.
+        ekSatirlar: _pozisyonEkSatirlari(
+            baz: baz, pnl: pnl, isOwnAsset: isOwnAsset, pState: pState),
       ),
       // Eski yığındaki yeri: pozisyonun hemen altı. #113 (eurobond) ile #116
       // (bu düzen) aynı gün ayrı dallarda yazıldı; katmanlı gövdeye
@@ -159,6 +141,61 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
         const DisclaimerWidget(kisa: true),
       ],
     ];
+  }
+
+  /// Pozisyon kartının ek satırları (enflasyon → kur ayrışması → başa baş)
+  /// — İKİ düzenin ortak girdisi (Ar-Ge 2026-11-15 #1, #2).
+  ///
+  /// Neden burada: "Fiyattan · Kurdan" ve enflasyon satırı yalnız katmanlı
+  /// kartta (bayrak `varlik_detay_katmanli`, varsayılan kapalı) kuruluyordu;
+  /// bayrak açılmadıkça Premium satın alan döviz pozisyonu sahibi satırı
+  /// varlık sayfasında hiç görmüyordu. Hesap ve kapılar tek yerde, iki
+  /// düzen aynı widget'ı alır; biri değişip öteki kalmaz.
+  Widget _pozisyonEkSatirlari({
+    required BazPara baz,
+    required _PnlOzeti pnl,
+    required bool isOwnAsset,
+    required PortfolioState? pState,
+  }) {
+    final maliyetBilinir = alarmMaliyeti(_canli.lots) != null;
+    // Kur ayrışmasının ortak kapısı: bugünkü kur (portföyün `toTRY`'siyle
+    // aynı) ve bilinen maliyet. `null` → ne ayrışma ne "alış kurunu ekle".
+    final kurKapisi = pState == null || !maliyetBilinir
+        ? null
+        : pozisyonKuru(_canli.asset.currency,
+            usdTry: pState.usdTry,
+            eurTry: pState.eurTry,
+            gbpTry: pState.gbpTry);
+    return PozisyonEkSatirlari(
+      baz: baz,
+      // Yalnız kendi varlığında: soru "benim param enflasyonu yendi mi?".
+      enflasyon: isOwnAsset ? _enflasyonIsiAl() : null,
+      // Kur ayrışması (Ar-Ge 2026-11-07 #1): kartın yazdığı TL kârıyla
+      // AYNI görünüm varlığı ve AYNI kur (`_pnlOzeti` → `pState.toTRY`);
+      // iki etkinin toplamı o kâra eşit. Hesaplanamıyorsa satır yok;
+      // maliyeti bilinmeyen lotta da ("—" yazan ortalama maliyetle aynı
+      // kural, `alarmMaliyeti`) fiyat etkisi uydurma olurdu.
+      kurAyrismasi: kurKapisi == null
+          ? null
+          : kurAyrismasi(_canli.asset, guncelKur: kurKapisi),
+      // Ayrışma yalnız alış kuru eksik olduğu için çıkmıyorsa (2026-11-13)
+      // satır sessizce kaybolmaz; Premium'a nedenini söyleyen tek satır.
+      // Aynı kapı (`kurKapisi`): satırın zaten çıkmayacağı yerde söylenmez.
+      kurAlisKuruEksik: kurKapisi != null &&
+          kurAyrismasiAlisKuruEksik(_canli.asset, guncelKur: kurKapisi),
+      // Başa baş (#2): sayı kartın KENDİ kâr/zararını kuran iki sayıdan
+      // (`_pnlOzeti`: maliyet, bugünkü değer). Portföy panelindeki satır
+      // temettüyü maliyetten düşer çünkü o panelin kâr/zararı temettü
+      // dahil; bu kartın "Toplam kâr/zarar"ı temettüsüz. Kartla aynı eşik
+      // seçildi: kart "kârdasın" derken bu satır "yükselmeli" diyemez.
+      // Mevduatta (birim yok) ve maliyeti bilinmeyen kayıtta yok; ortağın
+      // varlığında da yok (kendi pozisyonu değil).
+      basaBasOrani: !isOwnAsset ||
+              !maliyetBilinir ||
+              widget.asset.type == AssetType.mevduat
+          ? null
+          : basaBasIcinGerekenYukselis(pnl.totalCostTRY, pnl.currentValueTRY),
+    );
   }
 
   /// "Aldığından beri enflasyona göre" hesabı — lot defteri değişmedikçe
@@ -276,19 +313,13 @@ class _KatmanliPozisyonKarti extends StatefulWidget {
     required this.pnl,
     required this.miktarMetni,
     required this.ayrinti,
+    required this.ekSatirlar,
     this.ortalamaMaliyetMetni,
-    this.enflasyon,
-    this.kurAyrismasi,
-    this.kurAlisKuruEksik = false,
   });
 
-  /// Ayrışma yalnız alış kuru kayıtlı olmadığı için yok (bkz.
-  /// [kurAyrismasiAlisKuruEksik]); Premium'a nedenini söyleyen satır.
-  final bool kurAlisKuruEksik;
-
-  /// Döviz cinsi pozisyonda "Fiyattan · Kurdan" (Premium); `null` → satır
-  /// yok (TL varlık ya da kur/alış kuru bilinmiyor, bkz. [kurAyrismasi]).
-  final KurAyrismasi? kurAyrismasi;
+  /// Enflasyon → kur ayrışması → başa baş ([PozisyonEkSatirlari]); eski
+  /// kartla aynı widget (`_pozisyonEkSatirlari`).
+  final Widget ekSatirlar;
 
   /// Orta sütun (Ar-Ge 1 Kas 08:45 #3, yasin "yap"): "Toplam kâr/zarar"
   /// fiyatın altındaki "Pozisyonun" satırını tekrarlıyordu; yerine ortalama
@@ -297,10 +328,6 @@ class _KatmanliPozisyonKarti extends StatefulWidget {
 
   final BazPara baz;
   final _PnlOzeti pnl;
-
-  /// "Aldığından beri enflasyona göre" — `null` iş yok (ortağın varlığı);
-  /// iş `null` dönerse satır hiç açılmaz (uydurma yok).
-  final Future<RealReturn?>? enflasyon;
 
   /// `null` → miktar sütunu yok (mevduat).
   final String? miktarMetni;
@@ -370,24 +397,9 @@ class _KatmanliPozisyonKartiState extends State<_KatmanliPozisyonKarti> {
               ],
             ],
           ),
-          // Enflasyon satırı (yasin 2026-10-22, artifact seçeneği A): üç
-          // sayının altında, yeni kart/başlık yok. Hesap bitince açılır
-          // (`SandikAcilir`: hareketi azalt'ta anında); sonuç yoksa hiç.
-          if (widget.enflasyon case final isi?)
-            FutureBuilder<RealReturn?>(
-              future: isi,
-              builder: (context, s) => SandikAcilir(
-                acik: s.data != null,
-                child: s.data == null
-                    ? const SizedBox.shrink()
-                    : _EnflasyonSatiri(sonuc: s.data!),
-              ),
-            ),
-          // Enflasyonun hemen altı: ikisi de "kâr gerçekte nereden" sorusu.
-          if (widget.kurAyrismasi case final ka?)
-            KurAyrismasiSatiri(ayrisma: ka, baz: widget.baz)
-          else if (widget.kurAlisKuruEksik)
-            const KurAyrismasiEksikSatiri(),
+          // Ek satırlar (enflasyon → kur ayrışması → başa baş): üç sayının
+          // altında, yeni kart/başlık yok (yasin 2026-10-22, seçenek A).
+          widget.ekSatirlar,
           _AcKapaSatiri(
             baslik: l.s4Details,
             acik: _acik,
@@ -403,6 +415,85 @@ class _KatmanliPozisyonKartiState extends State<_KatmanliPozisyonKarti> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Pozisyon kartının ek satırları: enflasyon → "Fiyattan · Kurdan" (ya da
+/// alış kuru eksik cümlesi) → başa baş. İki düzenin ortak parçası
+/// (Ar-Ge 2026-11-15 #1): eski kart (`_PozisyonKarti.ekSatirlar`) ve
+/// katmanlı kart aynı widget'ı aynı girdilerle kurar
+/// (`_pozisyonEkSatirlari`); bayrak hangi düzeni seçerse seçsin Premium
+/// satırları aynı.
+///
+/// Widget hesap YAPMAZ: sayılar modelde (`kurAyrismasi`,
+/// `basaBasIcinGerekenYukselis`, `RealReturnService`). Görünürlük her
+/// satırın kendi deseninde (`premiumOzellikleriGorunur` → yok,
+/// `premiumKilitli` → [KilitSatiri], aksi açık). Hiçbir satır yoksa
+/// yükseklik sıfır — kart değişmez.
+class PozisyonEkSatirlari extends ConsumerWidget {
+  const PozisyonEkSatirlari({
+    super.key,
+    required this.baz,
+    this.enflasyon,
+    this.kurAyrismasi,
+    this.kurAlisKuruEksik = false,
+    this.basaBasOrani,
+  });
+
+  final BazPara baz;
+
+  /// "Aldığından beri enflasyona göre" — `null` iş yok (ortağın varlığı);
+  /// iş `null` dönerse satır hiç açılmaz (uydurma yok).
+  final Future<RealReturn?>? enflasyon;
+
+  /// Döviz cinsi pozisyonda "Fiyattan · Kurdan" (Premium); `null` → satır
+  /// yok (TL varlık ya da kur/alış kuru bilinmiyor, bkz. [kurAyrismasi]).
+  final KurAyrismasi? kurAyrismasi;
+
+  /// Ayrışma yalnız alış kuru kayıtlı olmadığı için yok (bkz.
+  /// [kurAyrismasiAlisKuruEksik]); Premium'a nedenini söyleyen satır.
+  final bool kurAlisKuruEksik;
+
+  /// Başa baş için gereken yükseliş (%); `null` → pozisyon zararda değil
+  /// ya da sayı yok → satır (kilit dahil) hiç yok.
+  final double? basaBasOrani;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final basaBas = basaBasSatiriCizilir(ref, basaBasOrani);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Hesap bitince açılır (`SandikAcilir`: hareketi azalt'ta anında);
+        // sonuç yoksa hiç.
+        if (enflasyon case final isi?)
+          FutureBuilder<RealReturn?>(
+            future: isi,
+            builder: (context, s) => SandikAcilir(
+              acik: s.data != null,
+              child: s.data == null
+                  ? const SizedBox.shrink()
+                  : _EnflasyonSatiri(sonuc: s.data!),
+            ),
+          ),
+        // Enflasyonun hemen altı: ikisi de "kâr gerçekte nereden" sorusu.
+        if (kurAyrismasi case final ka?)
+          KurAyrismasiSatiri(ayrisma: ka, baz: baz)
+        else if (kurAlisKuruEksik)
+          const KurAyrismasiEksikSatiri(),
+        // Grubun sonu (#2): aynı "param gerçekte ne durumda" sorusunun
+        // zarardaki hâli. Kilit kaynağı ayrı (`varlik_basa_bas`), paywall
+        // kartı aynı (X-Ray). Ekran okuyucu cümlesi satırın kendisinde
+        // (`basaBasCumle`).
+        if (basaBas)
+          Padding(
+            padding: const EdgeInsets.only(top: SandikSpace.sm),
+            child:
+                BasaBasSatiri(oran: basaBasOrani!, kaynak: 'varlik_basa_bas'),
+          ),
+      ],
     );
   }
 }

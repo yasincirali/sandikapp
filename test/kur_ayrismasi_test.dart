@@ -104,6 +104,41 @@ void main() {
     });
   });
 
+  group('döviz bazında alış ortalaması (2026-11-15)', () {
+    test('lot ağırlıklı, varlığın kendi para biriminde; kurdan bağımsız', () {
+      // 10 × $100 @ ₺30 + 5 × $140 @ ₺34 → (1000 + 700) / 15 = $113,33.
+      final a = _pozisyon([
+        _lot('1', qty: 10, price: 100, fx: 30),
+        _lot('2', qty: 5, price: 140, fx: 34),
+      ]);
+      final r = kurAyrismasi(a, guncelKur: 41)!;
+      expect(r.alisOrtalamasi, closeTo(1700 / 15, 1e-9));
+      expect(r.guncelFiyat, 120);
+      expect(r.dovizDegisimYuzde, closeTo((120 / (1700 / 15) - 1) * 100, 1e-9));
+    });
+
+    test('kısmi satış ortalamayı değiştirmez (ortalama maliyet, kartla aynı a)', () {
+      final a = _pozisyon([
+        _lot('1', qty: 10, price: 100, fx: 30),
+        _lot('2', qty: 10, price: 200, fx: 30),
+        _lot('3',
+            qty: 10,
+            price: 200,
+            fx: 30,
+            kind: AssetKind.sell,
+            ref: '2',
+            sellPrice: 210),
+      ]);
+      expect(
+          kurAyrismasi(a, guncelKur: 40)!.alisOrtalamasi, closeTo(150, 1e-9));
+    });
+
+    test('alış kuru yoksa ayrışma da ortalama da yok', () {
+      expect(
+          kurAyrismasi(_pozisyon([_lot('1', fx: 1.0)]), guncelKur: 40), isNull);
+    });
+  });
+
   group('sayı yok (uydurma yasak)', () {
     test('TL cinsi varlık', () {
       expect(
@@ -201,6 +236,9 @@ void main() {
       sembol: r'$',
       kurFarki: -1.0,
       toplam: 4800.0,
+      alisOrtalamasi: 100.0,
+      guncelFiyat: 120.0,
+      dovizDegisimYuzde: 20.0,
     );
 
     Future<void> pump(WidgetTester tester,
@@ -273,6 +311,15 @@ void main() {
       expect(find.byType(KurAyrismasiSayfasi), findsOneWidget);
       expect(find.text('Kâr nereden geldi'), findsOneWidget);
       expect(find.text('₺30,00 → ₺29,00'), findsOneWidget);
+      // İlk satır: döviz bazında alış ortalaması → bugün, değişim referanslı.
+      expect(find.text('Döviz bazında alış ortalaman → bugün'), findsOneWidget);
+      expect(find.text(r'$100,00 → $120,00'), findsOneWidget);
+      expect(find.text('Alıştan beri döviz bazında +%20,0'), findsOneWidget);
+      expect(
+          tester
+              .getTopLeft(find.text('Döviz bazında alış ortalaman → bugün'))
+              .dy,
+          lessThan(tester.getTopLeft(find.text('₺30,00 → ₺29,00')).dy));
       expect(find.text(r'Döviz bazında kâr $200 × alış kuru ₺30,00'),
           findsOneWidget);
       expect(find.text(r'Bugünkü döviz değeri $1.200 × kur farkı −₺1,00'),

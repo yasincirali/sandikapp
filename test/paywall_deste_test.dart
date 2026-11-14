@@ -63,6 +63,7 @@ void main() {
         'en_iyi_gun': PaywallKarti.xray,
         // Portföy kart panelinde başa baş satırı (2026-11-11).
         'basa_bas': PaywallKarti.xray,
+        'varlik_basa_bas': PaywallKarti.xray,
         // Hızlı Sat'ta Anaparam çipi (2026-11-12).
         'anaparam': PaywallKarti.xray,
         // Performans'ta aylık getiri tablosu (2026-11-11).
@@ -136,6 +137,10 @@ void main() {
         'lib/widgets/period_summary_view.dart',
         // Başa baş satırı (2026-11-11).
         'lib/widgets/basa_bas_satiri.dart',
+        // Başa baş satırının kaynakları çağıranda (2026-11-15): Portföy
+        // kart paneli ve varlık detayı pozisyon kartı.
+        'lib/screens/portfolio_screen.dart',
+        'lib/screens/asset_detail/katmanlar.dart',
         // Hızlı Sat Anaparam çipi (2026-11-12).
         'lib/widgets/quick_adjust_dialog.dart',
         // Aylık getiri tablosu (2026-11-11).
@@ -160,6 +165,7 @@ void main() {
             'kur_ayrismasi',
             'en_iyi_gun',
             'basa_bas',
+            'varlik_basa_bas',
             'anaparam',
             'aylik_getiri',
             'sattiklarin',

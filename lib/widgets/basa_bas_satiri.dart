@@ -28,7 +28,7 @@ bool basaBasSatiriCizilir(WidgetRef ref, double? oran) =>
 ///   kapalı ve admin değil, ya da zararda değil). Karar çağıranda çünkü
 ///   panel satırın yokluğunda yerleşimi değiştirir (temettü sola kayar,
 ///   satır aralığı da gider); boş bir `Expanded` 12 pt'lik delik bırakırdı.
-/// - `premiumKilitliProvider` → [KilitSatiri] (kaynak `basa_bas` → paywall
+/// - `premiumKilitliProvider` → [KilitSatiri] (kaynak `basa_bas` / `varlik_basa_bas` → paywall
 ///   X-Ray kartı: aynı "param gerçekte ne durumda" sorusu). Metin kişisel:
 ///   "Bu pozisyonun ... Premium'da" (2026-11-12) — satır zaten yalnız
 ///   zarardaki pozisyonda kurulduğu için genel bir özellik adı değil, bu
@@ -41,10 +41,18 @@ bool basaBasSatiriCizilir(WidgetRef ref, double? oran) =>
 /// Etiket ve değer alt alta okununca tek cümledir ("Başa baş için" /
 /// "%25 yükselmeli"); ekran okuyucu da tek cümle okur.
 class BasaBasSatiri extends ConsumerWidget {
-  const BasaBasSatiri({super.key, required this.oran});
+  const BasaBasSatiri({super.key, required this.oran, required this.kaynak});
 
   /// Gereken yükseliş, yüzde (25.0 = %25). Pozitif; çağıran `null`da kurmaz.
   final double oran;
+
+  /// Kilit satırının paywall kaynağı. Portföy kart paneli `basa_bas`,
+  /// varlık detayı pozisyon kartı `varlik_basa_bas` (2026-11-15): aynı
+  /// paywall kartı (X-Ray), analitikte hangi yüzeyin açtığı ayrı okunur.
+  /// `ozellik` (kapı olayı) ikisinde de `basa_bas`: aynı Premium özelliği.
+  /// Zorunlu (varsayılan yok): kaynak çağıranda literal dursun ki
+  /// `paywall_deste_test` her kaynağın bir karta düştüğünü tarayabilsin.
+  final String kaynak;
 
   /// Hane sayısı büyüklüğe göre: %25 ile %143 tam sayı okunur, küçük
   /// zararda ondalık anlam taşır (%0,4 ile %0 aynı şey değil).
@@ -57,7 +65,7 @@ class BasaBasSatiri extends ConsumerWidget {
     if (ref.watch(premiumKilitliProvider)) {
       return KilitSatiri(
         metin: l.basaBasKilitli,
-        kaynak: 'basa_bas',
+        kaynak: kaynak,
         ozellik: 'basa_bas',
         kilitEtiketi: l.goalDateLockedLabel,
       );
