@@ -46,6 +46,8 @@ void main() {
       // paketle aynı rejimde tutulur ki pencere geldiğinde elle açma
       // adımı unutulmasın.
       'recap_enabled',
+      // yasin 2026-11-15: çoklu portföy Premium'a açık.
+      'coklu_portfoy',
     ];
 
     for (final bayrak in acikOlmali) {

@@ -169,8 +169,13 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();
+    // Varsayılan açık (2026-11-15); "bayrak kapalı" senaryoları için kapatılır.
+    RemoteConfigService.testKapali = {'coklu_portfoy'};
   });
-  tearDown(() => RemoteConfigService.testAcik = {});
+  tearDown(() {
+    RemoteConfigService.testAcik = {};
+    RemoteConfigService.testKapali = {};
+  });
 
   group('Portföy ekranı', () {
     testWidgets('bayrak kapalı: seçici yok, liste havuz (bugünkü)', (t) async {
