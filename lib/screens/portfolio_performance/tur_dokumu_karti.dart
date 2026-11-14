@@ -183,9 +183,9 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final typeRows = <({AssetType type, _BreakdownRow row})>[];
     final childrenOf = <AssetType, List<_BreakdownRow>>{};
 
-    // Kalibrasyon girdisi: türün gösterilen uçları, üst kartın o tür için
-    // gördüğü uçlar ve kaynağı farklı mı (bkz. `tur_dokumu_kalibrasyonu.dart`).
-    final kalibrasyon = <AssetType, TurDokumuSatiri>{};
+    // Kalibrasyon girdisi: türün gösterilen uçları
+    // (bkz. `tur_dokumu_kalibrasyonu.dart`).
+    final kalibrasyon = <AssetType, TurDokumuUc>{};
 
     // Lot'lar TEK geçişte türe ve pozisyona bölünür. Eskiden her tür ve
     // her pozisyon satırı tüm defteri yeniden süzüyordu — iki kez (akış ve
@@ -211,16 +211,9 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       // GÜNLÜK altın: baş ve son aynı kotasyondan — bkz.
       // `DailySummary.gunIciAltinUclari` (2026-11-10, ayarlar ayrışıyordu).
       final turUc = widget.gunIciUclar?.call(turLot);
-      final seriUc = _endpoints(e.value, turLot);
-      final ep = turUc ?? seriUc;
+      final ep = turUc ?? _endpoints(e.value, turLot);
       if (ep == null) continue;
-      kalibrasyon[e.key] = TurDokumuSatiri(
-        (first: ep.first, last: ep.last),
-        toplamda: seriUc == null
-            ? null
-            : (first: seriUc.first, last: seriUc.last),
-        sabit: turUc != null,
-      );
+      kalibrasyon[e.key] = (first: ep.first, last: ep.last);
       typeRows.add((
         type: e.key,
         row: _BreakdownRow(
@@ -297,25 +290,15 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   void _calibrate(
     List<({AssetType type, _BreakdownRow row})> rows,
     Map<AssetType, List<_BreakdownRow>> childrenOf,
-    Map<AssetType, TurDokumuSatiri> kalibrasyon,
+    Map<AssetType, TurDokumuUc> kalibrasyon,
   ) {
-    // ⚠️ ÇAPRAZ BULAŞMA SINIRI.
-    //
-    // Kalibrasyon tek bir çarpanla çalışır: bir türdeki sapmayı diğer
-    // türlere yayar. Küçük artıklarda (üst kart `pState.toTRY` kurlarını,
-    // servis kendi kurunu kullanır — binde birkaç fark) bu zararsızdır ve
-    // toplamı tutturur. Ama çarpan 1'den belirgin uzaklaşırsa satırlar YALAN
-    // söyler: fiyatı hiç değişmemiş bir tür, başka bir tür oynadığı için
-    // oynamış görünür. Bu hata gün içi serisinde ölçüldü (fon 25.000 →
-    // 16.716) ve orada canlı değerleri tür bazında hesaplayarak kökten
-    // çözüldü; %2 sınırı bu yüzden durur.
-    //
-    // 2026-11-14 (kullanıcı bildirimi, Cumartesi Bugün): sınırın içinde
-    // kalan −%0,34 bile Fon/BES/Mevduat'ı zararda gösteriyordu. Artık
-    // fiyatı oynamayan satır ve üst karttan farklı kaynakla ölçülen satır
-    // (GÜNLÜK altın) hiç ölçeklenmez; kural ve testi
-    // `tur_dokumu_kalibrasyonu.dart`'ta. Toplamda birkaç TL sapma
-    // göstermek, her satırı yanlış göstermekten iyidir.
+    // Σ satır == üst kart her zaman (yasin 2026-11-14). Artık yalnız kendi
+    // değeri oynayan TÜRLERE dağıtılır; oynamayan tür ve ürünleri olduğu
+    // gibi kalır (Cumartesi Fon/BES/Mevduat −%0,34 bildirimi). Oynayan
+    // türün ürünleri aynı çarpanla ölçeklenir ki Σ ürün == tür kalsın.
+    // Eski %2 sınırı toplamı tutmayan döküm bırakıyordu, kaldırıldı; büyük
+    // fon sapması (25.000 → 16.716) gün içi canlı değerlerle kökten
+    // çözülmüştü. Kural ve testi `tur_dokumu_kalibrasyonu.dart`'ta.
     final k = turDokumuCarpanlari(kalibrasyon.values.toList(),
         ustFirst: widget.totalFirst, ustLast: widget.totalLast);
     final kFirst = k.kFirst;
@@ -324,24 +307,23 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     // Çarpan 1'e çok yakınsa dokunma — kayan nokta gürültüsüyle oynamayalım.
     if ((kFirst - 1).abs() < 1e-9 && (kLast - 1).abs() < 1e-9) return;
 
-    // Oynamayan satır olduğu gibi kalır; ürün satırı da kendi değerine
-    // bakar (türü oynasa bile fiyatı sabit kalan ürün oynamış görünmesin).
-    _BreakdownRow scaled(_BreakdownRow r) =>
-        !turDokumuOynadi((first: r.first, last: r.last))
-            ? r
-            : _BreakdownRow(
-                label: r.label,
-                first: r.first * kFirst,
-                last: r.last * kLast,
-                flow: r.flow,
-              );
+    _BreakdownRow scaled(_BreakdownRow r) => _BreakdownRow(
+          label: r.label,
+          first: r.first * kFirst,
+          last: r.last * kLast,
+          flow: r.flow,
+        );
+    bool dokunma(AssetType t) {
+      final u = kalibrasyon[t];
+      return k.yalnizOynayan && (u == null || !turDokumuOynadi(u));
+    }
 
     for (var i = 0; i < rows.length; i++) {
-      if (kalibrasyon[rows[i].type]?.sabit ?? false) continue;
+      if (dokunma(rows[i].type)) continue;
       rows[i] = (type: rows[i].type, row: scaled(rows[i].row));
     }
     for (final e in childrenOf.entries) {
-      if (kalibrasyon[e.key]?.sabit ?? false) continue;
+      if (dokunma(e.key)) continue;
       childrenOf[e.key] = [for (final k in e.value) scaled(k)];
     }
   }
