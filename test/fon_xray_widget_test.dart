@@ -338,6 +338,22 @@ void main() {
           findsOneWidget);
     });
 
+    // Ar-Ge 14 Kas #4: kilitliyken fonu olana kendi sayısı, kısa hâliyle.
+    testWidgets('kilitli + fonlu: "n fonun · portföyünün %x\'i"', (t) async {
+      RemoteConfigService.testAcik = {'paywall_enabled'};
+      await sayfa(t,
+          kilitli: true, fonPayi: const XrayFonPayi(fonSayisi: 4, pay: 37.6));
+      expect(find.text("4 fonun · portföyünün %38'i"), findsOneWidget);
+    });
+
+    testWidgets('kilitli + fonsuz: genel metin', (t) async {
+      RemoteConfigService.testAcik = {'paywall_enabled'};
+      await sayfa(t,
+          kilitli: true, fonPayi: const XrayFonPayi(fonSayisi: 0, pay: 0));
+      expect(find.text('Fonlarının içi dahil, paran gerçekte nerede'),
+          findsOneWidget);
+    });
+
     testWidgets('paywall açık + ücretsiz: satır kilit simgesiyle', (t) async {
       RemoteConfigService.testAcik = {'paywall_enabled'};
       await sayfa(t, kilitli: true);
@@ -372,10 +388,13 @@ void main() {
     );
 
     Future<void> ekran(WidgetTester t,
-        {bool kilitli = false, AsyncValue<PortfoyXray>? deger}) async {
+        {bool kilitli = false,
+        AsyncValue<PortfoyXray>? deger,
+        XrayFonPayi? fonPayi}) async {
       await _kur(t, const PortfoyXrayScreen(),
           gorunur: true,
           kilitli: kilitli,
+          fonPayi: fonPayi,
           ek: [
             portfoyXrayProvider
                 .overrideWithValue(deger ?? AsyncValue.data(ornek)),
@@ -387,6 +406,39 @@ void main() {
       expect(find.byType(PremiumKilitKarti), findsOneWidget);
       expect(find.text("Portföy X-Ray Premium'da"), findsOneWidget);
       expect(_sayiVar(), isFalse);
+    });
+
+    testWidgets('kilitli + fonlu: kişisel satır, X-Ray sonucu yok', (t) async {
+      await ekran(t,
+          kilitli: true, fonPayi: const XrayFonPayi(fonSayisi: 4, pay: 38.2));
+      expect(find.byType(PremiumKilitKarti), findsOneWidget);
+      expect(
+          find.text("4 fonun var, portföyünün %38'i. İçlerinde ne olduğu "
+              "Premium'da."),
+          findsOneWidget);
+      // Kilitli içerik sızmaz: tutar ve sınıf yok.
+      expect(find.textContaining('₺'), findsNothing);
+      expect(find.text('BIST hisse'), findsNothing);
+    });
+
+    testWidgets('kilitli + fonsuz: kart eski hâliyle', (t) async {
+      await ekran(t,
+          kilitli: true, fonPayi: const XrayFonPayi(fonSayisi: 0, pay: 0));
+      expect(find.textContaining('fonun var'), findsNothing);
+      expect(_sayiVar(), isFalse);
+    });
+
+    test('yüzde eki okunuşa göre', () {
+      final l = lookupAppLocalizations(const Locale('tr'));
+      String s(double p) =>
+          xrayKilitSatiri(l, XrayFonPayi(fonSayisi: 1, pay: p))!;
+      expect(s(40), startsWith("1 fonun var, portföyünün %40'ı."));
+      expect(s(50), startsWith("1 fonun var, portföyünün %50'si."));
+      expect(s(6), startsWith("1 fonun var, portföyünün %6'sı."));
+      expect(s(100), startsWith("1 fonun var, portföyünün %100'ü."));
+      expect(xrayKilitSatiri(l, const XrayFonPayi(fonSayisi: 1, pay: 0.3)),
+          isNull);
+      expect(xrayKilitSatiri(l, null), isNull);
     });
 
     testWidgets('dağılım, X-Ray dışı, örtüşme ve kaynak satırları', (t) async {

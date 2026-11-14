@@ -15491,6 +15491,18 @@ abstract class AppLocalizations {
   /// **'{ad}, {pay}, {tutar}. Kaynakları göster.'**
   String xrSinifEtiket(String ad, String pay, String tutar);
 
+  /// No description provided for @xrKilitKisisel.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} fonun var, portföyünün {pay}\'{ek}. İçlerinde ne olduğu Premium\'da.'**
+  String xrKilitKisisel(int n, String pay, String ek);
+
+  /// No description provided for @xrRaporAltKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} fonun · portföyünün {pay}\'{ek}'**
+  String xrRaporAltKilitli(int n, String pay, String ek);
+
   /// No description provided for @xrTlDisi.
   ///
   /// In tr, this message translates to:

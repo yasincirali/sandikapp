@@ -11,6 +11,7 @@ import '../services/portfoy_xray.dart';
 import '../services/fon_dagilimi.dart' show XrayKova;
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart' show trSayiIyelikEki;
 import '../widgets/fon_dagilimi_karti.dart';
 import '../widgets/premium_kilit_karti.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -56,6 +57,7 @@ class PortfoyXrayScreen extends ConsumerWidget {
             govde: l.xrEkranKilitGovde,
             kilitMetni: l.xrEkranKilitSatir,
             kaynak: 'portfoy_xray',
+            kisisel: xrayKilitSatiri(l, ref.watch(xrayFonPayiProvider)),
           ),
         ),
       );
@@ -78,6 +80,23 @@ class PortfoyXrayScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Kilit kartının kişisel satırı (Ar-Ge 14 Kas #4): fonu olan ücretsiz
+/// kullanıcıya "4 fonun var, portföyünün %38'i. İçlerinde ne olduğu
+/// Premium'da." Sayılar kullanıcının zaten gördüğü pozisyon değerlerinden
+/// ([XrayFonPayi]); kilitli sonuç (sınıflar, oranlar) verilmez. Fon yoksa,
+/// pay sıfıra yuvarlanıyorsa ya da durum bilinmiyorsa `null` → kart eski
+/// hâliyle. Kart bu satırı paragrafın ALTINA koyar (`PremiumKilitKarti`
+/// deseni, öteki kilit kartlarıyla aynı yer); ayrı bir "ilk satır" yuvası
+/// açmak tek bileşen kuralını bozardı.
+///
+/// Yüzde eki okunuşa göre ("%38'i", "%40'ı", "%50'si"): `trSayiIyelikEki`.
+String? xrayKilitSatiri(AppLocalizations l, XrayFonPayi? f) {
+  final pay = f?.yuvarlakPay;
+  if (f == null || pay == null) return null;
+  return l.xrKilitKisisel(f.fonSayisi, fmtPct(pay.toDouble(), digits: 0),
+      trSayiIyelikEki(pay));
 }
 
 class _Govde extends StatelessWidget {

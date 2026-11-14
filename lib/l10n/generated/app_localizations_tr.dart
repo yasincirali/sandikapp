@@ -9488,6 +9488,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String xrKilitKisisel(int n, String pay, String ek) {
+    return '$n fonun var, portföyünün $pay\'$ek. İçlerinde ne olduğu Premium\'da.';
+  }
+
+  @override
+  String xrRaporAltKilitli(int n, String pay, String ek) {
+    return '$n fonun · portföyünün $pay\'$ek';
+  }
+
+  @override
   String xrTlDisi(String fonlarla, String fonsuz) {
     return 'TL dışı payın $fonlarla · fonların olmadan $fonsuz';
   }
