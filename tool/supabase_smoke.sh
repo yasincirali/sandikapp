@@ -289,6 +289,17 @@ else
   echo "   (SUPABASE_SERVICE_KEY yok — tavan adımı atlandı)"
 fi
 
+echo "== 6f) Kayıt kapısı (0185) — gmail.con ile kayıt kullanıcı yaratmadan reddedilir"
+# config.toml'da kanca açık; eski istemcinin göreceği mesaj "email address …
+# invalid" ifadesini taşımalı (friendlyError onu "E-posta adresi geçersiz"e çevirir).
+KAPI=$(curl -sS -w '\n%{http_code}' -X POST "$SUPABASE_URL/auth/v1/signup" \
+  -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json" \
+  -d '{"email":"duman.kapi@gmail.con","password":"Duman1234"}')
+KAPI_KOD=$(echo "$KAPI" | tail -n1)
+[[ "$KAPI_KOD" =~ ^4 ]] || { echo "gmail.con kaydı reddedilmedi: HTTP $KAPI_KOD"; exit 1; }
+echo "$KAPI" | head -n -1 | grep -qi 'email address.*invalid' \
+  || { echo "ret mesajı beklenen ifadeyi taşımıyor: $KAPI"; exit 1; }
+
 echo "== 7) Temizlik"
 curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/assets?id=eq.$ASSET_ID" "${AUTH[@]}" >/dev/null
 curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/user_push_tokens?device_id=eq.duman-cihaz-$$" "${AUTH[@]}" >/dev/null

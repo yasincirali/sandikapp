@@ -12,6 +12,17 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-14 Kayıt e-posta kapısını aç (tek adım, sen)
+
+0185 Frankfurt'a dağıtıldıktan sonra: Supabase panel › Authentication ›
+Hooks › **Before User Created** › Add hook › tür **Postgres** › şema
+`public`, fonksiyon `hook_before_user_created` › Create/Enable.
+
+- [ ] Açıldı. Denemek için uygulamada `deneme@gmail.con` ile kayıt ol:
+      "E-posta adresi geçersiz. Yazımını kontrol et." görmelisin, kod
+      e-postası gitmemeli. Sorun olursa aynı yerden kapat (fonksiyon kalır,
+      zararı yok).
+
 ## ⏳ 2026-11-13 Play istatistiği haftalık özete (iki adım, sen)
 
 Pazartesi "Mağaza özeti (App Store + Play)" işi Play çökme/ANR oranını ve
