@@ -183,8 +183,9 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final typeRows = <({AssetType type, _BreakdownRow row})>[];
     final childrenOf = <AssetType, List<_BreakdownRow>>{};
 
-    double sumFirst = 0;
-    double sumLast = 0;
+    // Kalibrasyon girdisi: türün gösterilen uçları
+    // (bkz. `tur_dokumu_kalibrasyonu.dart`).
+    final kalibrasyon = <AssetType, TurDokumuUc>{};
 
     // Lot'lar TEK geçişte türe ve pozisyona bölünür. Eskiden her tür ve
     // her pozisyon satırı tüm defteri yeniden süzüyordu — iki kez (akış ve
@@ -212,8 +213,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       final turUc = widget.gunIciUclar?.call(turLot);
       final ep = turUc ?? _endpoints(e.value, turLot);
       if (ep == null) continue;
-      sumFirst += ep.first;
-      sumLast += ep.last;
+      kalibrasyon[e.key] = (first: ep.first, last: ep.last);
       typeRows.add((
         type: e.key,
         row: _BreakdownRow(
@@ -269,7 +269,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     //
     // Doğrusu: artığı türlerin AĞIRLIĞINCA dağıtmak. Böylece
     // `Σ satır == üst kart` korunur ve fazladan kavram uydurulmaz.
-    _calibrate(typeRows, childrenOf, sumFirst, sumLast);
+    _calibrate(typeRows, childrenOf, kalibrasyon);
 
     // En çok kazandıran üstte — GÖSTERİLEN sayıya göre ([_pnl]).
     typeRows.sort((a, b) => _pnl(b.row).compareTo(_pnl(a.row)));
@@ -290,28 +290,19 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   void _calibrate(
     List<({AssetType type, _BreakdownRow row})> rows,
     Map<AssetType, List<_BreakdownRow>> childrenOf,
-    double sumFirst,
-    double sumLast,
+    Map<AssetType, TurDokumuUc> kalibrasyon,
   ) {
-    // Sıfıra bölünemez; seri yoksa kalibre edilecek bir şey de yok.
-    var kFirst = sumFirst.abs() > 0.01 ? widget.totalFirst / sumFirst : 1.0;
-    var kLast = sumLast.abs() > 0.01 ? widget.totalLast / sumLast : 1.0;
-
-    // ⚠️ ÇAPRAZ BULAŞMA SINIRI.
-    //
-    // Kalibrasyon TEK bir çarpanla çalışır: bir türdeki sapmayı tüm türlere
-    // yayar. Küçük artıklarda (üst kart `pState.toTRY` kurlarını, servis
-    // kendi kurunu kullanır — binde birkaç fark) bu zararsızdır ve toplamı
-    // tutturur. Ama çarpan 1'den belirgin uzaklaşırsa satırlar YALAN söyler:
-    // fiyatı hiç değişmemiş bir tür, başka bir tür oynadığı için oynamış
-    // görünür. Bu hata gün içi serisinde ölçüldü (fon 25.000 → 16.716) ve
-    // orada canlı değerleri tür bazında hesaplayarak kökten çözüldü.
-    //
-    // Burada kalan artık küçük olmalı; büyükse kalibre ETME. Toplamda birkaç
-    // TL sapma göstermek, her satırı yanlış göstermekten iyidir.
-    const maxSapma = 0.02; // %2
-    if ((kFirst - 1).abs() > maxSapma) kFirst = 1.0;
-    if ((kLast - 1).abs() > maxSapma) kLast = 1.0;
+    // Σ satır == üst kart her zaman (yasin 2026-11-14). Artık yalnız kendi
+    // değeri oynayan TÜRLERE dağıtılır; oynamayan tür ve ürünleri olduğu
+    // gibi kalır (Cumartesi Fon/BES/Mevduat −%0,34 bildirimi). Oynayan
+    // türün ürünleri aynı çarpanla ölçeklenir ki Σ ürün == tür kalsın.
+    // Eski %2 sınırı toplamı tutmayan döküm bırakıyordu, kaldırıldı; büyük
+    // fon sapması (25.000 → 16.716) gün içi canlı değerlerle kökten
+    // çözülmüştü. Kural ve testi `tur_dokumu_kalibrasyonu.dart`'ta.
+    final k = turDokumuCarpanlari(kalibrasyon.values.toList(),
+        ustFirst: widget.totalFirst, ustLast: widget.totalLast);
+    final kFirst = k.kFirst;
+    final kLast = k.kLast;
 
     // Çarpan 1'e çok yakınsa dokunma — kayan nokta gürültüsüyle oynamayalım.
     if ((kFirst - 1).abs() < 1e-9 && (kLast - 1).abs() < 1e-9) return;
@@ -322,11 +313,17 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
           last: r.last * kLast,
           flow: r.flow,
         );
+    bool dokunma(AssetType t) {
+      final u = kalibrasyon[t];
+      return k.yalnizOynayan && (u == null || !turDokumuOynadi(u));
+    }
 
     for (var i = 0; i < rows.length; i++) {
+      if (dokunma(rows[i].type)) continue;
       rows[i] = (type: rows[i].type, row: scaled(rows[i].row));
     }
     for (final e in childrenOf.entries) {
+      if (dokunma(e.key)) continue;
       childrenOf[e.key] = [for (final k in e.value) scaled(k)];
     }
   }
