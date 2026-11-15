@@ -247,5 +247,26 @@ void main() {
       expect(ada, contains('static func yuzde(state:'));
       expect(ada, contains('if state.isHidden { return nil }'));
     });
+
+    // 2026-11-15 (yasin: "dinamik adayı geliştirelim"): tek odaklı
+    // genişletilmiş görünüm. Biri sessizce geri alınırsa Ada eski kalabalık
+    // hâline döner; Swift CI'da derlenmediği için kaynak kilidi.
+    test('Dinamik Ada: rakam geçişi, tek odak, günü sürükleyen', () {
+      final ada = _oku('ios/SandikWidget/SandikLiveActivity.swift');
+      final genis = ada.substring(
+          ada.indexOf('} dynamicIsland: {'), ada.indexOf('} compactLeading: {'));
+      final sag = ada.substring(
+          ada.indexOf('} compactTrailing: {'), ada.indexOf('} minimal: {'));
+      expect(sag, contains('.contentTransition(.numericText('),
+          reason: 'Dar görünüm yüzdesi hane hane kaymalı');
+      expect(genis, contains('SandikYuzdeSatiri('));
+      expect(genis, contains('SandikSurukleyenSatiri.gorunur('),
+          reason: 'Ada kilit kartıyla aynı kapıyı sormalı');
+      expect(genis, isNot(contains('TOPLAM PORTFÖY')),
+          reason: 'Etiketler cümle düzeninde (tasarım dili 2026-11-05)');
+      expect(genis, isNot(contains('.tracking(0.6)')));
+      // Değişim ana sayının yanına taşındı; ayrı alt kapsül tekrar etmesin.
+      expect(ada, isNot(contains('SandikChangePill')));
+    });
   });
 }
