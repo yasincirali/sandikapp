@@ -154,13 +154,26 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
     },
   );
 
-  Future<List<TopGainerAllocation>> _cek() =>
-      widget.satirYukleyici?.call(_donem.gun) ??
-      LeaderboardService.instance.fetchTopGainersAllocation(
-        periodDays: _donem.gun,
-        // Sunucu [n_min, n_max] = [3, 4] aralığına kırpar; 3 bir istek.
-        topN: 3,
-      );
+  /// Son gelen liste; açık ayrıntı sayfası satırını buradan okur. Sayfa
+  /// açılırken aldığı `satir`'ı sabit tutsaydı Premium alındıktan sonra
+  /// maskeli kodlar (`?1`) ve kilit düğmesi sayfa kapanana kadar kalırdı
+  /// ("para verdim, hâlâ kilitli"; Ar-Ge 2026-11-15 #1).
+  final ValueNotifier<List<TopGainerAllocation>?> _sonListe =
+      ValueNotifier(null);
+
+  Future<List<TopGainerAllocation>> _cek() {
+    final f = widget.satirYukleyici?.call(_donem.gun) ??
+        LeaderboardService.instance.fetchTopGainersAllocation(
+          periodDays: _donem.gun,
+          // Sunucu [n_min, n_max] = [3, 4] aralığına kırpar; 3 bir istek.
+          topN: 3,
+        );
+    // Hata FutureBuilder'da gösterilir; burada yalnız başarılı sonuç yazılır.
+    f.then((l) {
+      if (mounted) _sonListe.value = l;
+    }, onError: (Object _) {});
+    return f;
+  }
 
   Future<int?> _havuzCek() =>
       LeaderboardService.instance.fetchZirveHavuzBoyutu(periodDays: _donem.gun);
@@ -180,6 +193,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
   @override
   void dispose() {
     _tik.dispose();
+    _sonListe.dispose();
     super.dispose();
   }
 
@@ -199,7 +213,21 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
         s.compareTo(LeaderboardService.zirveRizaMetniSurumu) < 0;
   }
 
-  void _premiumAc() => PaywallScreen.show(context, source: 'zirve');
+  /// Paywall dönüşü beklenir; kilidin kalkması `build`'deki
+  /// [premiumKilitliProvider] dinleyicisinde ([_kilitKalkti]) yakalanır —
+  /// satın alma, geri yükleme ya da başka yüzeyden de gelse aynı yol.
+  Future<void> _premiumAc() => PaywallScreen.show(context, source: 'zirve');
+
+  /// Premium açıldı (true → false): liste (maskesiz kodlarla), erişim ve
+  /// katılım durumu hemen yeniden çekilir; 45 sn'lik tur beklenmez.
+  void _kilitKalkti() {
+    if (!mounted) return;
+    setState(() {
+      _satirlar = _cek();
+      _durum = _durumCek();
+    });
+    _erisimYenile();
+  }
 
   void _donemSec(ZirveDonem d) {
     if (d == _donem) return;
@@ -374,16 +402,28 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
         minChildSize: 0.4,
         maxChildSize: 0.9,
         snap: true,
-        builder: (_, kaydirma) => _PortfoyAyrintisi(
-          kaydirma: kaydirma,
-          donem: _donem,
-          satir: satir,
-          senPay: _senPay,
-          senFonDetay: _senFonDetay,
-          senVarlikDetay: _senVarlikDetay,
-          senRoi: _senRoi,
-          senHavuzda: _senSunucuda,
-          onKilitli: _premiumAc,
+        // Satır her yenilemede güncel listeden okunur (aynı sıra, aynı
+        // "ben"); listede yoksa açılıştaki satır kalır.
+        builder: (_, kaydirma) =>
+            ValueListenableBuilder<List<TopGainerAllocation>?>(
+          valueListenable: _sonListe,
+          builder: (_, liste, __) => _PortfoyAyrintisi(
+            kaydirma: kaydirma,
+            donem: _donem,
+            satir: satir == null
+                ? null
+                : (liste
+                        ?.where(
+                            (x) => x.rank == satir.rank && x.ben == satir.ben)
+                        .firstOrNull ??
+                    satir),
+            senPay: _senPay,
+            senFonDetay: _senFonDetay,
+            senVarlikDetay: _senVarlikDetay,
+            senRoi: _senRoi,
+            senHavuzda: _senSunucuda,
+            onKilitli: _premiumAc,
+          ),
         ),
       ),
     );
@@ -392,6 +432,9 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
   @override
   Widget build(BuildContext context) {
     ref.listen(portfolioProvider, (_, __) => _senYenile());
+    ref.listen<bool>(premiumKilitliProvider, (once, simdi) {
+      if (once == true && !simdi) _kilitKalkti();
+    });
     final hp = SandikSpace.screenH(context);
     return FutureBuilder<bool?>(
       future: _riza,
@@ -1344,6 +1387,12 @@ class _PortfoyAyrintisi extends StatelessWidget {
     final fonDetay = s?.fonDetay ?? senFonDetay;
     final varlikDetay = s?.varlikDetay ?? senVarlikDetay;
     final kilitli = s?.ayrintiKilitli ?? false;
+    final ortak = ZirveKiyas.ortakKalemler(
+      senFon: senFonDetay,
+      senVarlik: senVarlikDetay,
+      zirveFon: fonDetay,
+      zirveVarlik: varlikDetay,
+    );
     final roi = s?.roiPct ?? senRoi;
     final baslik = senMi ? 'Senin portföyün' : '${s.rank}. portföy';
     final siraEki = s != null && s.ben ? ' · zirvede ${s.rank}. sıradasın' : '';
@@ -1436,12 +1485,20 @@ class _PortfoyAyrintisi extends StatelessWidget {
             _OrtakVarliklar(
               benzerlik: s.benzerlik!,
               kilitli: kilitli,
-              ortak: ZirveKiyas.ortakKalemler(
+              ortak: ortak,
+              ondaOlmayan: ZirveKiyas.ondaOlupSendeOlmayan(
                 senFon: senFonDetay,
                 senVarlik: senVarlikDetay,
                 zirveFon: fonDetay,
                 zirveVarlik: varlikDetay,
               ),
+              vitrinOrtagi: kilitli
+                  ? ZirveKiyas.vitrinOrtagi(
+                      zirveFon: fonDetay,
+                      zirveVarlik: varlikDetay,
+                      ortak: ortak,
+                    )
+                  : null,
               onKilitli: onKilitli,
             ),
             const SizedBox(height: SandikSpace.md),
@@ -1504,18 +1561,83 @@ class _AyrintiKapaliNotu extends StatelessWidget {
 /// Seçili zirve portföyüyle ortak varlıkların (0158). Benzerlik sayısı
 /// herkese açık; hangi varlıkların ortak olduğu Premium (ya da ilk üye).
 /// Kilitliyken liste yerine tek düğme: merak "hangileri?" sorusunda.
+/// Vitrinde açık en büyük kalem kullanıcıda da varsa düğmenin üstünde o
+/// kalemin gerçek iki payı yazılır ([vitrinOrtagi]); yoksa yalnız düğme.
+/// Açıkken ortakların altında "Onda olup sende olmayanlar" (en büyük 3).
 class _OrtakVarliklar extends StatelessWidget {
   const _OrtakVarliklar({
     required this.benzerlik,
     required this.kilitli,
     required this.ortak,
+    required this.ondaOlmayan,
+    required this.vitrinOrtagi,
     required this.onKilitli,
   });
 
   final double benzerlik;
   final bool kilitli;
   final List<({String tur, String kod, double sen, double zirve})> ortak;
+  final List<({String tur, String kod, double pay})> ondaOlmayan;
+  final ({String tur, String kod, double sen, double zirve})? vitrinOrtagi;
   final VoidCallback onKilitli;
+
+  Widget _satir(BuildContext context,
+          {required String ad, required String sayi}) =>
+      Semantics(
+        label: '$ad: $sayi',
+        excludeSemantics: true,
+        // Wrap: büyük yazıda sayılar alt satıra iner, ad kesilmez.
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: SandikSpace.sm,
+          children: [
+            Text(
+              ad,
+              style: context.t.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: context.c.text90,
+              ),
+            ),
+            Text(
+              sayi,
+              style: context.t.numSmall.copyWith(
+                // Zirve sahnesi w600 istisnası: numSmall w600'e indi
+                // (2026-11-11), sahne eski ağırlığını korur.
+                fontWeight: FontWeight.w700,
+                color: context.c.text58,
+              ),
+            ),
+          ],
+        ),
+      );
+
+  /// Nötr liste: öneri değil, iki portföyün farkı. Dipnot bunu söyler.
+  List<Widget> _ondaOlmayanBolumu(BuildContext context) => [
+        const SizedBox(height: SandikSpace.md),
+        Text(
+          'Onda olup sende olmayanlar',
+          style: context.t.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: context.c.text90,
+          ),
+        ),
+        const SizedBox(height: SandikSpace.xs),
+        for (final o in ondaOlmayan) ...[
+          _satir(context,
+              ad: o.tur == 'fon' ? o.kod : ZirveKiyas.varlikAdi(o.kod),
+              sayi: 'onda ${ZirveKiyas.pay(o.pay)}'),
+          const SizedBox(height: SandikSpace.xs2),
+        ],
+        const SizedBox(height: SandikSpace.xs),
+        Text(
+          'Yalnız iki portföyün farkı; yatırım tavsiyesi değildir.',
+          style: context.t.bodySmall?.copyWith(
+            color: context.c.text58,
+            height: 1.4,
+          ),
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -1526,12 +1648,23 @@ class _OrtakVarliklar extends StatelessWidget {
         height: 1.4,
       ),
     );
-    if (benzerlik <= 0) return cumle;
     if (kilitli) {
+      if (benzerlik <= 0) return cumle;
+      final v = vitrinOrtagi;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           cumle,
+          if (v != null) ...[
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+              ZirveKiyas.vitrinOrtagiCumlesi(v, benzerlik: benzerlik),
+              style: context.t.bodyMedium?.copyWith(
+                color: context.c.text90,
+                height: 1.4,
+              ),
+            ),
+          ],
           const SizedBox(height: SandikSpace.sm),
           SandikAsyncButton(
             tur: SandikAsyncTur.cerceve,
@@ -1545,40 +1678,17 @@ class _OrtakVarliklar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         cumle,
-        const SizedBox(height: SandikSpace.sm),
-        for (final o in ortak) ...[
-          Semantics(
-            label: '${o.tur == 'fon' ? o.kod : ZirveKiyas.varlikAdi(o.kod)}: '
-                'sende ${ZirveKiyas.pay(o.sen)}, onda ${ZirveKiyas.pay(o.zirve)}',
-            excludeSemantics: true,
-            // Wrap: büyük yazıda sayılar alt satıra iner, ad kesilmez.
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: SandikSpace.sm,
-              children: [
-                Text(
-                  o.tur == 'fon' ? o.kod : ZirveKiyas.varlikAdi(o.kod),
-                  style: context.t.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: context.c.text90,
-                  ),
-                ),
-                Text(
-                  'sende ${ZirveKiyas.pay(o.sen)} · '
-                  'onda ${ZirveKiyas.pay(o.zirve)}',
-                  style: context.t.numSmall.copyWith(
-                    // Zirve sahnesi w600 istisnası: numSmall w600'e indi
-                    // (2026-11-11), sahne eski ağırlığını korur.
-                    fontWeight: FontWeight.w700,
-                    color: context.c.text58,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: SandikSpace.xs2),
+        if (benzerlik > 0) ...[
+          const SizedBox(height: SandikSpace.sm),
+          for (final o in ortak) ...[
+            _satir(context,
+                ad: o.tur == 'fon' ? o.kod : ZirveKiyas.varlikAdi(o.kod),
+                sayi: 'sende ${ZirveKiyas.pay(o.sen)} · '
+                    'onda ${ZirveKiyas.pay(o.zirve)}'),
+            const SizedBox(height: SandikSpace.xs2),
+          ],
         ],
+        if (ondaOlmayan.isNotEmpty) ..._ondaOlmayanBolumu(context),
       ],
     );
   }
