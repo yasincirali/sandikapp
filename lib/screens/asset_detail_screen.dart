@@ -2686,6 +2686,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             donemEtiketi: donemEtiketi(context.l10n,
                                 _periods[_selectedPeriodIdx].label),
                             gunIci: isIntraday,
+                            // Alış/satış günleri tabloda (Ar-Ge 15 Kas #1):
+                            // grafiğin işaretlerinin okuduğu aynı defter.
+                            lotlar: _canli.lots,
                           ),
                         ..._ozelAltBolum(ozelSonuclar),
                       ],

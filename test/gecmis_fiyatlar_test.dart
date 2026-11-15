@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/models/asset.dart';
+import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/gecmis_fiyatlar.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart';
@@ -10,6 +12,26 @@ import 'package:portfoy_takip/widgets/gecmis_fiyatlar.dart';
 import 'package:portfoy_takip/widgets/para_akisi_karti.dart';
 
 import 'helpers/kaynak.dart';
+
+Asset _lot(DateTime added,
+        {double qty = 5, bool satis = false, bool silinmis = false}) =>
+    Asset(
+      id: 'a${added.millisecondsSinceEpoch}${satis ? 's' : ''}',
+      userId: 'u',
+      name: 'THYAO',
+      ticker: 'THYAO',
+      type: AssetType.hisse,
+      quantity: qty,
+      purchasePrice: 100,
+      currency: 'TRY',
+      notes: '',
+      isManualPrice: false,
+      currentPrice: 100,
+      addedDate: added,
+      kind: satis ? AssetKind.sell : AssetKind.buy,
+      sellPrice: satis ? 120 : null,
+      deletedAt: silinmis ? DateTime(2026, 11, 10) : null,
+    );
 
 /// Varlık grafiğinin "Tablo olarak gör" sayfası (Premium, 2026-11-10).
 void main() {
@@ -57,6 +79,84 @@ void main() {
     });
   });
 
+  group('islemGunleri — grafiğin işaret kuralıyla gün eşleştirme', () {
+    test('gün başına alış/satış toplanır; silinmiş lot sayılmaz', () {
+      final r = islemGunleri([
+        _lot(DateTime(2026, 10, 3, 10), qty: 7),
+        _lot(DateTime(2026, 10, 3, 15), qty: 5),
+        _lot(DateTime(2026, 10, 8, 11), qty: 4, satis: true),
+        _lot(DateTime(2026, 10, 9, 11), silinmis: true),
+      ]);
+      expect(r.keys, unorderedEquals([DateTime(2026, 10, 3), DateTime(2026, 10, 8)]));
+      expect(r[DateTime(2026, 10, 3)]!.alisMiktar, 12);
+      expect(r[DateTime(2026, 10, 3)]!.satis, isFalse);
+      expect(r[DateTime(2026, 10, 8)]!.satisMiktar, 4);
+      expect(r[DateTime(2026, 10, 8)]!.alis, isFalse);
+      expect(islemGunleri(const []), isEmpty);
+    });
+  });
+
+  group('sonAlistanBeri', () {
+    final satirlar = gunlukKapanislar({
+      ms(2026, 10, 2): 90.0,
+      ms(2026, 10, 3): 100.0,
+      ms(2026, 10, 6): 104.0,
+      ms(2026, 10, 7): 108.4,
+    });
+
+    test('son alış gününün kapanışından en yeni kapanışa', () {
+      final r = sonAlistanBeri(satirlar, islemGunleri([
+        _lot(DateTime(2026, 10, 2, 10)),
+        _lot(DateTime(2026, 10, 3, 10)),
+        _lot(DateTime(2026, 10, 6, 10), satis: true), // satış sayılmaz
+      ]))!;
+      expect(r.gun, DateTime(2026, 10, 3));
+      expect(r.pct, closeTo(8.4, 1e-9));
+    });
+
+    test('son alış seride kapanış değilse daha eskiye düşülmez: null', () {
+      // 4 Eki Cumartesi: kapanış yok; 2 Eki'ye düşmek "son alış" olmazdı.
+      expect(
+          sonAlistanBeri(satirlar, islemGunleri([
+            _lot(DateTime(2026, 10, 2, 10)),
+            _lot(DateTime(2026, 10, 4, 10)),
+          ])),
+          isNull);
+    });
+
+    test('son alış bugünse, dönem öncesiyse ya da alış yoksa null', () {
+      expect(
+          sonAlistanBeri(
+              satirlar, islemGunleri([_lot(DateTime(2026, 10, 7, 10))])),
+          isNull);
+      expect(
+          sonAlistanBeri(
+              satirlar, islemGunleri([_lot(DateTime(2026, 9, 1, 10))])),
+          isNull);
+      expect(sonAlistanBeri(satirlar, const {}), isNull);
+    });
+  });
+
+  group('kilitOzeti — ücretsiz yarım sonuç', () {
+    test('tüm dönemin kapanış sayısı (60 kesiminden önce) ve en yüksek gün',
+        () {
+      final seri = {
+        for (var i = 0; i < 100; i++)
+          DateTime(2026, 1, 1, 18).add(Duration(days: i)).millisecondsSinceEpoch:
+              i == 40 ? 500.0 : 100.0 + i,
+      };
+      final r = kilitOzeti(seri)!;
+      expect(r.sayi, 100);
+      expect(r.enYuksekGun, DateTime(2026, 2, 10));
+    });
+
+    test('kapanış yoksa null', () {
+      expect(kilitOzeti(const {}), isNull);
+      expect(kilitOzeti({ms(2026, 1, 1): 0, ms(2026, 1, 2): double.nan}),
+          isNull);
+    });
+  });
+
   group('GecmisFiyatlarSatiri', () {
     final seri = {
       for (var i = 0; i < 90; i++)
@@ -67,7 +167,9 @@ void main() {
     Future<void> pump(WidgetTester tester,
         {bool gorunur = true,
         bool kilitli = false,
-        bool gunIci = false}) async {
+        bool gunIci = false,
+        Map<int, double>? ozelSeri,
+        List<Asset> lotlar = const []}) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [
           premiumOzellikleriGorunurProvider.overrideWithValue(gorunur),
@@ -81,7 +183,8 @@ void main() {
           home: Scaffold(
             body: Center(
               child: GecmisFiyatlarSatiri(
-                seri: seri,
+                seri: ozelSeri ?? seri,
+                lotlar: lotlar,
                 bicim: ayniOndalikFiyatBicimi(150),
                 donemEtiketi: '3 ay',
                 gunIci: gunIci,
@@ -126,12 +229,65 @@ void main() {
       await pump(tester, kilitli: true);
       final kilit = tester.widget<KilitSatiri>(find.byType(KilitSatiri));
       expect(kilit.kaynak, 'gecmis_fiyatlar');
-      expect(find.text("Geçmiş fiyat tablosu Premium'da"), findsOneWidget);
+      // Yarım sonuç: sayı ve tarih açık, hiçbir fiyat yazılmaz.
+      expect(
+          find.text("3 ay · 90 kapanış · en yüksek 28 Ağu · tablo Premium'da"),
+          findsOneWidget);
+      expect(find.textContaining('₺'), findsNothing);
       // Testte paywall RC'si kapalı: `PaywallScreen.show` sessizce döner;
       // önemli olan tablonun açılmaması.
       await tester.tap(find.byType(KilitSatiri));
       await tester.pumpAndSettle();
       expect(find.byType(GecmisFiyatlarTablosu), findsNothing);
+    });
+
+    testWidgets('ücretsiz, seride kapanış yok: eski kilit metni',
+        (tester) async {
+      await pump(tester,
+          kilitli: true,
+          ozelSeri: {ms(2026, 1, 1): 0, ms(2026, 1, 2): double.nan});
+      expect(find.text("Geçmiş fiyat tablosu Premium'da"), findsOneWidget);
+    });
+
+    testWidgets('Premium: alış/satış günü etiketli, son alış satırı başta',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final semantik = tester.ensureSemantics();
+      // Seri 1 Haz–29 Ağu; 29 Ağu (i=89) en yeni, 25 Ağu (i=85) alış,
+      // 27 Ağu (i=87) satış.
+      await pump(tester, lotlar: [
+        _lot(DateTime(2026, 8, 25, 11), qty: 12),
+        _lot(DateTime(2026, 8, 27, 11), qty: 3, satis: true),
+      ]);
+      await tester.tap(find.text('Tablo olarak gör'));
+      await tester.pumpAndSettle();
+      expect(find.text('Alış · 12 lot'), findsOneWidget);
+      expect(find.text('Satış · 3 lot'), findsOneWidget);
+      // Yalnız renk değil: ikon da var.
+      expect(find.byIcon(Icons.add_circle_outline_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.remove_circle_outline_rounded), findsOneWidget);
+      // 25 Ağu (i=85, tek) kapanışı 99+42,5=141,5; 29 Ağu 99+44,5=143,5.
+      final pct = fmtPctIsaretli((143.5 / 141.5 - 1) * 100, digits: 1);
+      expect(find.text('Son alışın 25 Ağu · o günden beri $pct'),
+          findsOneWidget);
+      expect(
+          find.bySemanticsLabel(
+              RegExp(r'^25 Ağu 2026, kapanış .*Senin işlem günün: Alış · 12 lot$')),
+          findsOneWidget);
+      semantik.dispose();
+    });
+
+    testWidgets('lot yoksa etiket ve son alış satırı yok', (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await pump(tester);
+      await tester.tap(find.text('Tablo olarak gör'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Alış'), findsNothing);
+      expect(find.textContaining('Son alışın'), findsNothing);
     });
 
     testWidgets('paywall kapalı, admin değil: hiçbir şey', (tester) async {
@@ -161,6 +317,8 @@ void main() {
         child: Scaffold(
           body: GecmisFiyatlarTablosu(
             bicim: ayniOndalikFiyatBicimi(312.4),
+            ozet: 'Son alışın 5 Kas · o günden beri +%1,2',
+            islemler: islemGunleri([_lot(DateTime(2026, 11, 5, 10), qty: 12)]),
             satirlar: [
               GunlukKapanis(
                   gun: DateTime(2026, 11, 6), kapanis: 312.4, degisimPct: 1.25),
@@ -179,6 +337,7 @@ void main() {
     ));
     expect(tester.takeException(), isNull);
     expect(find.byIcon(Icons.remove_rounded), findsOneWidget);
+    expect(find.text('Alış · 12 lot'), findsOneWidget);
   });
 
   test('iki yüzey de ortak satırı kullanır, yeni istek yok', () {
