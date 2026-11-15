@@ -81,36 +81,30 @@ struct SandikLiveActivity: Widget {
 
             return DynamicIsland {
                 // ---- Expanded (basılı tutunca) ----
+                //
+                // ## Tek odak (2026-11-15, yasin: "dinamik adayı geliştirelim")
+                // Önceki düzende üst satırda logo + "sandık" + tarih +
+                // "Son: 14:32" yarışıyor, asıl sayı ortada sıkışıyor, günlük
+                // değişim ise alttaki ayrı bir kapsülde tekrar ediliyordu.
+                // Şimdi: üstte yalnız küçük logo ve gün; ana sayı solda
+                // büyük, günlük değişim AYNI satırın sağında; güncelleme
+                // saati grafiğin altına indi. Büyük harf + harf aralıklı
+                // etiket cümle düzenine döndü (tasarım dili, 2026-11-05).
+                // Kaynak artifact: Eoodg7ZomhQuYWpwiGTpiD.
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 7) {
-                        SandikLogoMark(width: 22)
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("sandık")
-                                .font(.sandikLabel(15, weight: .semibold))
-                                .foregroundStyle(palette.gold)
-                            // Kilit ekranıyla aynı gerekçe: rakam hangi
-                            // güne ait, expanded görünümde de okunmalı.
-                            if !context.state.dateText.isEmpty {
-                                Text(context.state.dateText)
-                                    .font(.sandikLabel(9, weight: .medium))
-                                    .foregroundStyle(palette.text58)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.8)
-                            }
+                    HStack(spacing: 6) {
+                        SandikLogoMark(width: 18)
+                        // Kilit ekranıyla aynı gerekçe: rakam hangi güne
+                        // ait, genişletilmiş görünümde de okunmalı.
+                        if !context.state.dateText.isEmpty {
+                            Text(context.state.dateText)
+                                .font(.sandikLabel(12, weight: .medium))
+                                .foregroundStyle(palette.text58)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
                         }
                     }
                     .padding(.leading, 4)
-                }
-
-                DynamicIslandExpandedRegion(.trailing) {
-                    Text(!context.state.kapaliGoster
-                         ? "Son: \(context.state.updatedAtText)"
-                         : "Kapalı • \(context.state.updatedAtText)")
-                        .font(.sandikNumber(12, weight: .medium))
-                        .foregroundStyle(palette.text58)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .padding(.trailing, 4)
                 }
 
                 DynamicIslandExpandedRegion(.center) {
@@ -119,56 +113,56 @@ struct SandikLiveActivity: Widget {
                     // görünür bir yüzeydir.
                     let showsAmount =
                         context.state.showAmounts && !context.state.isHidden
+                    let yonRengi = context.state.hasDirection
+                        ? palette.statusColor(isPositive: context.state.isPositive)
+                        : palette.text58
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(showsAmount ? "TOPLAM PORTFÖY DEĞERİ" : "BUGÜN")
-                            .font(.sandikLabel(10, weight: .semibold))
-                            // Küçük punto etiketlerde harf aralığı açılır;
-                            // sıkışık kapitaller okunmaz.
-                            .tracking(0.6)
-                            .foregroundStyle(palette.text58)
+                    HStack(alignment: .lastTextBaseline, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(showsAmount
+                                 ? "Toplam portföy değeri" : "Bugünkü değişim")
+                                .font(.sandikLabel(11, weight: .medium))
+                                .foregroundStyle(palette.text58)
+
+                            if showsAmount {
+                                Text(context.state.totalText)
+                                    .font(.sandikNumber(22, weight: .semibold))
+                                    .tracking(-0.2)
+                                    .foregroundStyle(palette.gold)
+                                    .lineLimit(1)
+                                    // Dar cihazlarda (mini) uzun tutar
+                                    // kırpılmasın; küçülsün ama okunur kalsın.
+                                    .minimumScaleFactor(0.7)
+                                    // Rakamlar zıplamaz, hane hane kayar
+                                    // (iOS 17). Hareketi azalt açıkken
+                                    // sistem geçişi kendisi kapatır.
+                                    .contentTransition(.numericText(
+                                        countsDown: !context.state.isPositive))
+                            } else {
+                                // Tutar kapalıyken yüzde kartın tek büyük
+                                // sayısı; halka yok (2026-09-30 ikinci tur).
+                                SandikYuzdeSatiri(state: context.state,
+                                                  boyut: 26, renk: yonRengi)
+                            }
+                        }
+                        .layoutPriority(1)
 
                         if showsAmount {
-                            Text(context.state.totalText)
-                                .font(.sandikNumber(20, weight: .bold))
-                                // Başlık boyutlarında -0.01em sıkılaştırma.
-                                .tracking(-0.2)
-                                .foregroundStyle(palette.gold)
-                                .lineLimit(1)
-                                // Dar cihazlarda (mini) uzun tutar
-                                // kırpılmasın; küçülsün ama okunur kalsın.
-                                .minimumScaleFactor(0.75)
-                        } else {
-                            // Tutar kapalıyken (ikinci tur, kullanıcı: "büyük
-                            // kartta yuvarlak göstergeye gerek yok, farklı bir
-                            // tasarım"): halka yok; yüzde kartın tek büyük
-                            // sayısı, altta dolgulu eğri. Seans çubuğu
-                            // kaldırıldı (kullanıcı kararı 2026-10-01).
-                            HStack(spacing: 5) {
-                                // Ok YALNIZCA gerçek bir yön varken.
-                                // Koşulsuz basıldığında iki durumda
-                                // yanlış bilgi veriyordu: değişim
-                                // ölçülemediğinde (`changePctText == "—"`)
-                                // ekranda `▲ —`, sıfır değişimde ise
-                                // `▲ %0,00` çıkıyor ve olmayan bir
-                                // hareketi varmış gibi gösteriyordu.
-                                // Renk zaten `hasDirection`'a bakıyordu;
-                                // ok ile renk aynı koşula bağlanır.
-                                if context.state.hasDirection {
-                                    Text(directionArrow(
-                                        context.state.isPositive))
-                                        .font(.sandikLabel(11, weight: .black))
-                                }
-                                Text(context.state.changePctText)
-                                    .font(.sandikNumber(26, weight: .bold))
-                                    .tracking(-0.3)
+                            Spacer(minLength: 4)
+                            // Değişim ana sayının yanında: göz tek satırda
+                            // "ne kadar, ne yönde" okur. Eski alt kapsül
+                            // aynı bilgiyi ikinci kez veriyordu, kalktı.
+                            VStack(alignment: .trailing, spacing: 1) {
+                                SandikYuzdeSatiri(state: context.state,
+                                                  boyut: 15, renk: yonRengi)
+                                Text(context.state.changeText)
+                                    .font(.sandikNumber(12, weight: .medium))
+                                    .foregroundStyle(yonRengi)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.75)
+                                    .contentTransition(.numericText(
+                                        countsDown: !context.state.isPositive))
                             }
-                            .foregroundStyle(context.state.hasDirection
-                                ? palette.statusColor(
-                                    isPositive: context.state.isPositive)
-                                : palette.text58)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -178,10 +172,12 @@ struct SandikLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     let tutarAcik =
                         context.state.showAmounts && !context.state.isHidden
+                    let gozAlici = context.attributes.gozAlici
                     VStack(spacing: 6) {
                         // Gün içi grafik — tutar gizliyken de görünür.
-                        // Tutar kapalıyken kartın ana görseli: dolgulu ve
-                        // uç noktalı, biraz daha yüksek.
+                        // Tutar kapalıyken kartın ana görseli: dolgulu,
+                        // biraz daha yüksek. Gün başı çizgisi ve dip halkası
+                        // `goz_alici` bayrağıyla (kilit kartıyla aynı kapı).
                         if !context.state.sparkline.isEmpty {
                             SandikSparkline(
                                 points: context.state.sparkline,
@@ -193,19 +189,32 @@ struct SandikLiveActivity: Widget {
                                 showsFill: !tutarAcik,
                                 isMarketOpen: tutarAcik
                                     ? nil : !context.state.kapaliGoster,
-                                baslangicCizgisi: context.attributes.gozAlici,
-                                dipHalkasi: context.attributes.gozAlici
+                                baslangicCizgisi: gozAlici,
+                                dipHalkasi: gozAlici
                             )
-                            .frame(height: tutarAcik ? 26 : 40)
+                            .frame(height: tutarAcik ? 30 : 40)
                         }
-                        // Tutar kapalıyken alttaki seans çubuğu KALKTI
-                        // (kullanıcı kararı 2026-10-01: "seans çizgisini
-                        // kaldıralım"); boşalan yer eğriye verildi (34 → 40).
-                        if tutarAcik {
-                            SandikChangePill(state: context.state)
+                        // Günü sürükleyen: kilit kartında zaten vardı, aynı
+                        // veri Ada'ya da geliyordu ama çizilmiyordu
+                        // (2026-11-15). Kapı kilit kartıyla birebir.
+                        if SandikSurukleyenSatiri.gorunur(
+                            state: context.state, gozAlici: gozAlici) {
+                            SandikSurukleyenSatiri(state: context.state,
+                                                   palette: palette)
                         }
+                        // Güncelleme saati üst satırdan buraya indi:
+                        // önemli değil ama "bu sayı ne kadar taze" sorusunun
+                        // cevabı. Seans kapalıysa kelimeyle söylenir.
+                        Text(!context.state.kapaliGoster
+                             ? "Son güncelleme \(context.state.updatedAtText)"
+                             : "Piyasa kapalı · \(context.state.updatedAtText)")
+                            .font(.sandikNumber(11, weight: .medium))
+                            .foregroundStyle(palette.text58)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                    .padding(.top, 4)
+                    .padding(.top, 2)
                 }
 
             } compactLeading: {
@@ -262,6 +271,10 @@ struct SandikLiveActivity: Widget {
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
+                        // Fiyat turunda rakam zıplamaz, hane hane kayar
+                        // (2026-11-15). Hareketi azalt açıkken sistem kapatır.
+                        .contentTransition(.numericText(
+                            countsDown: !context.state.isPositive))
                 }
                 .foregroundStyle(context.state.hasDirection
                     ? palette.statusColor(isPositive: context.state.isPositive)
@@ -518,39 +531,13 @@ struct SandikLockScreenView: View {
     }
 
     /// Günü sürükleyen satırı gösterilsin mi (goz_alici madde 4)?
-    ///
-    /// Sembol kilit ekranına yalnız "Tutarları göster" açıkken gelir
-    /// (kullanıcı seçimi 2026-10-09); kapı kaynakta da var, burada ikinci
-    /// kez sorulur ki eski bir push'tan kalan alan gizli bakiyede çizilmesin.
+    /// Kapı [SandikSurukleyenSatiri.gorunur]'da; Ada da aynısını sorar.
     private var surukleyenGorunur: Bool {
-        gozAlici && tutarGorunur && !state.surukleyenAd.isEmpty
-            && !state.surukleyenTutarText.isEmpty
+        SandikSurukleyenSatiri.gorunur(state: state, gozAlici: gozAlici)
     }
 
-    /// "Günü sürükleyen  THYAO  ▲ %3,81  +₺1.910" — portföyün bugünkü
-    /// hareketini en çok kimin taşıdığı. Renk pozisyonun kendi yönü:
-    /// portföy düşerken yükselen bir sürükleyen de olabilir.
     private var surukleyenSatiri: some View {
-        HStack(spacing: 6) {
-            Text("Günü sürükleyen")
-                .font(.sandikLabel(10, weight: .medium))
-                .foregroundStyle(palette.text58)
-            Text(state.surukleyenAd)
-                .font(.sandikLabel(11, weight: .bold))
-                .foregroundStyle(palette.text90)
-                .lineLimit(1)
-                .truncationMode(.tail)
-            Spacer(minLength: 4)
-            Text("\(directionArrow(state.surukleyenPozitif)) \(state.surukleyenPctText)")
-                .font(.sandikNumber(11, weight: .semibold))
-                .monospacedDigit()
-            Text(state.surukleyenTutarText)
-                .font(.sandikNumber(11, weight: .bold))
-                .monospacedDigit()
-        }
-        .foregroundStyle(palette.statusColor(isPositive: state.surukleyenPozitif))
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
+        SandikSurukleyenSatiri(state: state, palette: palette)
     }
 
     var body: some View {
@@ -710,60 +697,77 @@ struct SandikLockScreenView: View {
     }
 }
 
-// MARK: - Değişim pill'i (Dynamic Island expanded alt satırı)
+// MARK: - Ortak satırlar (kilit kartı + Dynamic Island)
 
-/// `surface1` zeminli pill — "Bugün: ▲ +₺35.420,00 (%2,45)".
+/// "Günü sürükleyen  THYAO  ▲ %3,81  +₺1.910" — portföyün bugünkü
+/// hareketini en çok kimin taşıdığı. Renk pozisyonun kendi yönü:
+/// portföy düşerken yükselen bir sürükleyen de olabilir.
+///
+/// 2026-11-15: kilit kartından çıkarıldı ki Ada aynı satırı aynı kapıyla
+/// çizsin; iki kopya zamanla ayrışırdı.
 @available(iOS 17.0, *)
-struct SandikChangePill: View {
+struct SandikSurukleyenSatiri: View {
     let state: SandikActivityAttributes.ContentState
+    let palette: SandikPalette
 
-    private var palette: SandikPalette {
-        SandikPalette.resolved(isLight: state.isLightTheme)
+    /// Sembol yalnız "Tutarları göster" açıkken gelir (kullanıcı seçimi
+    /// 2026-10-09); kapı kaynakta da var, burada ikinci kez sorulur ki eski
+    /// bir push'tan kalan alan gizli bakiyede çizilmesin.
+    static func gorunur(state: SandikActivityAttributes.ContentState,
+                        gozAlici: Bool) -> Bool {
+        gozAlici && state.showAmounts && !state.isHidden
+            && !state.surukleyenAd.isEmpty
+            && !state.surukleyenTutarText.isEmpty
     }
 
     var body: some View {
         HStack(spacing: 6) {
-            Text("Bugün")
-                .font(.sandikLabel(11, weight: .medium))
+            Text("Günü sürükleyen")
+                .font(.sandikLabel(10, weight: .medium))
                 .foregroundStyle(palette.text58)
+            Text(state.surukleyenAd)
+                .font(.sandikLabel(11, weight: .semibold))
+                .foregroundStyle(palette.text90)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: 4)
+            Text("\(directionArrow(state.surukleyenPozitif)) \(state.surukleyenPctText)")
+                .font(.sandikNumber(11, weight: .semibold))
+                .monospacedDigit()
+            Text(state.surukleyenTutarText)
+                .font(.sandikNumber(11, weight: .semibold))
+                .monospacedDigit()
+        }
+        .foregroundStyle(palette.statusColor(isPositive: state.surukleyenPozitif))
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+    }
+}
 
-            // Yön oku yalnızca gerçek bir hareket varken. Sıfır değişimde
-            // ok basmak olmayan bir yönü ima eder.
+/// Yön oku + yüzde. Ok YALNIZCA gerçek bir yön varken: koşulsuz basıldığında
+/// ölçüm yokken `▲ —`, sıfır değişimde `▲ %0,00` çıkıyor ve olmayan bir
+/// hareketi varmış gibi gösteriyordu. Renk de aynı koşula bağlı (çağıran
+/// `renk` verir). Yüzde fiyat turunda hane hane kayar (2026-11-15).
+@available(iOS 17.0, *)
+struct SandikYuzdeSatiri: View {
+    let state: SandikActivityAttributes.ContentState
+    let boyut: CGFloat
+    let renk: Color
+
+    var body: some View {
+        HStack(spacing: boyut > 20 ? 5 : 3) {
             if state.hasDirection {
                 Text(directionArrow(state.isPositive))
-                    .font(.sandikLabel(10, weight: .black))
-                    .foregroundStyle(palette.statusColor(isPositive: state.isPositive))
+                    .font(.sandikLabel(boyut * 0.45, weight: .semibold))
             }
-
-            // Tutar yalnızca izin verildiyse; yüzde her zaman görünür.
-            if state.showAmounts && !state.isHidden {
-                Text(state.changeText)
-                    .font(.sandikNumber(13, weight: .bold))
-                    .foregroundStyle(state.hasDirection
-                        ? palette.statusColor(isPositive: state.isPositive)
-                        : palette.text58)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-
-                Text("(\(state.changePctText))")
-                    .font(.sandikNumber(12, weight: .medium))
-                    .foregroundStyle(palette.text58)
-            } else {
-                Text(state.changePctText)
-                    .font(.sandikNumber(13, weight: .bold))
-                    .foregroundStyle(state.hasDirection
-                        ? palette.statusColor(isPositive: state.isPositive)
-                        : palette.text58)
-            }
-
-            Spacer(minLength: 0)
+            Text(state.changePctText)
+                .font(.sandikNumber(boyut, weight: .semibold))
+                .tracking(boyut > 20 ? -0.3 : 0)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .contentTransition(.numericText(countsDown: !state.isPositive))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: SandikTheme.radiusMd, style: .continuous)
-                .fill(palette.surface1)
-        )
+        .foregroundStyle(renk)
     }
 }
