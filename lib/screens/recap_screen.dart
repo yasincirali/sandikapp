@@ -283,34 +283,25 @@ class RecapBanner extends ConsumerStatefulWidget {
   ConsumerState<RecapBanner> createState() => _RecapBannerState();
 }
 
+/// Afişin verisi; null = afiş çizilmez. Widget'ın `initState`'inden
+/// provider'a taşındı (yasin 2026-11-15, Profil tek seferde çizilsin):
+/// açılışta ısıtılır, Profil kapısı bekler. Takvim kapısı EN BAŞTA:
+/// pencere dışındaysa hiçbir sorgu yapılmaz (yılın 11 ayı anında null).
+final yillikOzetAfisiProvider = FutureProvider<RecapData?>((ref) async {
+  if (!RemoteConfigService.instance.recapEnabled) return null;
+  final simdi = DateTime.now();
+  if (!RecapService.isYearlyWindow(simdi)) return null;
+  final me = ref.watch(authProvider).valueOrNull;
+  if (me == null) return null;
+  // Portföy her fiyat turunda yeniden yayınlanır; özet bir kez hesaplanır
+  // (eski `_istendi` tek atışıyla aynı), bu yüzden `watch` değil `future`.
+  final state = await ref.read(portfolioProvider.future);
+  final d = await yillikOzetVerisi(me: me, state: state, simdi: simdi);
+  return (d != null && d.isMeaningful) ? d : null;
+});
+
 class _RecapBannerState extends ConsumerState<RecapBanner> {
-  RecapData? _veri;
-  bool _istendi = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
-  }
-
-  Future<void> _yukle() async {
-    if (_istendi || !mounted) return;
-    _istendi = true;
-
-    if (!RemoteConfigService.instance.recapEnabled) return;
-    final simdi = DateTime.now();
-    // Takvim kapısı EN BAŞTA: pencere dışındaysa hiçbir sorgu yapılmaz.
-    if (!RecapService.isYearlyWindow(simdi)) return;
-
-    final d = await yillikOzetVerisi(
-      me: ref.read(authProvider).valueOrNull,
-      state: ref.read(portfolioProvider).valueOrNull,
-      simdi: simdi,
-    );
-    if (d == null) return;
-    if (!mounted || !d.isMeaningful) return;
-    setState(() => _veri = d);
-  }
+  RecapData? get _veri => ref.watch(yillikOzetAfisiProvider).valueOrNull;
 
   @override
   Widget build(BuildContext context) {

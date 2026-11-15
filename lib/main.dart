@@ -22,6 +22,9 @@ import 'models/asset.dart';
 import 'models/asset_type.dart';
 import 'models/user_model.dart';
 import 'providers/premium_provider.dart';
+import 'providers/halka_arz_provider.dart' show halkaArzGorunumuProvider;
+import 'widgets/percentile_strip.dart' show yuzdelikDilimProvider;
+import 'screens/recap_screen.dart' show yillikOzetAfisiProvider;
 import 'providers/app_notification_provider.dart';
 import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
@@ -1174,6 +1177,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   // Üst şerit listeleri (bkz. `splashVeriHazir.ustSeritHazir`).
   ProviderSubscription<Object?>? _portfoylerWarmUp;
   ProviderSubscription<Object?>? _takipWarmUp;
+  // Profil'in geç gelen satırları (bkz. `profilHazirProvider`). Splash
+  // bunları BEKLEMEZ (ilk ekran Ana sayfa); yalnız ısıtır ki Profil'e
+  // geçildiğinde veri hazır olsun ve sayfa tek seferde çizilsin.
+  final List<ProviderSubscription<Object?>> _profilWarmUp = [];
 
   /// Açılış turu + Bugün kartı ısıtması bitti mi (başarı/hata fark etmez).
   /// `false` iken splash sürer (bkz. `splashVeriHazir.acilisHazir`).
@@ -1246,6 +1253,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       (_, __) {},
       fireImmediately: true,
     );
+    if (_profilWarmUp.isEmpty) {
+      for (final p in <ProviderListenable<Object?>>[
+        pendingInvitesProvider,
+        premiumHaklariProvider,
+        halkaArzGorunumuProvider,
+        yuzdelikDilimProvider,
+        yillikOzetAfisiProvider,
+      ]) {
+        _profilWarmUp
+            .add(ref.listenManual(p, (_, __) {}, fireImmediately: true));
+      }
+    }
     _acilisIsitma ??= _acilisiIsit();
   }
 
@@ -1320,6 +1339,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _portfoylerWarmUp = null;
         _takipWarmUp?.close();
         _takipWarmUp = null;
+        for (final s in _profilWarmUp) {
+          s.close();
+        }
+        _profilWarmUp.clear();
         // Açılış ısıtması da sıfırlanır: sıradaki kullanıcı kendi turunu
         // ve Bugün serilerini bekler.
         _acilisIsitma = null;
@@ -1487,6 +1510,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     _partnerAssetsWarmUp?.close();
     _portfoylerWarmUp?.close();
     _takipWarmUp?.close();
+    for (final s in _profilWarmUp) {
+      s.close();
+    }
     PartnerInviteListenerService.instance.stop();
     IntradaySeriesCache.instance.surum.removeListener(_gunIciSeriGeldi);
     WidgetsBinding.instance.removeObserver(this);

@@ -58,41 +58,44 @@ class PercentileStrip extends ConsumerStatefulWidget {
   ConsumerState<PercentileStrip> createState() => _PercentileStripState();
 }
 
+/// Son 30 günün yüzdelik dilimi; null = şerit çizilmez (kapılardan biri
+/// kapalı ya da sunucuda kendi satırı yok).
+///
+/// Widget'ın `initState`'inden provider'a taşındı (yasin 2026-11-15:
+/// "Profil açıldığında kademeli açılıp sonradan çizilen komponentler var,
+/// hepsi aynı anda tekte çizilmeli"). İstek eskiden şerit kurulunca
+/// başlıyordu, yani Profil HER açılışta şerit sonradan beliriyordu. Artık
+/// açılışta ısıtılır (`_AuthGate._warmUpData`), Profil hazır veriyle kurulur
+/// ve Profil kapısı (`profilHazirProvider`) bunu bekler. Kullanıcı başına
+/// bir kez: ROI'yi her yeniden kurulumda hesaplatmayız.
+final yuzdelikDilimProvider = FutureProvider<PercentileBucket?>((ref) async {
+  final optIn = ref.watch(leaderboardOptInProvider);
+  final me = ref.watch(authProvider.select((a) => a.valueOrNull?.id));
+  if (me == null || !optIn) return null;
+  if (!RemoteConfigService.instance.percentileStripEnabled) return null;
+  // Anlık görüntüyü cihaz YAZMAZ (0095): `leaderboard-snapshot` cron'u
+  // yarışa katılan herkes için günde iki kez TWR yazar. Eskiden şerit
+  // kendi simülasyon değerini yüklüyordu — iki ölçü aynı havuzda
+  // karışırdı. Kendi satırı yoksa (yeni hesap, 30 gün dolmadı) RPC boş
+  // döner ve şerit gizli kalır; uydurma dilim yok.
+  return LeaderboardService.instance
+      .fetchPercentile(PercentileStrip.periodDays);
+});
+
 class _PercentileStripState extends ConsumerState<PercentileStrip> {
-  PercentileBucket? _data;
-  bool _istendi = false;
+  /// Görüntülenme olayı ekran başına bir kez (eskiden `_yukle` tek atıştı).
+  bool _loglandi = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // Build içinde değil: hesap ağ çağrısı içeriyor ve `initState` sırasında
-    // provider okumak güvenli değil.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
-  }
-
-  Future<void> _yukle() async {
-    if (_istendi || !mounted) return;
-    _istendi = true; // tek atış: her rebuild'de ROI hesaplatma
-
-    if (!RemoteConfigService.instance.percentileStripEnabled) return;
-    if (!ref.read(leaderboardOptInProvider)) return;
-    final me = ref.read(authProvider).valueOrNull;
-    if (me == null) return;
-
-    // Anlık görüntüyü cihaz YAZMAZ (0095): `leaderboard-snapshot` cron'u
-    // yarışa katılan herkes için günde iki kez TWR yazar. Eskiden şerit
-    // kendi simülasyon değerini yüklüyordu — iki ölçü aynı havuzda
-    // karışırdı. Kendi satırı yoksa (yeni hesap, 30 gün dolmadı) RPC boş
-    // döner ve şerit gizli kalır; uydurma dilim yok.
-    final servis = LeaderboardService.instance;
-    final data = await servis.fetchPercentile(PercentileStrip.periodDays);
-    if (!mounted || data == null) return;
-
-    unawaited(AnalyticsService.instance.logPercentileViewed(
-      bucket: data.percentile,
-      periodDays: PercentileStrip.periodDays,
-    ));
-    setState(() => _data = data);
+  PercentileBucket? get _data {
+    final data = ref.watch(yuzdelikDilimProvider).valueOrNull;
+    if (data != null && !_loglandi) {
+      _loglandi = true;
+      unawaited(AnalyticsService.instance.logPercentileViewed(
+        bucket: data.percentile,
+        periodDays: PercentileStrip.periodDays,
+      ));
+    }
+    return data;
   }
 
   // Veri gelince yükseklik akarak belirir

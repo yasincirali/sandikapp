@@ -25,6 +25,8 @@ import '../theme/sandik.dart';
 import '../utils/polling.dart';
 import 'recap_screen.dart';
 import 'halka_arz_screen.dart' show HalkaArzProfilSatiri;
+import '../providers/halka_arz_provider.dart'
+    show halkaArzEtkinProvider, halkaArzGorunumuProvider;
 import '../services/crash_reporter.dart';
 import '../services/share_card_service.dart';
 import '../services/analytics_service.dart';
@@ -95,7 +97,41 @@ Future<void> _showPartnerMsg(
   );
 }
 
+/// Profil'in geç gelen yüzeylerinin hepsi çözüldü mü (hata da çözülmüş
+/// sayılır; o yüzey kendi boş/hata hâlini çizer).
+///
+/// yasin 2026-11-15: "Profil ekranında açıldığında kademeli açılıp sonradan
+/// çizilen komponentler var; sayfada gösterilecek alanlar varsa hepsi aynı
+/// anda tekte çizilmeli." Kimlik kartının altındaki satırların her biri kendi
+/// isteğini bekleyip sırayla beliriyordu (bekleyen istekler, Premium satırı,
+/// halka arz, yüzdelik şeridi, yıllık özet afişi, ortak listesi). Hepsi
+/// açılışta ısıtılır (`_AuthGate._warmUpData`), bu yüzden Profil çoğu zaman
+/// bu kapıyı anında geçer; geçemezse gövde tek yükleyici gösterir ve sayfa
+/// tamamıyla tek seferde gelir. Emniyet supabı [_ProfileScreenState._supap].
+final profilHazirProvider = Provider<bool>((ref) {
+  bool cozuldu(AsyncValue<Object?> v) => v.hasValue || v.hasError;
+  // Hepsi ÖNCE izlenir, sonra karar verilir: kısa devreyle sırayla izlemek
+  // sonrakilerin isteğini öncekinin dönüşüne kadar başlatmıyordu (ısıtma
+  // yoksa bekleme toplanırdı).
+  final kaynaklar = <AsyncValue<Object?>>[
+    ref.watch(partnersProvider),
+    ref.watch(pendingInvitesProvider),
+    if (ref.watch(paywallVisibleProvider)) ref.watch(premiumHaklariProvider),
+    if (ref.watch(halkaArzEtkinProvider)) ref.watch(halkaArzGorunumuProvider),
+    ref.watch(yuzdelikDilimProvider),
+    ref.watch(yillikOzetAfisiProvider),
+  ];
+  return kaynaklar.every(cozuldu);
+});
+
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  /// Profil kapısının emniyet supabı: ağ koptuğunda gövde yükleyicide
+  /// takılı kalmasın. Dolunca gelen satırlar eskisi gibi sonradan girer;
+  /// bu yalnız bozuk bağlantıda görülür.
+  static const _supap = Duration(seconds: 2);
+  Timer? _supapZamanlayici;
+  bool _supapDoldu = false;
+
   final _codeCtrl = TextEditingController();
   final _codeFocus = FocusNode();
   String? _generatedCode;
@@ -133,6 +169,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void initState() {
     super.initState();
     _restoreRateLimitCountdown();
+    _supapZamanlayici = Timer(_supap, () {
+      if (mounted) setState(() => _supapDoldu = true);
+    });
   }
 
   /// Kilit önceki oturumda oluşmuş olabilir; ekran açılır açılmaz
@@ -148,6 +187,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   void dispose() {
+    _supapZamanlayici?.cancel();
     _rateLimitTicker?.cancel();
     _codeCtrl.dispose();
     _codeFocus.dispose();
@@ -399,6 +439,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).valueOrNull;
     final partnersAsync = ref.watch(partnersProvider);
+    // `build`'in kendisinde izlenir (iç builder'da değil): payIle
+    // kapanışı başka bir widget'ın build'inde koşar, izleme orada
+    // ProfileScreen'i yeniden kurmuyordu.
+    final hazir = ref.watch(profilHazirProvider) || _supapDoldu;
 
     // Tam ekran `_busy` perdesi (ModalBarrier + "İşleniyor..." kutusu),
     // `PopScope` ve gövdeyi kilitleyen `AbsorbPointer` 2026-10-08'de kalktı:
@@ -457,7 +501,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
                 // Body
-            govde: SandikKaydirmaBasligi.payIle((ustPay) => SandikYenile(
+            govde: SandikKaydirmaBasligi.payIle((ustPay) {
+              // Yükleyici → tam sayfa çapraz solar (2026-10-14 geçişi);
+              // satırlar tek tek değil, hep birlikte gelir.
+              return SandikIcerikGecisi(
+                tamEkran: true,
+                anahtar: hazir,
+                child: !hazir
+                    ? Padding(
+                        padding: EdgeInsets.only(top: ustPay),
+                        child: const SandikLoadingScreen())
+                    : SandikYenile(
       color: context.c.amberText,
       edgeOffset: ustPay,
       onRefresh: () async {
@@ -591,7 +645,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const SizedBox(height: 40),
                       ],
                     ),
-    )),
+    ));
+            }),
             ),
         );
   }
