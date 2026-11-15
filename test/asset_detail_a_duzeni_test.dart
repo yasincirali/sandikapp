@@ -1,3 +1,4 @@
+import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -65,7 +66,10 @@ class _FakePortfolio extends PortfolioNotifier {
 }
 
 void main() {
+  // Eski (katmansız) düzeni kilitler; varsayılan 2026-11-15'ten beri katmanlı.
+  tearDownAll(() => RemoteConfigService.testKapali = {});
   setUpAll(() async {
+    RemoteConfigService.testKapali = {'varlik_detay_katmanli'};
     await initializeDateFormatting('tr_TR');
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();

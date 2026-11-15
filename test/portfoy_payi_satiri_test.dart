@@ -1,3 +1,4 @@
+import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -75,7 +76,10 @@ Future<void> _ac(WidgetTester tester, Asset asset) async {
 }
 
 void main() {
+  // Eski (katmansız) düzeni kilitler; varsayılan 2026-11-15'ten beri katmanlı.
+  tearDownAll(() => RemoteConfigService.testKapali = {});
   setUpAll(() async {
+    RemoteConfigService.testKapali = {'varlik_detay_katmanli'};
     await initializeDateFormatting('tr_TR');
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();

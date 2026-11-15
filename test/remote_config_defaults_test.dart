@@ -48,6 +48,8 @@ void main() {
       'recap_enabled',
       // yasin 2026-11-15: çoklu portföy Premium'a açık.
       'coklu_portfoy',
+      // yasin 2026-11-15: varlık sayfasında katmanlı düzen kalıcı.
+      'varlik_detay_katmanli',
     ];
 
     for (final bayrak in acikOlmali) {
@@ -115,7 +117,6 @@ void main() {
     // emekliye ayrıldı (aşağıdaki kilit).
     for (final b in const [
       'performans_tek_akis',
-      'varlik_detay_katmanli',
       'sinyal_on_ayar',
       'raporlar_kapisi',
     ]) {
