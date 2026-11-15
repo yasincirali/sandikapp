@@ -1,4 +1,5 @@
 import ActivityKit
+import AppIntents
 import Foundation
 
 /// Live Activity'nin veri sözleşmesi — ana uygulama ile uzantının ORTAK tipi.
@@ -204,6 +205,12 @@ struct SandikActivityAttributes: ActivityAttributes {
     /// başlar. Eski sürümün açtığı oturumda alan yoktur → `false`, bugünkü
     /// görünüm (çözümleme aşağıda toleranslı).
     var gozAlici: Bool = false
+
+    /// Ada'da "Tutarı gizle" düğmesi gösterilsin mi (2026-11-15, yasin:
+    /// "5'i yap"; Premium). `gozAlici` ile aynı gerekçe: sunucu push'u
+    /// Premium'u bilmez, oturum açılırken uygulamadan bir kez gelir. Eski
+    /// oturumda alan yok → `false`, düğme yok.
+    var gizleDugmesi: Bool = false
 }
 
 @available(iOS 17.0, *)
@@ -215,6 +222,8 @@ extension SandikActivityAttributes {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         sessionName = try c.decode(String.self, forKey: .sessionName)
         gozAlici = try c.decodeIfPresent(Bool.self, forKey: .gozAlici) ?? false
+        gizleDugmesi =
+            try c.decodeIfPresent(Bool.self, forKey: .gizleDugmesi) ?? false
     }
 }
 
@@ -334,5 +343,58 @@ extension SandikActivityAttributes.ContentState {
         sessionEndsAtUnix > 0
             ? Date(timeIntervalSince1970: sessionEndsAtUnix)
             : Date().addingTimeInterval(3600)
+    }
+}
+
+// MARK: - Ada'dan tutarı gizle (2026-11-15)
+
+/// Kullanıcının Ada/kilit kartında tutarı tek dokunuşla örttüğü tercih.
+///
+/// **Neden ContentState'te değil de uygulama grubunda:** sunucu 5 dakikada
+/// bir (dakikalık bayrakta her dakika) içeriği BÜTÜNÜYLE push'lar ve bu
+/// tercihi bilmez; state'e yazılsaydı ilk push tutarı geri açardı. Görünüm
+/// tercihi render anında buradan okur, böylece hiçbir push onu ezemez.
+/// Uygulamadaki göz simgesinden AYRI tutuldu: o tercih Dart'ta ve ana ekran
+/// widget'ını da yönetir; buradaki yalnız Canlı Etkinlik içindir ve
+/// düğmesiyle geri açılır.
+@available(iOS 17.0, *)
+enum SandikAdaGizlilik {
+    static let suite = "group.com.sandik.app"
+    static let anahtar = "ada_tutar_gizli"
+
+    static var gizli: Bool {
+        get { UserDefaults(suiteName: suite)?.bool(forKey: anahtar) ?? false }
+        set { UserDefaults(suiteName: suite)?.set(newValue, forKey: anahtar) }
+    }
+
+    /// Tutar bu oturumda çizilsin mi: kullanıcı kilit ekranında tutara izin
+    /// vermiş, uygulamada bakiye gizli değil ve (düğmesi olan oturumda)
+    /// Ada'dan örtülmemiş. Düğmesi olmayan oturumda tercih YOK SAYILIR:
+    /// Premium biterse kullanıcı geri açamayacağı bir örtüyle kalmasın.
+    static func tutarGorunur(state: SandikActivityAttributes.ContentState,
+                             attributes: SandikActivityAttributes) -> Bool {
+        guard state.showAmounts && !state.isHidden else { return false }
+        return !(attributes.gizleDugmesi && gizli)
+    }
+}
+
+/// Ada'daki "Gizle / Göster" düğmesi.
+///
+/// `LiveActivityIntent`: `perform` uygulama sürecinde koşar (gerekirse
+/// arka planda açılır), ActivityKit'e oradan erişir. Bu dosya iki hedefte
+/// de derlendiği için tip ikisinde de var — Apple'ın istediği kurulum.
+/// Tercih yazıldıktan sonra oturum AYNI içerikle güncellenir: amaç yalnız
+/// görünümü yeniden çizdirmek.
+@available(iOS 17.0, *)
+struct AdaTutarGizleIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Tutarı gizle veya göster"
+    static let isDiscoverable: Bool = false
+
+    func perform() async throws -> some IntentResult {
+        SandikAdaGizlilik.gizli.toggle()
+        for activity in Activity<SandikActivityAttributes>.activities {
+            await activity.update(activity.content)
+        }
+        return .result()
     }
 }
