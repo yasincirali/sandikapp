@@ -9192,6 +9192,33 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String pwdPortfoyVeri(int varlik, int tur) {
+    String _temp0 = intl.Intl.pluralLogic(
+      varlik,
+      locale: localeName,
+      other: '$varlik assets',
+      one: '1 asset',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      tur,
+      locale: localeName,
+      other: '$tur types',
+      one: '1 type',
+    );
+    return '$_temp0 in one list · $_temp1';
+  }
+
+  @override
+  String portfoyPay(String pay) {
+    return '$pay of All';
+  }
+
+  @override
+  String portfoyPayKar(String pay, String fark, String yuzde) {
+    return '$pay of All · $fark ($yuzde)';
+  }
+
+  @override
   String ortakGorurBaslik(String ad) {
     return 'What can $ad see?';
   }

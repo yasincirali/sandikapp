@@ -77,6 +77,7 @@ import '../services/fiyat_kaynagi.dart';
 import '../models/portfoy_siralama.dart';
 import '../widgets/sandik_siralama_dugmesi.dart';
 import '../widgets/sira_kaydirma.dart';
+import '../widgets/portfoy_hedef_satiri.dart';
 import '../widgets/portfoy_secici.dart';
 import '../widgets/portfoy_secim_sayfasi.dart';
 import '../widgets/varlik_guncelle.dart';
@@ -685,6 +686,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                             onDegisti: () =>
                                 setState(() => _filteredType = null),
                           ),
+                        // Seçili portföyün hedefi (Premium, Ar-Ge 15 Kas
+                        // 17:03 #2): hedef yokken ya da Tümü'de sıfır boy.
+                        if (_view == '' && !onKurulum)
+                          const PortfoyHedefSatiri(
+                              bosluk: EdgeInsets.only(top: SandikSpace.sm)),
                         // Özellik önerisi (yasin 2026-10-20 "oralara
                         // koyalım"): Ana sayfadaki kartın aynısı, en çok
                         // vakit geçirilen sekmede de. Tek sağlayıcı ve tek

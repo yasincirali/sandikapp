@@ -12,12 +12,15 @@ import '../providers/base_currency_provider.dart';
 import '../providers/ortak_paylasimi_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/portfoy_provider.dart';
+import '../providers/preferences_provider.dart';
 import '../services/crash_reporter.dart';
+import '../services/hedef_ritmi.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../widgets/ortak_paylasim_sayfasi.dart';
+import '../widgets/portfoy_hedef_satiri.dart';
 import '../widgets/portfoy_secici.dart';
 import '../widgets/portfoy_secim_sayfasi.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -69,6 +72,42 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
       );
     }
 
+    // Premium ayrıntı (Ar-Ge 15 Kas 17:03 #2–#3): pay, kâr/zarar ve hedef.
+    // Kural hedefe tarihle aynı; ücretsizde satır birebir eski. Premium
+    // biterse kayıtlı hedef silinmez, yalnız burada görünmez olur.
+    final premium =
+        ref.watch(hedefTarihiDurumuProvider) == OzellikDurumu.acik;
+    final gizli = ref.watch(balanceHiddenProvider);
+    // Hedefler liste kurulmadan okunur: tembel `itemBuilder` içinde
+    // `ref.watch` build dışına düşerdi.
+    final hedefler = <String?, KapsamHedefDurumu?>{
+      if (premium)
+        for (final id in <String?>[null, for (final p in liste) p.id])
+          id: ref.watch(portfoyHedefDurumuProvider(id)),
+    };
+    // "Tümünde %38 · +₺4.210 (%12,4)": fark işaretli yazılır, anlam
+    // yalnız renkle verilmez. Tek portföyde (yalnız Ana) pay hep %100 —
+    // söylenecek şey yok, satır çizilmez. Maliyet yoksa (fiyatsız ya da
+    // boş portföy) yalnız pay; uydurma yüzde yok.
+    String? ayrinti(String? id) {
+      if (!premium || liste.isEmpty) return null;
+      final o = ozet[id];
+      if (o == null) return null;
+      final pay = fmtPct(o.pay * 100, digits: 0);
+      if (o.maliyet <= 0) return l.portfoyPay(pay);
+      final govde = baz.fmt(o.kar.abs());
+      final fark = govde == baz.fmt(0) || gizli
+          ? govde
+          : '${o.kar > 0 ? '+' : '\u2212'}$govde';
+      return l.portfoyPayKar(
+          pay, fark, fmtPctIsaretli(o.kar / o.maliyet * 100, digits: 1));
+    }
+
+    String? hedefMetni(String? id) => switch (hedefler[id]) {
+          final d? => portfoyHedefMetni(l, d, gizli: gizli),
+          null => premium ? l.todayGoalSetAction : null,
+        };
+
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(title: l.portfoyYonetimiBaslik),
@@ -93,6 +132,13 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                 ad: anaAdi,
                 alt: l.portfoyAnaAciklama,
                 deger: baz.fmt(ozet[null]?.deger ?? 0),
+                ayrinti: ayrinti(null),
+                hedefMetni: hedefMetni(null),
+                hedefOran: hedefler[null]?.oran,
+                onHedef: premium
+                    ? () => portfoyHedefSayfasiniAc(context, ref,
+                        id: null, ad: anaAdi)
+                    : null,
                 ortakDurumu: durum(null),
                 onYenidenAdlandir: () => showPortfoyAdiSayfasi(
                   context,
@@ -145,6 +191,13 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                     child: _Satir(
                       ad: p.ad,
                       deger: baz.fmt(ozet[p.id]?.deger ?? 0),
+                      ayrinti: ayrinti(p.id),
+                      hedefMetni: hedefMetni(p.id),
+                      hedefOran: hedefler[p.id]?.oran,
+                      onHedef: premium
+                          ? () => portfoyHedefSayfasiniAc(context, ref,
+                              id: p.id, ad: p.ad)
+                          : null,
                       ortakDurumu: durum(p.id),
                       onYenidenAdlandir: () => showPortfoyAdiSayfasi(
                         context,
@@ -456,6 +509,10 @@ class _Satir extends StatelessWidget {
     required this.ad,
     required this.deger,
     this.alt,
+    this.ayrinti,
+    this.hedefMetni,
+    this.hedefOran,
+    this.onHedef,
     this.ortakDurumu,
     this.onYenidenAdlandir,
     this.onSil,
@@ -464,6 +521,15 @@ class _Satir extends StatelessWidget {
   final String ad;
   final String deger;
   final String? alt;
+
+  /// Premium: Tümü'ndeki pay ve kâr/zarar; ücretsizde `null` (satır yok).
+  final String? ayrinti;
+
+  /// Premium: hedef cümlesi ya da "Hedef belirle"; [hedefOran] hedef
+  /// varken ince çizgi. [onHedef] hedef sayfasını açar.
+  final String? hedefMetni;
+  final double? hedefOran;
+  final VoidCallback? onHedef;
 
   /// Tek ortakta "Ayşe görüyor / görmüyor" (0135); yoksa satır yok.
   final ({String metin, bool gizli})? ortakDurumu;
@@ -491,6 +557,49 @@ class _Satir extends StatelessWidget {
                   style:
                       context.t.bodyMedium?.copyWith(color: context.c.text58),
                 ),
+                if (ayrinti != null) ...[
+                  const SizedBox(height: SandikSpace.xxs),
+                  Text(
+                    ayrinti!,
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text58),
+                  ),
+                ],
+                if (hedefMetni != null)
+                  SandikTappable(
+                    onTap: onHedef,
+                    semanticLabel: hedefMetni,
+                    child: ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(minHeight: SandikTouch.min),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ExcludeSemantics(
+                            child: Row(
+                              children: [
+                                Icon(Icons.flag_outlined,
+                                    size: 14, color: context.c.text58),
+                                const SizedBox(width: SandikSpace.xs),
+                                Expanded(
+                                  child: Text(
+                                    hedefMetni!,
+                                    style: context.t.bodySmall
+                                        ?.copyWith(color: context.c.text58),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (hedefOran case final o?) ...[
+                            const SizedBox(height: SandikSpace.xs),
+                            PortfoyHedefCizgisi(oran: o),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                 if (alt != null) ...[
                   const SizedBox(height: SandikSpace.xxs),
                   Text(

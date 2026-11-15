@@ -7,7 +7,8 @@ import 'package:purchases_flutter/purchases_flutter.dart' show Package;
 
 import '../models/asset.dart' show Asset;
 import '../models/asset_type.dart';
-import '../models/position.dart' show aktifLotlar;
+import '../models/portfoy_grubu.dart';
+import '../models/position.dart' show aggregatePositions, aktifLotlar;
 import '../providers/auth_provider.dart' show partnersProvider;
 import '../providers/portfolio_provider.dart' show portfolioProvider;
 import '../providers/preferences_provider.dart'
@@ -204,6 +205,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       busy: _busy,
       onSatinAl: _satinAl,
       onGeriYukle: _geriYukle,
+      portfoySayilari: widget.source == 'portfoy_limit'
+          ? portfoyTesvikSayilari(lotlar)
+          : null,
     );
   }
 

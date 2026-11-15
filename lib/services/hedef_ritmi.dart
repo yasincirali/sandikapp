@@ -1,4 +1,5 @@
 import '../models/asset.dart';
+import '../models/hedef_tarihi.dart';
 import '../utils/tr_format.dart';
 import 'contribution_history_service.dart';
 
@@ -80,4 +81,72 @@ class HedefRitmi {
   /// yokken gereken tutarın kendisi (geçmişteki satış ileriye borç
   /// olarak taşınmaz: gereken zaten bugünkü değerden hesaplandı).
   int get eksik => plandasin ? 0 : gereken - (eklemeYok ? 0 : ortalama);
+}
+
+/// Bir portföyün hedefi ve ona yakınlığı (Premium portföy hedefi, Ar-Ge
+/// 15 Kas 17:03 #2). Bugün kartının hedef satırıyla AYNI kurallar: oran
+/// değer / hedef, gün geçtiyse ya da hedefe ulaşıldıysa ritim yok, ritim
+/// yalnız gün seçiliyken ve [HedefRitmiService] o portföyün KENDİ
+/// defterinden ölçebiliyorsa. Defter kısaysa satır "plandasın" demez —
+/// uydurma sayı yok.
+///
+/// Saf: provider (`portfoyHedefDurumuProvider`) ve testler aynı yolu çağırır.
+class KapsamHedefDurumu {
+  const KapsamHedefDurumu._({
+    required this.hedef,
+    required this.deger,
+    required this.tarih,
+    required this.ritim,
+    required this.ortalama,
+  });
+
+  /// Hedef tutarı (TRY, > 0).
+  final int hedef;
+
+  /// Kapsamın bugünkü değeri (TRY) — yönetim satırındaki değerle aynı sayı.
+  final double deger;
+
+  /// Hedefin günü; yoksa `null`.
+  final DateTime? tarih;
+
+  /// "Plandasın" kıyası; gün yok, gün geçti, ulaşıldı ya da defter kısa
+  /// ise `null`.
+  final HedefRitmi? ritim;
+
+  /// Son üç tam ayın aylık net eklemesi (sayfaya iletilir); ölçülemezse
+  /// ya da hedefe ulaşıldıysa `null`.
+  final double? ortalama;
+
+  double get oran => (deger / hedef).clamp(0.0, 1.0);
+  bool get ulasildi => deger >= hedef;
+  double get kalan => ulasildi ? 0 : hedef - deger;
+  int get yuzde => (oran * 100).floor();
+
+  /// [hedef] 0 ya da negatifse `null` (hedef yok, satır yok).
+  static KapsamHedefDurumu? kur({
+    required int hedef,
+    required double deger,
+    required List<Asset> defter,
+    required DateTime now,
+    DateTime? tarih,
+  }) {
+    if (hedef <= 0) return null;
+    final ulasildi = deger >= hedef;
+    final ortalama = ulasildi
+        ? null
+        : HedefRitmiService.sonUcAyOrtalamasi(defter, now: now);
+    final ritim = (tarih == null || ulasildi || hedefGunuGecti(tarih, now))
+        ? null
+        : HedefRitmi.kur(
+            ortalama: ortalama,
+            gereken: hedefAylikTutar(
+                kalan: hedef - deger, tarih: tarih, bugun: now));
+    return KapsamHedefDurumu._(
+      hedef: hedef,
+      deger: deger,
+      tarih: tarih,
+      ritim: ritim,
+      ortalama: ortalama,
+    );
+  }
 }
