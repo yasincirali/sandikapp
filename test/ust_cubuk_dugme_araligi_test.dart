@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:portfoy_takip/providers/halka_arz_provider.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/signal_alert.dart';
@@ -91,6 +92,8 @@ Future<void> _pump(WidgetTester tester, Widget ekran) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
     overrides: [
+      // Halka arz satırı ağdan okur; Profil kapısı onu bekler (2026-11-15).
+      halkaArzEtkinProvider.overrideWithValue(false),
       authProvider.overrideWith(_FakeAuth.new),
       portfolioProvider.overrideWith(_FakePortfolio.new),
       partnersProvider.overrideWith(_FakePartners.new),
@@ -104,6 +107,13 @@ Future<void> _pump(WidgetTester tester, Widget ekran) async {
   ));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
+  // Profil kapısı (2026-11-15): geç gelen satırlar (testte Supabase'siz
+  // hata yolundan) çözülünce sayfa tek seferde çizilir; birkaç kare karar,
+  // bir geçiş süresi çapraz solma.
+  for (var i = 0; i < 3; i++) {
+    await tester.pump();
+    await tester.pump(SandikMotion.surface);
+  }
   // Yükleyici → gövde çapraz geçişi biter (2026-10-14); yükleyicinin
   // "sandık" yazısı başlıkla karışmasın.
   await tester.pump(SandikMotion.surface);

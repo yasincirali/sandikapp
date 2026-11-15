@@ -180,6 +180,13 @@ Future<void> _profil(WidgetTester tester, {required bool bayrak}) async {
   ));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
+  // Profil kapısı (2026-11-15): geç gelen satırlar (testte Supabase'siz
+  // hata yolundan) çözülünce sayfa tek seferde çizilir; birkaç kare karar,
+  // bir geçiş süresi çapraz solma.
+  for (var i = 0; i < 3; i++) {
+    await tester.pump();
+    await tester.pump(SandikMotion.surface);
+  }
 }
 
 /// `pushGuarded` çift dokunma penceresini GERÇEK saatle ölçer (350 ms);
