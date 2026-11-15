@@ -130,83 +130,85 @@ class _LockScreenState extends State<LockScreen> {
     }
   }
 
+  /// Düğmeler yalnız doğrulama sonuçsuz kalınca görünür (iptal, ret,
+  /// cihazda kilit yok, hata). İlk istem sürerken ekran açılış karesinin
+  /// aynısıdır: Face ID'li kullanıcı da açılışta yalnız işareti görür, istem
+  /// onun üstünde çıkar (yasin 2026-11-15, tek tip açılış).
+  bool get _kontrollerGorunur =>
+      _sonSonuc != null && !_sonSonuc!.basariliMi && !_busy;
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return Scaffold(
-      backgroundColor: c.background,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xl),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: c.amberFill.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: c.amberFill.withValues(alpha: 0.35)),
-                  ),
-                  child: Icon(Icons.lock_outline_rounded,
-                      size: 34, color: c.amberText),
-                ),
-                const SizedBox(height: SandikSpace.lg),
-                Text(
-                  context.l10n.lockTitle,
-                  textAlign: TextAlign.center,
-                  style: context.t.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: c.text90,
-                  ),
-                ),
-                const SizedBox(height: SandikSpace.sm),
-                Text(
-                  _durumMetni(context),
-                  textAlign: TextAlign.center,
-                  style: context.t.bodyMedium?.copyWith(color: c.text58),
-                ),
-                const SizedBox(height: SandikSpace.xl),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _busy ? null : _tryUnlock,
-                    icon: const Icon(Icons.fingerprint_rounded),
-                    label: Text(_busy ? context.l10n.lockVerifying : context.l10n.unlock),
-                  ),
-                ),
-                // Yalnızca cihaz doğrulama YAPAMAZ hâldeyken: tekrar
-                // denemenin sonucu değişmez, kullanıcı içeri giremez.
-                if (_sonSonuc == BiyometrikSonuc.kullanilamaz) ...[
-                  const SizedBox(height: SandikSpace.sm),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: _busy ? null : widget.onKilidiKapat,
-                      child: Text(context.l10n.lockDisableAndContinue),
-                    ),
-                  ),
-                ],
-                // HER ZAMAN görünür: bu kilidi açmaz, oturumu kapatır.
-                // Kilit ekranı kullanıcıyı KENDİ hesabına döndürdüğü için
-                // başka hesaba geçmenin tek yolu buydu; Face ID çalışmayan
-                // ya da başkasına ait bir cihazda hiç yolu yoktu.
-                const SizedBox(height: SandikSpace.sm),
-                //
-                // Çıkış istek atar → [SandikAsyncButton] (2026-10-08).
-                // Biyometrik doğrulama yerel bir sistem istemidir, istek
-                // değildir: "Kilidi aç" düğmesi ve `_busy` ("Doğrulanıyor…"
-                // metni, diğer düğmeleri kapatma) olduğu gibi kalır.
-                SandikAsyncButton(
-                  tur: SandikAsyncTur.metin,
-                  height: null,
-                  onPressed: _busy ? null : _cikisiOnayla,
-                  child: Text(context.l10n.lockSwitchAccount),
-                ),
-              ],
+    final gorunur = _kontrollerGorunur;
+    final kontroller = Padding(
+      padding: const EdgeInsets.fromLTRB(
+          SandikSpace.xl, 0, SandikSpace.xl, SandikSpace.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _durumMetni(context),
+            textAlign: TextAlign.center,
+            style: context.t.bodyMedium?.copyWith(color: c.text58),
+          ),
+          const SizedBox(height: SandikSpace.lg),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _busy ? null : _tryUnlock,
+              icon: const Icon(Icons.fingerprint_rounded),
+              label: Text(
+                  _busy ? context.l10n.lockVerifying : context.l10n.unlock),
             ),
+          ),
+          // Yalnızca cihaz doğrulama YAPAMAZ hâldeyken: tekrar
+          // denemenin sonucu değişmez, kullanıcı içeri giremez.
+          if (_sonSonuc == BiyometrikSonuc.kullanilamaz) ...[
+            const SizedBox(height: SandikSpace.sm),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: _busy ? null : widget.onKilidiKapat,
+                child: Text(context.l10n.lockDisableAndContinue),
+              ),
+            ),
+          ],
+          // HER ZAMAN (düğmeler görünürken) var: bu kilidi açmaz, oturumu
+          // kapatır. Kilit ekranı kullanıcıyı KENDİ hesabına döndürdüğü için
+          // başka hesaba geçmenin tek yolu buydu; Face ID çalışmayan
+          // ya da başkasına ait bir cihazda hiç yolu yoktu.
+          const SizedBox(height: SandikSpace.sm),
+          //
+          // Çıkış istek atar → [SandikAsyncButton] (2026-10-08).
+          // Biyometrik doğrulama yerel bir sistem istemidir, istek
+          // değildir: "Kilidi aç" düğmesi ve `_busy` ("Doğrulanıyor…"
+          // metni, diğer düğmeleri kapatma) olduğu gibi kalır.
+          SandikAsyncButton(
+            tur: SandikAsyncTur.metin,
+            height: null,
+            onPressed: _busy ? null : _cikisiOnayla,
+            child: Text(context.l10n.lockSwitchAccount),
+          ),
+        ],
+      ),
+    );
+    // Eski kilit ekranı (kilit simgesi halkası, "sandık kilitli" başlığı,
+    // ortalanmış sütun) açılış karesinden bambaşka bir sayfaydı: Face ID'li
+    // kullanıcı açılışta iki ayrı ekran görüyordu. Şimdi işaret açılış
+    // karesiyle aynı yerde durur; başlık işaretin erişilebilirlik etiketi,
+    // düğmeler altta belirir ve işareti kaydırmaz.
+    return SandikLoadingScreen(
+      isaretEtiketi: context.l10n.lockTitle,
+      alt: IgnorePointer(
+        ignoring: !gorunur,
+        child: ExcludeSemantics(
+          excluding: !gorunur,
+          child: AnimatedOpacity(
+            opacity: gorunur ? 1 : 0,
+            duration: SandikMotion.surfaceOf(context),
+            curve: SandikMotion.enter,
+            child: kontroller,
           ),
         ),
       ),

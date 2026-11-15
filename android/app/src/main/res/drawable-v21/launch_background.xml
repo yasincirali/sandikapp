@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Sistem açılışı ile ilk Flutter karesi arası pencere zemini (ve Android
+     12 öncesinin açılışı). Ortada açılış işareti: `splash_icon` 240 dp
+     tuvalin ortasında 112 dp işaret (tool/acilis_gorseli_uret_test.dart).
+     Uygulamanın açılış karesi aynı işareti aynı yerde çizer; geçişte
+     görsel zıplamaz (yasin 2026-11-15, tek tip açılış). -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/sandik_background" />
+    <item>
+        <bitmap
+            android:src="@drawable/splash_icon"
+            android:gravity="center" />
+    </item>
 </layer-list>
