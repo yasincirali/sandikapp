@@ -104,10 +104,14 @@ void main() {
     await initPreferencesCache();
   });
 
-  tearDown(() => RemoteConfigService.testAcik = {});
+  tearDown(() {
+    RemoteConfigService.testAcik = {};
+    RemoteConfigService.testKapali = {};
+  });
 
   testWidgets('bayrak KAPALI: eski yığın — yedi satır açık, katman yok',
       (tester) async {
+    RemoteConfigService.testKapali = {_bayrak};
     await _ac(tester);
 
     expect(find.text('Pozisyonun'), findsOneWidget);

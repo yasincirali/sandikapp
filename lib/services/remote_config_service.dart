@@ -320,8 +320,9 @@ class RemoteConfigService {
     // S3 — Portföy küçük halka + lejant (`portfoy_dagilim_cubugu`):
     // emekliye ayrıldı, bkz. "Emekliye ayrılan bayraklar (2026-10-20)".
     // S4 — varlık detayı katmanlı sıra: fiyat+grafik → pozisyonun → analiz
-    // (katlı) → geçmiş ve belgeler.
-    'varlik_detay_katmanli': false,
+    // (katlı) → geçmiş ve belgeler. AÇIK doğar (yasin 2026-11-15: katmanlı
+    // düzen kalıcı); eski düzen kodu bayrak kapatılabilsin diye durur.
+    'varlik_detay_katmanli': true,
     // S5 — sinyal ayarları önce ön ayar (Az / Dengeli / Çok), ayrıntı katlı.
     'sinyal_on_ayar': false,
     // S6 — Performans başlığında "Raporlar" kapısı (hafta özeti, aylık
