@@ -14807,6 +14807,24 @@ abstract class AppLocalizations {
   /// **'{sayi} portföy'**
   String pwdPortfoySayi(int sayi);
 
+  /// No description provided for @pwdPortfoyVeri.
+  ///
+  /// In tr, this message translates to:
+  /// **'{varlik} varlığın tek listede · {tur} türde'**
+  String pwdPortfoyVeri(int varlik, int tur);
+
+  /// No description provided for @portfoyPay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümünde {pay}'**
+  String portfoyPay(String pay);
+
+  /// No description provided for @portfoyPayKar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümünde {pay} · {fark} ({yuzde})'**
+  String portfoyPayKar(String pay, String fark, String yuzde);
+
   /// No description provided for @ortakGorurBaslik.
   ///
   /// In tr, this message translates to:

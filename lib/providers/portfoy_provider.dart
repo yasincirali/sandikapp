@@ -9,6 +9,7 @@ import '../models/gorunum_kapsami.dart';
 import '../models/portfoy.dart';
 import '../models/position.dart';
 import '../services/analytics_service.dart';
+import '../services/hedef_ritmi.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
@@ -303,20 +304,79 @@ final varsayilanYeniPortfoyProvider = Provider<String?>((ref) {
 /// ekranında o portföy seçiliyken görünen toplamla aynı yol; Σ değer ==
 /// Tümü (`test/coklu_portfoy_test.dart`). Kayıt sayısı silme onayında
 /// "kaç kayıt Ana'ya döner" sorusunun cevabı.
-typedef PortfoyOzeti = ({double deger, int kayit});
+///
+/// [maliyet], [kar], [pay] (Premium yönetim satırı, Ar-Ge 15 Kas 17:03 #3):
+/// kullanıcı hangi amacın büyüdüğünü görmek için portföyleri tek tek
+/// seçmesin. Üçü de AYNI `copyWith(assets:)` kümesinden: maliyet
+/// `totalCost`, kâr `capitalGainLoss` (temettü hariç; ikisi aynı açık
+/// pozisyon kümesi, `aktifLotlar` kuralı), pay = değer / Tümü'nün
+/// `totalValue`'su. Tümü 0 ise pay 0 (uydurma oran yok).
+typedef PortfoyOzeti = ({
+  double deger,
+  int kayit,
+  double maliyet,
+  double kar,
+  double pay,
+});
 
 final portfoyOzetleriProvider = Provider<Map<String?, PortfoyOzeti>>((ref) {
   final s = ref.watch(portfolioProvider).valueOrNull;
   final liste = ref.watch(portfoylerProvider).valueOrNull;
   if (s == null || liste == null) return const {};
   final bilinen = {for (final p in liste) p.id};
-  return {
-    for (final e in portfoyeGoreBol(s.assets, bilinen).entries)
-      e.key: (
-        deger: s.copyWith(assets: e.value).totalValue,
-        kayit: e.value.length,
-      ),
-  };
+  final tumu = s.totalValue;
+  final ozet = <String?, PortfoyOzeti>{};
+  for (final e in portfoyeGoreBol(s.assets, bilinen).entries) {
+    final parca = s.copyWith(assets: e.value);
+    final deger = parca.totalValue;
+    ozet[e.key] = (
+      deger: deger,
+      kayit: e.value.length,
+      maliyet: parca.totalCost,
+      kar: parca.capitalGainLoss,
+      pay: tumu > 0 ? deger / tumu : 0,
+    );
+  }
+  return ozet;
+});
+
+/// Portföy hedefinin `kapsamHedefiProvider` / `kapsamHedefTarihiProvider`
+/// anahtarı (`null` = Ana). Ben/Birlikte/ortak anahtarlarının yanına
+/// EKLENİR (`portfoy_<id>`); var olan hedefler dokunulmadan kalır.
+String portfoyHedefKapsami(String? id) =>
+    'portfoy_${id ?? PortfoySecimi.ana}';
+
+/// Portföy hedefinin "bugün"ü: provider ve hedef sayfası aynı anı okur;
+/// test sabit saat verir (deterministik).
+DateTime Function() portfoyHedefSaati = DateTime.now;
+
+/// Bir portföyün hedef durumu (anahtar `null` = Ana) ya da `null`: hedef
+/// yok ya da özellik bu kullanıcıda açık değil.
+///
+/// Premium: kural hedefe tarihle AYNI ([hedefTarihiDurumuProvider]).
+/// Premium biterse kayıtlı hedef SİLİNMEZ; yalnız gösterim kapanır, tekrar
+/// Premium olana geri gelir. Değer [portfoyOzetleriProvider]'ın değeri
+/// (yönetim satırı ve Portföy sekmesi aynı sayıyı görür); ritim yalnız o
+/// portföyün defteriyle ölçülür (başka portföye eklenen para "plandasın"
+/// demesin).
+final portfoyHedefDurumuProvider =
+    Provider.family<KapsamHedefDurumu?, String?>((ref, id) {
+  if (ref.watch(hedefTarihiDurumuProvider) != OzellikDurumu.acik) return null;
+  final kapsam = portfoyHedefKapsami(id);
+  final hedef = ref.watch(kapsamHedefiProvider(kapsam));
+  if (hedef <= 0) return null;
+  final s = ref.watch(portfolioProvider).valueOrNull;
+  final liste = ref.watch(portfoylerProvider).valueOrNull;
+  if (s == null || liste == null) return null;
+  final bilinen = {for (final p in liste) p.id};
+  final defter = portfoyeGoreBol(s.assets, bilinen)[id] ?? const <Asset>[];
+  return KapsamHedefDurumu.kur(
+    hedef: hedef,
+    deger: ref.watch(portfoyOzetleriProvider)[id]?.deger ?? 0,
+    defter: defter,
+    now: portfoyHedefSaati(),
+    tarih: ref.watch(kapsamHedefTarihiProvider(kapsam)),
+  );
 });
 
 /// Ana portföyün kullanıcı verdiği adı; `null` = varsayılan ("Ana

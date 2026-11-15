@@ -185,6 +185,11 @@ class PortfoyCipi extends StatelessWidget {
 /// "+ Yeni portföy": sınır doluysa paywall (kaynak `portfoy_limit`), değilse
 /// ad sayfası; oluşturulan portföy SEÇİLİR (kullanıcı neden oluşturduysa
 /// ona bakmak ister). Dönen değer yeni portföy ya da `null`.
+///
+/// Paywall'dan dönünce sınır YENİDEN okunur: kullanıcı tam bu iş için
+/// Premium aldıysa akış ad sayfasıyla sürer — "+ Yeni"ye ikinci kez
+/// basması gerekmez (Zirve'deki "satın alınca kilit hemen kalkar" ile aynı
+/// ilke, #386). Sınır hâlâ doluysa (vazgeçti / satın alma bitmedi) `null`.
 Future<Portfoy?> yeniPortfoyAkisi(
   BuildContext context,
   WidgetRef ref, {
@@ -196,7 +201,7 @@ Future<Portfoy?> yeniPortfoyAkisi(
     unawaited(AnalyticsService.instance
         .logPremiumGateShown(feature: 'portfoy_limit'));
     await PaywallScreen.show(context, source: 'portfoy_limit');
-    return null;
+    if (!context.mounted || ref.read(portfoySiniriDoluProvider)) return null;
   }
   final l = context.l10n;
   final notifier = ref.read(portfoylerProvider.notifier);

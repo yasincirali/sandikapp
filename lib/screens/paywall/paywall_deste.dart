@@ -217,6 +217,20 @@ List<PaywallKarti> desteSirasi(
   return [...once, ...acik.where((k) => !once.contains(k))];
 }
 
+/// Portföy kartının teşvik sayıları: bugünkü mülkiyet (`aktifLotlar`,
+/// çağıran verir) net pozisyon olarak sayılır, tür [PortfoyGrubu] ile
+/// (BIST/ABD ayrımı olmadan: "kaç türde" sorusu). Pozisyon yoksa `null` —
+/// kart eski metnine döner (uydurma sayı yok).
+({int varlik, int tur})? portfoyTesvikSayilari(List<Asset> aktif) {
+  final pozisyonlar = aggregatePositions(aktif);
+  if (pozisyonlar.isEmpty) return null;
+  return (
+    varlik: pozisyonlar.length,
+    tur: {for (final p in pozisyonlar) PortfoyGrubu.of(p.asDisplayAsset(), pazarAyir: false)}
+        .length,
+  );
+}
+
 /// Kart renkleri. Kartlar marka yüzeyleridir; iki temada da aynı görünür
 /// (prototipteki koyu yeşil / amber / krem / orta yeşil). Değerler paletten
 /// gelir, ham renk yazılmaz.
@@ -261,10 +275,14 @@ class _DesteGovdesi extends StatefulWidget {
     required this.onSatinAl,
     required this.onGeriYukle,
     this.persona = PaywallPersona.genel,
+    this.portfoySayilari,
   });
 
   final String source;
   final PaywallPersona persona;
+
+  /// Kullanıcının kendi defteri ([portfoyTesvikSayilari]); `null` = veri yok.
+  final ({int varlik, int tur})? portfoySayilari;
   final bool yillik;
   final ValueChanged<bool> onPlan;
 
@@ -290,14 +308,22 @@ class _DesteGovdesi extends StatefulWidget {
 class _DesteGovdesiState extends State<_DesteGovdesi> {
   List<DesteKarti>? _kartlar;
   Locale? _dil;
+  ({int varlik, int tur})? _sayilar;
 
   /// Kartlar bir kez kurulur (plan sekmesi değişince deste yeniden
   /// kurulmasın: kabuklar `RepaintBoundary`'de önbellekte kalır). Dil
   /// değişirse yeniden.
   List<DesteKarti> _desteKartlari(BuildContext context) {
     final dil = Localizations.maybeLocaleOf(context);
-    if (_kartlar != null && dil == _dil) return _kartlar!;
+    // Teşvik sayıları defterden gelir; deste defter yüklenmeden açıldıysa
+    // sayılar sonradan gelince kart bir kez yeniden kurulur.
+    if (_kartlar != null &&
+        dil == _dil &&
+        widget.portfoySayilari == _sayilar) {
+      return _kartlar!;
+    }
     _dil = dil;
+    _sayilar = widget.portfoySayilari;
     final rc = RemoteConfigService.instance;
     final sira = desteSirasi(widget.source,
         radar: rc.balinaRadariAcik,
@@ -425,7 +451,14 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
               vurgulu: 1,
               aralik: SandikSpace.sm,
               renk: _KartRengi.koyu),
-          l.pwdPortfoySayi(1),
+          // "+ Yeni"den gelen ücretsiz kullanıcı: kendi verisi (Ar-Ge 15
+          // Kas 17:03 #4). Soyut "1 portföy" yerine bugün tek listede
+          // duran gerçek sayı; veri yoksa eski metin. Baskı/aciliyet yok.
+          switch (widget.portfoySayilari) {
+            final p? when widget.source == 'portfoy_limit' =>
+              l.pwdPortfoyVeri(p.varlik, p.tur),
+            _ => l.pwdPortfoySayi(1),
+          },
           l.pwdPortfoyPremium,
         ),
       PaywallKarti.akis => (

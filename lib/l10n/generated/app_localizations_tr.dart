@@ -9060,6 +9060,21 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String pwdPortfoyVeri(int varlik, int tur) {
+    return '$varlik varlığın tek listede · $tur türde';
+  }
+
+  @override
+  String portfoyPay(String pay) {
+    return 'Tümünde $pay';
+  }
+
+  @override
+  String portfoyPayKar(String pay, String fark, String yuzde) {
+    return 'Tümünde $pay · $fark ($yuzde)';
+  }
+
+  @override
   String ortakGorurBaslik(String ad) {
     return '$ad neyi görsün?';
   }
