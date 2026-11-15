@@ -268,5 +268,29 @@ void main() {
       // Değişim ana sayının yanına taşındı; ayrı alt kapsül tekrar etmesin.
       expect(ada, isNot(contains('SandikChangePill')));
     });
+
+    // 2026-11-15 (yasin: "5'i yap"): Ada'dan tutarı gizle, Premium.
+    test('Dinamik Ada: tutarı gizle düğmesi push\'a dayanıklı ve kapılı', () {
+      final ada = _oku('ios/SandikWidget/SandikLiveActivity.swift');
+      final attr = _oku('ios/SandikWidget/SandikAttributes.swift');
+      final plugin = _oku('ios/Runner/LiveActivityPlugin.swift');
+      final dart = _oku('lib/services/live_activity_service.dart');
+      final main = _oku('lib/main.dart');
+      // Tercih state'te DEĞİL uygulama grubunda: sunucu push'u ezemez.
+      expect(attr, contains('struct AdaTutarGizleIntent: LiveActivityIntent'));
+      expect(attr, contains('static let anahtar = "ada_tutar_gizli"'));
+      expect(attr, contains(
+          'gizleDugmesi =\n            try c.decodeIfPresent(Bool.self, forKey: .gizleDugmesi) ?? false'),
+          reason: 'Eski oturum alanı taşımaz; çözümleme toleranslı olmalı');
+      // Görünüm tek kapıdan sorar; kilit kartı da aynı örtüye uyar.
+      expect(RegExp('SandikAdaGizlilik.tutarGorunur\\(').allMatches(ada).length,
+          greaterThanOrEqualTo(3));
+      expect(ada, contains('Button(intent: AdaTutarGizleIntent())'));
+      expect(ada, contains('.frame(minWidth: 44, minHeight: 44)'));
+      // Premium: öznitelik yalnız start'ta, Premium kilidinden.
+      expect(plugin, contains('args["gizleDugmesi"] as? Bool ?? false'));
+      expect(dart, contains("'gizleDugmesi': gizleDugmesi,"));
+      expect(main, contains('la.gizleDugmesi = !ref.read(premiumKilitliProvider);'));
+    });
   });
 }

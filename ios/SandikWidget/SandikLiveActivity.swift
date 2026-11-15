@@ -107,12 +107,25 @@ struct SandikLiveActivity: Widget {
                     .padding(.leading, 4)
                 }
 
+                // Tutarı gizle / göster (Premium, 2026-11-15). Kalabalıkta
+                // toplamı örtmek için uygulamayı açmak gerekiyordu. Düğme
+                // yalnız tutar zaten görünebilecekken çıkar: kullanıcı
+                // tutara hiç izin vermediyse gizlenecek bir şey yok.
+                DynamicIslandExpandedRegion(.trailing) {
+                    if context.attributes.gizleDugmesi
+                        && context.state.showAmounts
+                        && !context.state.isHidden {
+                        SandikGizleDugmesi(gizli: SandikAdaGizlilik.gizli)
+                            .padding(.trailing, 4)
+                    }
+                }
+
                 DynamicIslandExpandedRegion(.center) {
                     // Kilit ekranıyla AYNI kural: tutar yalnızca kullanıcı
                     // açıkça izin verdiyse. Dynamic Island da kilitliyken
                     // görünür bir yüzeydir.
-                    let showsAmount =
-                        context.state.showAmounts && !context.state.isHidden
+                    let showsAmount = SandikAdaGizlilik.tutarGorunur(
+                        state: context.state, attributes: context.attributes)
                     let yonRengi = context.state.hasDirection
                         ? palette.statusColor(isPositive: context.state.isPositive)
                         : palette.text58
@@ -170,8 +183,8 @@ struct SandikLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    let tutarAcik =
-                        context.state.showAmounts && !context.state.isHidden
+                    let tutarAcik = SandikAdaGizlilik.tutarGorunur(
+                        state: context.state, attributes: context.attributes)
                     let gozAlici = context.attributes.gozAlici
                     VStack(spacing: 6) {
                         // Gün içi grafik — tutar gizliyken de görünür.
@@ -198,7 +211,8 @@ struct SandikLiveActivity: Widget {
                         // veri Ada'ya da geliyordu ama çizilmiyordu
                         // (2026-11-15). Kapı kilit kartıyla birebir.
                         if SandikSurukleyenSatiri.gorunur(
-                            state: context.state, gozAlici: gozAlici) {
+                            state: context.state, gozAlici: gozAlici,
+                            tutarGorunur: tutarAcik) {
                             SandikSurukleyenSatiri(state: context.state,
                                                    palette: palette)
                         }
@@ -509,7 +523,10 @@ struct SandikLockScreenView: View {
             : palette.text58
     }
 
-    private var tutarGorunur: Bool { state.showAmounts && !state.isHidden }
+    private var tutarGorunur: Bool {
+        SandikAdaGizlilik.tutarGorunur(state: state,
+                                       attributes: context.attributes)
+    }
 
     /// Göz alıcılık görünümü — oturum açılırken uygulamadan gelir.
     private var gozAlici: Bool { context.attributes.gozAlici }
@@ -533,7 +550,8 @@ struct SandikLockScreenView: View {
     /// Günü sürükleyen satırı gösterilsin mi (goz_alici madde 4)?
     /// Kapı [SandikSurukleyenSatiri.gorunur]'da; Ada da aynısını sorar.
     private var surukleyenGorunur: Bool {
-        SandikSurukleyenSatiri.gorunur(state: state, gozAlici: gozAlici)
+        SandikSurukleyenSatiri.gorunur(state: state, gozAlici: gozAlici,
+                                       tutarGorunur: tutarGorunur)
     }
 
     private var surukleyenSatiri: some View {
@@ -682,7 +700,7 @@ struct SandikLockScreenView: View {
         // Tutar gizliyken sesli okuma da tutarı SÖYLEMEZ. Aksi halde
         // ekranda gizlenen rakam VoiceOver'dan duyulurdu — kilit
         // ekranında bu, gizlemenin tamamen anlamsızlaşması demek.
-        guard state.showAmounts else {
+        guard tutarGorunur else {
             return "Sandık. \(gun)Bugün yüzde \(state.changePctText) \(yon). "
                 + "Son güncelleme \(state.updatedAtText)."
         }
@@ -714,8 +732,8 @@ struct SandikSurukleyenSatiri: View {
     /// 2026-10-09); kapı kaynakta da var, burada ikinci kez sorulur ki eski
     /// bir push'tan kalan alan gizli bakiyede çizilmesin.
     static func gorunur(state: SandikActivityAttributes.ContentState,
-                        gozAlici: Bool) -> Bool {
-        gozAlici && state.showAmounts && !state.isHidden
+                        gozAlici: Bool, tutarGorunur: Bool) -> Bool {
+        gozAlici && tutarGorunur
             && !state.surukleyenAd.isEmpty
             && !state.surukleyenTutarText.isEmpty
     }
@@ -769,5 +787,39 @@ struct SandikYuzdeSatiri: View {
                 .contentTransition(.numericText(countsDown: !state.isPositive))
         }
         .foregroundStyle(renk)
+    }
+}
+
+/// Ada'daki "Gizle / Göster" kapsülü.
+///
+/// HIG: dokunma alanı 44×44 pt (`frame` + `contentShape`); görünen kapsül
+/// daha küçük kalır ki Ada'nın üst satırını boğmasın. Anlam yalnız ikonla
+/// değil kelimeyle de verilir; VoiceOver eylemi söyler.
+@available(iOS 17.0, *)
+struct SandikGizleDugmesi: View {
+    let gizli: Bool
+
+    /// Ada'nın zemini temadan bağımsız hep siyah donanım; açık temanın
+    /// beyaz yüzeyi orada parlar. Koyu palet sabit.
+    private let palette = SandikPalette.resolved(isLight: false)
+
+    var body: some View {
+        Button(intent: AdaTutarGizleIntent()) {
+            HStack(spacing: 4) {
+                Image(systemName: gizli ? "eye" : "eye.slash")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(gizli ? "Göster" : "Gizle")
+                    .font(.sandikLabel(12, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(palette.text90)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(palette.surface2))
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(gizli ? "Tutarı göster" : "Tutarı gizle")
     }
 }

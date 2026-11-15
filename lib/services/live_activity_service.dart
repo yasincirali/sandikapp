@@ -198,6 +198,12 @@ class LiveActivityService {
   /// ile aynı desen.
   bool dakikalikGuncelleme = false;
 
+  /// Ada'da "Tutarı gizle" düğmesi (Premium, 2026-11-15). Oturumun SABİT
+  /// özniteliği olarak yalnız 'start'ta gider (bkz. `gozAlici`); Premium
+  /// sonradan açılırsa düğme bir sonraki oturumda gelir. `main.dart` her
+  /// senkronda Premium kilidinden atar.
+  bool gizleDugmesi = false;
+
   /// Son kurulan tarif — [_writeSummary] satıra yazar.
   Map<String, Object?>? _tarif;
 
@@ -256,6 +262,7 @@ class LiveActivityService {
     _lastPushedTheme = null;
     _themeColumnSupported = true;
     showAmountsOnLockScreen = false;
+    gizleDugmesi = false;
   }
 
   /// Native taraftan gelen push token'ını dinlemeye başlar.
@@ -829,6 +836,7 @@ class LiveActivityService {
           // Oturumun SABİT özniteliği (bkz. `SandikActivityAttributes
           // .gozAlici`): yalnız 'start'ta okunur, sunucu push'u ezmez.
           'gozAlici': RemoteConfigService.instance.gozAlici,
+          'gizleDugmesi': gizleDugmesi,
         },
       );
 

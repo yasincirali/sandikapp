@@ -2400,6 +2400,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // provider okuyamaz (Riverpod'a bağlı değil, singleton).
     final la = LiveActivityService.instance;
     la.showAmountsOnLockScreen = ref.read(lockScreenAmountsProvider);
+    // Ada'daki "Tutarı gizle" düğmesi Premium (2026-11-15); paywall
+    // kapalıyken kimse kilitli değildir, düğme herkese.
+    la.gizleDugmesi = !ref.read(premiumKilitliProvider);
     la.startMinute = ref.read(liveActivityStartProvider);
     la.endMinute = ref.read(liveActivityEndProvider);
     la.includeWeekend = ref.read(liveActivityWeekendProvider);
