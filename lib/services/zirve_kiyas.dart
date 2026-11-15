@@ -522,6 +522,60 @@ abstract final class ZirveKiyas {
     return l;
   }
 
+  /// Zirve portföyünde olup kullanıcıda olmayan en büyük [enFazla] açık
+  /// kalem, büyükten küçüğe (Ar-Ge 2026-11-15 #2: "Seninle ortak" iki
+  /// yönlü). Yeni istek yok: [ortakKalemler] ile aynı haritalar. Kilitli
+  /// (`?n`) ve [fonDiger] kalemler sayılmaz — sembolü bilinmeyen kalem
+  /// "sende yok" diye listelenemez. Kullanıcıda payı 0 olan kalem "yok".
+  static List<({String tur, String kod, double pay})> ondaOlupSendeOlmayan({
+    required Map<String, double> senFon,
+    required Map<String, Map<String, double>> senVarlik,
+    required Map<String, double> zirveFon,
+    required Map<String, Map<String, double>> zirveVarlik,
+    int enFazla = 3,
+  }) {
+    bool sendeVar(String tur, String kod) => tur == 'fon'
+        ? (senFon[kod] ?? 0) > 0
+        : (senVarlik[tur]?[kod] ?? 0) > 0;
+    return [
+      for (final e in tumKalemler(zirveFon, zirveVarlik))
+        if (!kilitliMi(e.kod) && !sendeVar(e.tur, e.kod)) e,
+    ].take(enFazla).toList();
+  }
+
+  /// Vitrinde (Premium değilken) herkese açık en büyük kalem kullanıcıda da
+  /// varsa o ortak kalem; yoksa null (Ar-Ge 2026-11-15 #3). Sunucu vitrini
+  /// en büyük kalemi açık, gerisini `?n` gönderir; "en büyük açık kalem"
+  /// zirvenin maskesiz kalemlerinin en büyüğüdür. Sayı uydurulmaz: iki pay
+  /// da gerçek, ortaklar listesinde yoksa cümle çıkmaz.
+  static ({String tur, String kod, double sen, double zirve})? vitrinOrtagi({
+    required Map<String, double> zirveFon,
+    required Map<String, Map<String, double>> zirveVarlik,
+    required List<({String tur, String kod, double sen, double zirve})> ortak,
+  }) {
+    final acik = tumKalemler(zirveFon, zirveVarlik)
+        .where((e) => !kilitliMi(e.kod))
+        .firstOrNull;
+    if (acik == null) return null;
+    return ortak
+        .where((o) => o.tur == acik.tur && o.kod == acik.kod)
+        .firstOrNull;
+  }
+
+  /// Kilitli "Seninle ortak"taki yarım sonuç: "Ortak varlıklarından biri
+  /// THYAO: sende %12, onda %21". "Gerisi Premium'da" yalnız benzerlik bu
+  /// kalemin ortak payından büyükse (başka ortak kalem gerçekten varsa)
+  /// eklenir — sayım tahmini yapılmaz.
+  static String vitrinOrtagiCumlesi(
+      ({String tur, String kod, double sen, double zirve}) o,
+      {required double benzerlik}) {
+    final ad = o.tur == 'fon' ? o.kod : varlikAdi(o.kod);
+    final ortakPay = o.sen < o.zirve ? o.sen : o.zirve;
+    final gerisi = benzerlik - ortakPay > 0.1;
+    return 'Ortak varlıklarından biri $ad: sende ${pay(o.sen)}, '
+        'onda ${pay(o.zirve)}${gerisi ? " · Gerisi Premium'da" : ''}';
+  }
+
   /// "Seninle %24 benzer: aynı varlıkların ortak payı." / ortak yoksa
   /// "Seninle ortak varlığı yok."
   static String benzerlikCumlesi(double b) => b < 0.05
