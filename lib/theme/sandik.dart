@@ -2110,54 +2110,58 @@ class SandikSectionHeader extends StatelessWidget {
   }
 }
 
-/// Tam ekran loading — yükleme işareti + "sandık" yazısı. Ekran ilk
-/// açılışında kullan.
+/// Tam ekran açılış/yükleme karesi — ekranın tam ortasında tek işaret.
 ///
 /// Zemin moda duyarlıdır ([SandikPalette.background]). İşaret vektördür
 /// ([YuklemeIsareti], 2026-09-24): eski GIF 2,8 kat büyütülünce kenarı
-/// bulanık bant + köşeleri basamak oluyor, koyu zeminde "çerçeve" gibi
-/// görünüyordu (gerekçe ve ölçüm `yukleme_isareti.dart`). Eski `_showGif`
-/// kare gecikmesi ve 220 ms fade GIF'in ilk karesinin hazır olmasını
-/// bekliyordu; vektör ilk karede çizildiği için ikisi de kalktı.
-/// [CustomLoadingIndicator] aynı widget'ı kullanır — açılıştaki görsel ile
-/// uygulama içi gösterge birebir aynı.
+/// bulanık bant + köşeleri basamak oluyordu (gerekçe `yukleme_isareti.dart`).
+///
+/// **Tek tip açılış (yasin 2026-11-15).** Sistemin açılış görseli, bu kare
+/// ve kilit ekranı ([LockScreen]) aynı işareti aynı boyda, aynı noktada
+/// çizer ([YuklemeIsareti.acilis]); Face ID'li ve Face ID'siz kullanıcı
+/// aynı açılışı görür. Önceden işaretin altında "sandık" yazısı vardı ve
+/// sütun ortalandığı için işaret yukarı kayıktı; sistem görseli (ortada
+/// uygulama simgesi) ile ilk Flutter karesi arasında görsel zıplıyordu.
+/// Yazı kalktı: kare sade, marka işaretin kendisi.
+///
+/// [alt] işareti KAYDIRMADAN altta durur (kilit ekranının düğmeleri):
+/// işaret her zaman ekranın ortasında kalır.
 class SandikLoadingScreen extends StatelessWidget {
-  const SandikLoadingScreen({super.key});
+  const SandikLoadingScreen({super.key, this.alt, this.isaretEtiketi});
 
-  /// Geniş ekranda logonun tasarım ölçüsü; dar ekranda yukarıdan sınırlanır.
-  static const double _logoSize = 140;
+  /// Ekranın altında, güvenli alan içinde duran içerik; null = yok.
+  final Widget? alt;
+
+  /// İşaretin erişilebilirlik etiketi (kilit ekranı "sandık kilitli" der).
+  final String? isaretEtiketi;
 
   @override
   Widget build(BuildContext context) {
-    // Dar ekran / büyük yazı tipi telafisi: 140 sabit kalırsa küçük
-    // cihazlarda logo + wordmark dikeyde taşar. Kısa kenarın %36'sı ile
-    // sınırlanır, böylece geniş ekranda tasarım ölçüsünde (140) kalır,
-    // dar ekranda orantılı küçülür.
-    final shortestSide = MediaQuery.sizeOf(context).shortestSide;
-    final size = math.min(_logoSize, shortestSide * 0.36);
-
+    final isaret = Center(
+      child: Semantics(
+        label: isaretEtiketi,
+        image: isaretEtiketi != null,
+        excludeSemantics: true,
+        child: const YuklemeIsareti.acilis(),
+      ),
+    );
     final scaffold = Scaffold(
       backgroundColor: context.c.background,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            YuklemeIsareti(size: size, golgeli: true),
-            const SizedBox(height: SandikSpace.lg),
-            Text(
-              'sandık',
-              style: sandikFont(
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                // Moda duyarlı: light palette'te `gold` koyu kahveye iner
-                // (10.98:1). Dark `gold` sabiti açık zeminde okunmuyordu.
-                color: context.c.gold,
-                letterSpacing: -0.5,
-              ),
+      body: alt == null
+          ? isaret
+          : Stack(
+              children: [
+                Positioned.fill(child: isaret),
+                Positioned.fill(
+                  child: SafeArea(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: alt,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
     );
 
     // Durum çubuğu ikonları splash zemininin TERSİ olmalı. Bu, AppBar'ı

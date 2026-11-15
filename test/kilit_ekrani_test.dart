@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_auth/local_auth.dart';
@@ -5,6 +7,7 @@ import 'package:portfoy_takip/l10n/generated/app_localizations.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/screens/lock_screen.dart';
 import 'package:portfoy_takip/services/biometric_lock_service.dart';
+import 'package:portfoy_takip/theme/yukleme_isareti.dart';
 
 /// Kilit ekranı bir daha DONMAZ.
 ///
@@ -139,7 +142,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(cikildi, isFalse);
-      expect(find.text(l.lockTitle), findsOneWidget,
+      // Başlık 2026-11-15'ten beri görünür metin değil, işaretin
+      // erişilebilirlik etiketi (kilit ekranı açılış karesinin aynısı).
+      expect(find.bySemanticsLabel(l.lockTitle), findsOneWidget,
           reason: 'kilit ekranında kalınmalı');
     });
 
@@ -203,6 +208,34 @@ void main() {
           cevir(LocalAuthExceptionCode.unknownError), BiyometrikSonuc.hata);
     });
   });
+
+  // Tek tip açılış (yasin 2026-11-15): "ilk açılış splash ekranı Face ID'li
+  // ve Face ID'siz kullanıcıda tutarlı, sade ve tek tip olmalı".
+  group('kilit ekranı açılış karesinin aynısı', () {
+    testWidgets('istem açıkken yalnız işaret görünür, ortada ve açılış boyunda',
+        (tester) async {
+      final c = Completer<BiyometrikSonuc>();
+      _SahteKilit.bekle = c;
+      addTearDown(() => _SahteKilit.bekle = null);
+      await ekraniAc(tester);
+      await tester.pump();
+
+      final r = tester.getRect(find.byType(YuklemeIsareti));
+      final ekran = tester.view.physicalSize / tester.view.devicePixelRatio;
+      expect(r.width, YuklemeIsareti.acilisBoyu);
+      expect(r.center, Offset(ekran.width / 2, ekran.height / 2));
+      // Düğmeler ağaçta ama görünmez, dokunulmaz ve okunmaz.
+      expect(find.text(l.unlock).hitTestable(), findsNothing);
+      expect(find.bySemanticsLabel(l.lockSwitchAccount), findsNothing);
+
+      c.complete(BiyometrikSonuc.iptal);
+      await tester.pumpAndSettle();
+      expect(find.text(l.unlock).hitTestable(), findsOneWidget,
+          reason: 'iptalden sonra tekrar deneme ve çıkış aynı ekranda belirir');
+      expect(tester.getRect(find.byType(YuklemeIsareti)), r,
+          reason: 'düğmeler belirince işaret yerinden oynamaz');
+    });
+  });
 }
 
 class _SahteKilit extends BiometricLockService {
@@ -210,6 +243,9 @@ class _SahteKilit extends BiometricLockService {
 
   static BiyometrikSonuc sonuc = BiyometrikSonuc.iptal;
   static bool firlat = false;
+
+  /// Doluysa istem bu tamamlanana dek açık kalır (sistem Face ID sayfası).
+  static Completer<BiyometrikSonuc>? bekle;
 
   @override
   Future<bool> get available async => true;
@@ -221,6 +257,8 @@ class _SahteKilit extends BiometricLockService {
       throw const LocalAuthException(
           code: LocalAuthExceptionCode.unknownError);
     }
+    final b = bekle;
+    if (b != null) return b.future;
     return sonuc;
   }
 }

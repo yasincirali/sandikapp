@@ -180,7 +180,16 @@ class YuklemeIsaretiPainter extends CustomPainter {
 /// (iOS HIG: hareket tercihi yok sayılmaz). Ayar oturum içinde değişirse
 /// `didChangeDependencies` sayacı durdurur/başlatır.
 class YuklemeIsareti extends StatefulWidget {
-  const YuklemeIsareti({super.key, required this.size, this.golgeli = false});
+  const YuklemeIsareti(
+      {super.key, required this.size, this.golgeli = false})
+      : acilis = false;
+
+  /// Açılış karesinin işareti: sabit boy, gölgesiz (yerel görselde gölge
+  /// yok ve iki temada aynı görsel kullanılıyor), ortak dalga saati.
+  const YuklemeIsareti.acilis({super.key})
+      : size = acilisBoyu,
+        golgeli = false,
+        acilis = true;
 
   /// Açık zeminde işaretin altına yumuşak gölge düşsün mü? Açılış ekranı
   /// gibi büyük, tek başına duran işaret için; satır içi küçük göstergede
@@ -195,6 +204,31 @@ class YuklemeIsareti extends StatefulWidget {
   /// bu bayrak aynı davranışı AÇIK hâle getirir. Sayacın kendisini sınayan
   /// test bayrağı geçici olarak `true` yapar (`yukleme_isareti_test`).
   static bool hareketli = true;
+
+  /// Açılış karesindeki işaretin boyu (mantıksal pt/dp).
+  ///
+  /// yasin 2026-11-15 ("ilk açılış splash ekranı Face ID'li ve Face ID'siz
+  /// kullanıcıda tutarlı, sade ve tek tip olmalı"): sistemin açılış görseli
+  /// (iOS `LaunchImage`, Android `splash_icon`), uygulamanın açılış ekranı
+  /// ve kilit ekranı AYNI işareti AYNI boyda ve ekranın tam ortasında
+  /// gösterir; geçişlerde hiçbir şey zıplamaz. Önceden sistem görseli
+  /// 144 pt'lik uygulama simgesi, Flutter karesi 140 pt'lik işaret + altında
+  /// "sandık" yazısıydı (işaret yukarı kayıktı).
+  ///
+  /// Değişirse yerel görseller yeniden üretilir:
+  /// `flutter test tool/acilis_gorseli_uret_test.dart`
+  /// (`acilis_karesi_tek_tip_test` boyları denetler).
+  static const double acilisBoyu = 112;
+
+  /// Açılış işaretlerinin ortak dalga saati. Açılış ekranı → kilit ekranı
+  /// → açılış ekranı geçişinde her kare yeni bir işaret kurar; kendi
+  /// sayacı sıfırdan başlasaydı dalga her geçişte geri sıçrardı. İlk
+  /// açılış işareti saati başlatır (faz 0 = yerel görselin karesi), sonraki
+  /// işaretler aynı saatten devam eder.
+  static DateTime? _ortakSaatBasi;
+
+  /// Açılış karesi işareti mi ([acilisBoyu] + ortak dalga saati).
+  final bool acilis;
 
   final double size;
 
@@ -217,6 +251,13 @@ class _YuklemeIsaretiState extends State<YuklemeIsareti>
         ..stop()
         ..value = 0;
     } else if (!_sayac.isAnimating) {
+      if (widget.acilis) {
+        final simdi = DateTime.now();
+        final bas = YuklemeIsareti._ortakSaatBasi ??= simdi;
+        final dongu = YuklemeIsaretiSabitleri.dongu.inMicroseconds;
+        _sayac.value =
+            (simdi.difference(bas).inMicroseconds % dongu) / dongu;
+      }
       _sayac.repeat();
     }
   }

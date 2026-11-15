@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/theme/yukleme_isareti.dart';
 
 /// Açılış ekranı light mode + dar ekran davranışı.
 ///
@@ -33,9 +34,9 @@ void main() {
     return tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor!;
   }
 
-  Color wordmarkColor(WidgetTester tester) {
-    return tester.widget<Text>(find.text('sandık')).style!.color!;
-  }
+  // "sandık" yazısı 2026-11-15'te kalktı (tek tip açılış: sistem görseli
+  // ile aynı tek işaret); yazının renk testleri işaretin konum/boy
+  // testine dönüştü (aşağıda).
 
   /// Gerçek uygulama zinciri: cihaz parlaklığı → `ThemeMode.system` →
   /// `MaterialApp.theme/darkTheme` → splash. Yukarıdaki [harness] temayı
@@ -73,26 +74,12 @@ void main() {
       );
     });
 
-    testWidgets('light modda wordmark okunur tonda olmalı', (tester) async {
-      await tester.pumpWidget(
-        harness(brightness: Brightness.light, size: const Size(390, 844)),
-      );
-
-      expect(
-        wordmarkColor(tester),
-        SandikPalette.light.gold,
-        reason: 'Dark `gold` (#D4A24C) açık zeminde okunmuyordu; light '
-            'palette karşılığı koyu kahvedir.',
-      );
-    });
-
     testWidgets('dark modda koyu palet korunur (regresyon)', (tester) async {
       await tester.pumpWidget(
         harness(brightness: Brightness.dark, size: const Size(390, 844)),
       );
 
       expect(scaffoldBackground(tester), SandikPalette.dark.background);
-      expect(wordmarkColor(tester), SandikPalette.dark.gold);
     });
   });
 
@@ -108,7 +95,6 @@ void main() {
         reason: 'Kullanıcı şikâyeti: cihaz/IDE light iken splash koyu '
             'açılıyordu. Tema modu varsayılanı `system` olmalı.',
       );
-      expect(wordmarkColor(tester), SandikPalette.light.gold);
     });
 
     testWidgets('cihaz DARK ise splash koyu gelir', (tester) async {
@@ -117,7 +103,6 @@ void main() {
       );
 
       expect(scaffoldBackground(tester), SandikPalette.dark.background);
-      expect(wordmarkColor(tester), SandikPalette.dark.gold);
     });
   });
 
@@ -171,31 +156,22 @@ void main() {
       });
     }
 
-    testWidgets('logo dar ekranda küçülür, geniş ekranda tasarım ölçüsünde kalır',
-        (tester) async {
-      Future<double> logoBoxWidth(Size size) async {
+    testWidgets(
+        'işaret her ekranda açılış boyunda ve tam ortada (sistem görseliyle '
+        'birebir, yasin 2026-11-15)', (tester) async {
+      for (final size in const [Size(320, 480), Size(430, 932)]) {
         await tester.pumpWidget(
           harness(brightness: Brightness.light, size: size),
         );
-        // Wordmark'tan önceki kare kutu — GIF yuvası.
-        final box = tester.widget<SizedBox>(
-          find
-              .descendant(
-                of: find.byType(Column),
-                matching: find.byType(SizedBox),
-              )
-              .first,
-        );
-        return box.width!;
+        final r = tester.getRect(find.byType(YuklemeIsareti));
+        expect(r.width, YuklemeIsareti.acilisBoyu);
+        expect(r.height, YuklemeIsareti.acilisBoyu);
+        final ekran = tester.getRect(find.byType(Scaffold));
+        expect(r.center, ekran.center,
+            reason: 'Sistem açılış görseli ekranın tam ortasında; işaret '
+                'kayarsa ilk Flutter karesinde zıplar.');
+        expect(find.text('sandık'), findsNothing);
       }
-
-      final wide = await logoBoxWidth(const Size(430, 932));
-      final narrow = await logoBoxWidth(const Size(320, 480));
-
-      expect(wide, 140,
-          reason: 'Geniş ekranda tasarım ölçüsü korunmalı.');
-      expect(narrow, lessThan(wide),
-          reason: 'Dar ekranda logo kısa kenara göre küçülmeli.');
     });
   });
 

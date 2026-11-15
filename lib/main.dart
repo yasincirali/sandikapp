@@ -2453,6 +2453,43 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     );
   }
 
+  /// Kilit ekranı (soğuk açılış ve öne dönüş kilidi). Görünüşü açılış
+  /// karesinin aynısı (bkz. [LockScreen], [SandikLoadingScreen]).
+  Widget _kilitEkrani(AppUser user) {
+    _lockAtLaunchFor = user.id;
+    _locked = true;
+    _kilitDurumu(true);
+    return LockScreen(
+      key: const ValueKey('lock'),
+      onUnlocked: () {
+        // Cihazın sahibi doğrulandı: hesap geçişinde yeni kapı kilidi
+        // ikinci kez sormaz (bkz. `HesapGecisi.cihazDogrulandi`).
+        HesapGecisi.instance.cihazDogrulandi = true;
+        setState(() => _locked = false);
+      },
+      // Cihaz artık kimseyi doğrulayamıyorsa (ekran kilidi kaldırılmış)
+      // kilit koruma sağlamıyor, yalnızca sahibini dışarıda tutuyor.
+      // Tercihi kapat ve içeri al — bkz. `LockScreen` dokümanı.
+      onKilidiKapat: () async {
+        await ref.read(biometricLockProvider.notifier).set(false);
+        if (mounted) setState(() => _locked = false);
+      },
+      // Başka hesaba geçiş. Zaman aşımı artık çıkış değil KİLİT
+      // uyguladığından (yukarıdaki iki dal) kullanıcı hep kendi
+      // oturumuna dönüyor; bu düğme olmadan başka hesaba geçmek için
+      // önce Face ID'den geçmek gerekiyordu. Kilidi açmaz — oturumu
+      // siler ve giriş ekranına döner.
+      onCikisYap: () async {
+        await ref.read(authProvider.notifier).logout();
+        if (!mounted) return;
+        setState(() {
+          _locked = false;
+          _lockAtLaunchFor = null; // sıradaki kullanıcı için yeniden sorulsun
+        });
+      },
+    );
+  }
+
   /// Hangi ekranın gösterileceğine karar verir. Sıra ve koşullar
   /// değiştirilmemelidir — auth/disclaimer/onboarding kapıları bu sıraya bağlı.
   Widget _resolveScreen(AsyncValue<AppUser?> auth, AppUser? user) {
@@ -2491,6 +2528,24 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // Emniyet supabı: veri gelmezse (ağ yok, hata) splash'te takılı kalma —
     // `_dataWaitExpired` sonrası ana ekrana geç, HomeScreen kendi hata/boş
     // durumunu gösterir.
+    // Kilit veri beklemesinden ÖNCE (yasin 2026-11-15, tek tip açılış).
+    // Eskiden Face ID'li kullanıcı önce verinin gelmesini açılış karesinde
+    // bekliyor, sonra AYRI bir kilit sayfası görüyor, Face ID'den sonra
+    // ana sayfaya geçiyordu: iki bekleme, iki ayrı ekran. Şimdi kilit
+    // açılış karesinin aynısıdır ve istem verinin yüklenmesiyle paralel
+    // çıkar (`_veriHazir()` yukarıda izlenmeye devam eder). Kilit açılınca
+    // veri hâlâ gelmediyse aşağıdaki kapı aynı kareyi göstermeyi sürdürür;
+    // kilitsiz kullanıcı ile aynı geçişle ana sayfaya girilir. Yasal kapı
+    // ve tur bu sıradan etkilenmez (ikisi de geçilmiş olmalı); ad kapısı
+    // zaten kilidi bekliyordu.
+    if (user != null &&
+        _yasalKapilarGecildi &&
+        _onboardingDone == true &&
+        (_locked ||
+            (_lockAtLaunchFor != user.id && _lockAtLaunchNeeded()))) {
+      return _kilitEkrani(user);
+    }
+
     if (user != null &&
         _yasalKapilarGecildi &&
         _onboardingDone == true &&
@@ -2610,38 +2665,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // Soğuk açılış: kilit tercihi açıksa ana ekran kurulmadan önce kilit.
     // Kullanıcı değişince (`_checkedUserId`) yeniden değerlendirilir.
     if (_locked || (_lockAtLaunchFor != user.id && _lockAtLaunchNeeded())) {
-      _lockAtLaunchFor = user.id;
-      _locked = true;
-      _kilitDurumu(true);
-      return LockScreen(
-        key: const ValueKey('lock'),
-        onUnlocked: () {
-          // Cihazın sahibi doğrulandı: hesap geçişinde yeni kapı kilidi
-          // ikinci kez sormaz (bkz. `HesapGecisi.cihazDogrulandi`).
-          HesapGecisi.instance.cihazDogrulandi = true;
-          setState(() => _locked = false);
-        },
-        // Cihaz artık kimseyi doğrulayamıyorsa (ekran kilidi kaldırılmış)
-        // kilit koruma sağlamıyor, yalnızca sahibini dışarıda tutuyor.
-        // Tercihi kapat ve içeri al — bkz. `LockScreen` dokümanı.
-        onKilidiKapat: () async {
-          await ref.read(biometricLockProvider.notifier).set(false);
-          if (mounted) setState(() => _locked = false);
-        },
-        // Başka hesaba geçiş. Zaman aşımı artık çıkış değil KİLİT
-        // uyguladığından (yukarıdaki iki dal) kullanıcı hep kendi
-        // oturumuna dönüyor; bu düğme olmadan başka hesaba geçmek için
-        // önce Face ID'den geçmek gerekiyordu. Kilidi açmaz — oturumu
-        // siler ve giriş ekranına döner.
-        onCikisYap: () async {
-          await ref.read(authProvider.notifier).logout();
-          if (!mounted) return;
-          setState(() {
-            _locked = false;
-            _lockAtLaunchFor = null; // sıradaki kullanıcı için yeniden sorulsun
-          });
-        },
-      );
+      return _kilitEkrani(user);
     }
 
     _kilitDurumu(false);
