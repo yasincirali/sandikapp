@@ -1147,6 +1147,34 @@ class AppLocalizationsTr extends AppLocalizations {
   String get gecmisFiyatlarKilitli => 'Geçmiş fiyat tablosu Premium\'da';
 
   @override
+  String gecmisFiyatlarKilitliOzet(String donem, String sayi, String tarih) {
+    return '$donem · $sayi kapanış · en yüksek $tarih · tablo Premium\'da';
+  }
+
+  @override
+  String gecmisFiyatlarSonAlis(String tarih, String pct) {
+    return 'Son alışın $tarih · o günden beri $pct';
+  }
+
+  @override
+  String gecmisFiyatlarAlis(String miktar) {
+    return 'Alış · $miktar';
+  }
+
+  @override
+  String gecmisFiyatlarSatis(String miktar) {
+    return 'Satış · $miktar';
+  }
+
+  @override
+  String get gecmisFiyatlarAlisSatis => 'Alış ve satış';
+
+  @override
+  String gecmisFiyatlarIslemA11y(String satir, String islem) {
+    return '$satir. Senin işlem günün: $islem';
+  }
+
+  @override
   String get gecmisFiyatlarBaslik => 'Geçmiş fiyatlar';
 
   @override
@@ -11378,6 +11406,21 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String toughestDaySinceA11y(String satir, String pct, String degisim) {
     return '$satir, $pct. O günden beri değişim $degisim.';
+  }
+
+  @override
+  String bestDayMover(String ad, String tutar) {
+    return 'O gün en çok taşıyan: $ad $tutar';
+  }
+
+  @override
+  String toughestDayMover(String ad, String tutar) {
+    return 'O gün en çok düşüren: $ad $tutar';
+  }
+
+  @override
+  String dayRowA11y(String satir, String pct) {
+    return '$satir, $pct.';
   }
 
   @override

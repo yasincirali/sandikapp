@@ -149,7 +149,15 @@ class DonemGunu {
   /// ve satır çizilmez.
   final double? oGundenBeriPct;
 
-  const DonemGunu(this.gun, this.pct, {this.oGundenBeriPct});
+  /// O gün portföyü en çok taşıyan (en iyi gün) ya da en çok düşüren (en
+  /// zor gün) pozisyonun adı ve TL etkisi (Ar-Ge 15 Kas #2): "−%4,2"
+  /// nedeniyle dursun. Hesap [PeriodSummaryService.gunEnCokEtkileyen];
+  /// ölçülemezse ikisi de `null` ve satır çizilmez (isim uydurulmaz).
+  final String? etkileyen;
+  final double? etkileyenTRY;
+
+  const DonemGunu(this.gun, this.pct,
+      {this.oGundenBeriPct, this.etkileyen, this.etkileyenTRY});
 }
 
 /// Bir dönemin özeti.
@@ -807,12 +815,19 @@ class PeriodSummaryService {
   /// En iyi gün eksi olabilir (hiç artı gün yoksa); işaret olduğu gibi
   /// taşınır, metin ekranda dürüst kalır. En iyi ile en zor aynı günse
   /// (eşit oranlar) yalnız en iyi döner.
+  ///
+  /// [byPosition] + [etiket] verilirse her iki güne o günün en çok
+  /// etkileyen pozisyonu eklenir ([gunEnCokEtkileyen]; aynı `breakdown`,
+  /// yeni istek yok). [etiket] yoksa eklenmez: ham `positionKey`
+  /// ("altin|sub:çeyrek|TRY") ekrana çıkmasın.
   static ({DonemGunu enIyi, DonemGunu? enZor})? enIyiEnZorGun(
     Map<int, double> total, {
     required List<Asset> lotlar,
     required int fromMs,
     required int toMs,
     required DateTime bugun,
+    Map<String, Map<int, double>> byPosition = const {},
+    String Function(String positionKey)? etiket,
   }) {
     if (total.isEmpty) return null;
     final bugunMs = dayKey(bugun).millisecondsSinceEpoch;
@@ -837,6 +852,9 @@ class PeriodSummaryService {
     ]..sort((a, b) => a.ms.compareTo(b.ms));
 
     final olculen = <DonemGunu>[];
+    // Gün → (önceki kapanış damgası, o günün kapanış damgası): en çok
+    // etkileyen pozisyon AYNI iki slot arasında ölçülür.
+    final damgalar = <DateTime, ({int onceki, int simdi})>{};
     for (var i = 1; i < gunler.length; i++) {
       final gun = gunler[i];
       if (gun >= bugunMs) break;
@@ -853,8 +871,9 @@ class PeriodSummaryService {
       if (piyasa.abs() < 0.005) continue;
       final oran = (simdi.v - akis) / onceki.v;
       if (oran <= 0) continue;
-      olculen.add(DonemGunu(
-          DateTime.fromMillisecondsSinceEpoch(gun), (oran - 1) * 100));
+      final g = DateTime.fromMillisecondsSinceEpoch(gun);
+      olculen.add(DonemGunu(g, (oran - 1) * 100));
+      damgalar[g] = (onceki: onceki.ts, simdi: simdi.ts);
     }
     if (olculen.length < enIyiGunAsgari) return null;
 
@@ -864,15 +883,91 @@ class PeriodSummaryService {
       if (g.pct > enIyi.pct) enIyi = g;
       if (g.pct < enZor.pct) enZor = g;
     }
-    if (identical(enIyi, enZor) || enZor.pct == enIyi.pct) {
-      return (enIyi: enIyi, enZor: null);
+    ({String ad, double tl})? etkileyen(DonemGunu g) {
+      final d = damgalar[g.gun];
+      if (etiket == null || byPosition.isEmpty || d == null) return null;
+      return gunEnCokEtkileyen(
+        byPosition: byPosition,
+        lotlar: lotlar,
+        oncekiTs: d.onceki,
+        simdiTs: d.simdi,
+        yon: g.pct,
+        etiket: etiket,
+      );
     }
+
+    final iyiEtki = etkileyen(enIyi);
+    final enIyiSonuc = DonemGunu(enIyi.gun, enIyi.pct,
+        etkileyen: iyiEtki?.ad, etkileyenTRY: iyiEtki?.tl);
+    if (identical(enIyi, enZor) || enZor.pct == enIyi.pct) {
+      return (enIyi: enIyiSonuc, enZor: null);
+    }
+    final zorEtki = etkileyen(enZor);
     return (
-      enIyi: enIyi,
+      enIyi: enIyiSonuc,
       enZor: DonemGunu(enZor.gun, enZor.pct,
           oGundenBeriPct: oGundenBeriPct(total,
-              lotlar: lotlar, gun: enZor.gun, fromMs: fromMs, toMs: toMs)),
+              lotlar: lotlar, gun: enZor.gun, fromMs: fromMs, toMs: toMs),
+          etkileyen: zorEtki?.ad,
+          etkileyenTRY: zorEtki?.tl),
     );
+  }
+
+  /// Bir günün ([oncekiTs], [simdiTs]] aralığında portföyü [yon] yönünde
+  /// en çok hareket ettiren pozisyon ve TL etkisi — "O gün en çok düşüren:
+  /// THYAO −₺1.240" (Ar-Ge 15 Kas #2). Saf.
+  ///
+  /// Etki = pozisyonun iki slottaki değer farkı − aradaki akışı
+  /// ([gunlukAkis]: alım +, satış −; [enIyiEnZorGun] ile aynı kural), yani
+  /// o gün alınan pozisyonun alım tutarı "taşıdı" sayılmaz.
+  ///
+  /// Uydurma yok:
+  ///  · Bir slotta değeri olmayan pozisyon yalnız aradaki akış bunu
+  ///    açıklıyorsa (o gün alındı / tamamen satıldı) 0 sayılır; akışsız
+  ///    eksik slot veri boşluğudur, pozisyon ölçülmez (yoksa tüm değeri
+  ///    "o günün etkisi" görünürdü).
+  ///  · Yalnız günün yönünde etki yapan aday olur (düşen günde yükselen
+  ///    varlığı "düşüren" diye yazmak yanlış olurdu); |etki| ₺0,5'in
+  ///    altındaysa ("−₺0") aday yok.
+  /// Aday yoksa `null`.
+  static ({String ad, double tl})? gunEnCokEtkileyen({
+    required Map<String, Map<int, double>> byPosition,
+    required List<Asset> lotlar,
+    required int oncekiTs,
+    required int simdiTs,
+    required double yon,
+    required String Function(String positionKey) etiket,
+  }) {
+    if (yon == 0 || !yon.isFinite) return null;
+    final isaret = yon.sign;
+    String? enKey;
+    var enEtki = 0.0;
+    byPosition.forEach((key, seri) {
+      final v0 = seri[oncekiTs];
+      final v1 = seri[simdiTs];
+      if (v0 == null && v1 == null) return;
+      var alim = 0.0;
+      var satim = 0.0;
+      for (final l in lotlar) {
+        final ms = l.addedDate.millisecondsSinceEpoch;
+        if (ms <= oncekiTs || ms > simdiTs) continue;
+        if (positionKey(l) != key) continue;
+        final f = gunlukAkis(l);
+        if (f > 0) alim += f;
+        if (f < 0) satim += f;
+      }
+      if (v0 == null && alim == 0) return;
+      if (v1 == null && satim == 0) return;
+      final etki = (v1 ?? 0) - (v0 ?? 0) - (alim + satim);
+      if (!etki.isFinite) return;
+      final yonlu = etki * isaret;
+      if (yonlu >= 0.5 && yonlu > enEtki) {
+        enEtki = yonlu;
+        enKey = key;
+      }
+    });
+    final k = enKey;
+    return k == null ? null : (ad: etiket(k), tl: enEtki * isaret);
   }
 
   /// [gun]'ün kapanışından ([total]'ın o günkü SON ölçümü) pencerenin son
@@ -1488,7 +1583,12 @@ class PeriodSummaryService {
           : (canliDagilim.isEmpty ? null : canliDagilim),
       gunSayimi: gunSayimi(breakdown.total, fromMs: fromMs, toMs: toMs),
       enIyiEnZorGun: enIyiEnZorGun(breakdown.total,
-          lotlar: assets, fromMs: fromMs, toMs: toMs, bugun: now),
+          lotlar: assets,
+          fromMs: fromMs,
+          toMs: toMs,
+          bugun: now,
+          byPosition: breakdown.byPosition,
+          etiket: etiket),
       sparkline: [
         ...donemEgrisi,
         if (donemEgrisi.isNotEmpty && donemEgrisi.last != pe.son) pe.son,

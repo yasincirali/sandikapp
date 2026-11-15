@@ -480,10 +480,13 @@ String fmtTarih(DateTime t,
 /// yılından farklıysa eklenir ("28 Aralık 2025"): 3A penceresi yıl
 /// başını aşabiliyor ve yılsız "28 Aralık" hangi yılın günü belli etmez.
 /// Performans'ın "en iyi / en zor gün" satırı (2026-11-11).
-String fmtGunAy(DateTime t, {String dil = 'tr_TR', DateTime? bugun}) {
+/// [kisa] ay adını kısaltır ("3 Eki" / "Oct 3"): Geçmiş fiyatlar sayfasının
+/// tek satırlık özetleri (Ar-Ge 15 Kas #1, #3).
+String fmtGunAy(DateTime t,
+    {String dil = 'tr_TR', DateTime? bugun, bool kisa = false}) {
   final y = t.toLocal();
   final yilli = y.year != (bugun ?? DateTime.now()).year;
-  final ay = _ayAdi(y.month, dil, false);
+  final ay = _ayAdi(y.month, dil, kisa);
   if (dil.startsWith('en')) {
     return yilli ? '$ay ${y.day}, ${y.year}' : '$ay ${y.day}';
   }

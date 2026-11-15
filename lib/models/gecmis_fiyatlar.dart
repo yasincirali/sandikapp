@@ -16,7 +16,9 @@
 /// (bir önceki kapanışa) göredir; sayfanın dipnotu bunu söyler.
 library;
 
+import '../utils/islem_isaretleri.dart';
 import '../utils/tr_format.dart' show dayKey;
+import 'asset.dart';
 
 /// Tablonun bir satırı. [degisimPct] önceki kapanışa göre yüzde; önceki
 /// kapanış yoksa (dönemin ilk günü) ya da sıfır/negatifse `null`.
@@ -73,4 +75,95 @@ List<GunlukKapanis> gunlukKapanislar(
   }
   final yeniUstte = satirlar.reversed.toList();
   return yeniUstte.length > azami ? yeniUstte.sublist(0, azami) : yeniUstte;
+}
+
+/// Bir takvim gününde kullanıcının bu varlıktaki alım/satımı — tablo
+/// satırındaki "Alış · 12 lot" etiketi (Ar-Ge 15 Kas #1).
+///
+/// [ornek] o günün bir lotu: birim ("lot", "pay", "gr") ve miktar biçimi
+/// `Asset.miktarMetni`'nden gelsin diye; ekran kendi birim kuralını kurmaz.
+class GunIslemi {
+  const GunIslemi({
+    required this.alisMiktar,
+    required this.satisMiktar,
+    required this.ornek,
+  });
+
+  final double alisMiktar;
+  final double satisMiktar;
+  final Asset ornek;
+
+  bool get alis => alisMiktar > 0;
+  bool get satis => satisMiktar > 0;
+}
+
+/// [lotlar] → takvim günü (00:00) → o günün alım/satımı. Saf.
+///
+/// Hangi lotun işlem sayıldığı GRAFİĞİN işaretleriyle aynı kuraldan gelir
+/// ([islemIsaretleri]: temettü, silinmiş lot, birim fiyatı olmayan lot
+/// işaret üretmez) — grafikte noktası olmayan gün tabloda etiket almasın.
+/// Eksen başı epoch: tablo tarihle eşleştirir, X ekseni kullanılmaz; gün
+/// lotun KENDİ tarihidir (işaretin eksene yaslanmış x'i değil).
+Map<DateTime, GunIslemi> islemGunleri(List<Asset> lotlar) {
+  if (lotlar.isEmpty) return const {};
+  final isaretler = islemIsaretleri(
+    lotlar: lotlar,
+    eksenBasi: DateTime.fromMillisecondsSinceEpoch(0),
+    ilkX: 0,
+    sonX: double.infinity,
+  );
+  final out = <DateTime, GunIslemi>{};
+  for (final m in isaretler) {
+    final gun = dayKey(m.lot.addedDate.toLocal());
+    final eski = out[gun];
+    final q = m.lot.quantity.abs();
+    out[gun] = GunIslemi(
+      alisMiktar: (eski?.alisMiktar ?? 0) + (m.satis ? 0 : q),
+      satisMiktar: (eski?.satisMiktar ?? 0) + (m.satis ? q : 0),
+      ornek: eski?.ornek ?? m.lot,
+    );
+  }
+  return out;
+}
+
+/// Sayfa başındaki "Son alışın 3 Eki · o günden beri +%8,4" (Ar-Ge 15 Kas
+/// #1). [satirlar] TAM liste, en yeni üstte ([gunlukKapanislar], kesilmemiş);
+/// [islemler] [islemGunleri]. Saf.
+///
+/// Uydurma yok: son alış günü serinin bir kapanış satırı değilse (dönemden
+/// önce, hafta sonu, tatil) yakın bir günün fiyatı ödünç alınmaz, `null`.
+/// Daha eski bir alışa da düşülmez — "son alışın" gerçekten son alış.
+/// Son alış bugünün (en yeni satırın) günüyse ölçülecek bir "o günden beri"
+/// yok, `null`.
+({DateTime gun, double pct})? sonAlistanBeri(
+  List<GunlukKapanis> satirlar,
+  Map<DateTime, GunIslemi> islemler,
+) {
+  if (satirlar.length < 2) return null;
+  DateTime? son;
+  islemler.forEach((gun, i) {
+    if (i.alis && (son == null || gun.isAfter(son!))) son = gun;
+  });
+  final s = son;
+  if (s == null || !s.isBefore(satirlar.first.gun)) return null;
+  for (final r in satirlar) {
+    if (r.gun == s) {
+      return (gun: s, pct: (satirlar.first.kapanis / r.kapanis - 1) * 100);
+    }
+  }
+  return null;
+}
+
+/// Ücretsiz kilit satırının yarım sonucu (Ar-Ge 15 Kas #3): dönemdeki
+/// kapanış sayısı ve en yüksek kapanışın GÜNÜ — fiyatlar kilitli kalır.
+/// [seri] grafiğin serisi; sayım 60 satırlık kesimden ÖNCE (dönemin hepsi).
+/// En yüksek eşitse en yenisi. Kapanış yoksa `null` (eski metin). Saf.
+({int sayi, DateTime enYuksekGun})? kilitOzeti(Map<int, double> seri) {
+  final tum = gunlukKapanislar(seri, azami: 1 << 30);
+  if (tum.isEmpty) return null;
+  var enYuksek = tum.first; // en yeni üstte: eşitlikte yenisi kalır
+  for (final r in tum) {
+    if (r.kapanis > enYuksek.kapanis) enYuksek = r;
+  }
+  return (sayi: tum.length, enYuksekGun: enYuksek.gun);
 }

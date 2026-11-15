@@ -2006,6 +2006,42 @@ abstract class AppLocalizations {
   /// **'Geçmiş fiyat tablosu Premium\'da'**
   String get gecmisFiyatlarKilitli;
 
+  /// Ücretsiz kilit satırı: seriden gerçek kapanış sayısı ve en yüksek kapanışın günü; fiyatlar kilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{donem} · {sayi} kapanış · en yüksek {tarih} · tablo Premium\'da'**
+  String gecmisFiyatlarKilitliOzet(String donem, String sayi, String tarih);
+
+  /// Geçmiş fiyatlar sayfasının başı: son alış günü ve o günün kapanışından bugüne fiyat değişimi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son alışın {tarih} · o günden beri {pct}'**
+  String gecmisFiyatlarSonAlis(String tarih, String pct);
+
+  /// No description provided for @gecmisFiyatlarAlis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alış · {miktar}'**
+  String gecmisFiyatlarAlis(String miktar);
+
+  /// No description provided for @gecmisFiyatlarSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satış · {miktar}'**
+  String gecmisFiyatlarSatis(String miktar);
+
+  /// No description provided for @gecmisFiyatlarAlisSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alış ve satış'**
+  String get gecmisFiyatlarAlisSatis;
+
+  /// No description provided for @gecmisFiyatlarIslemA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{satir}. Senin işlem günün: {islem}'**
+  String gecmisFiyatlarIslemA11y(String satir, String islem);
+
   /// No description provided for @gecmisFiyatlarBaslik.
   ///
   /// In tr, this message translates to:
@@ -18277,6 +18313,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{satir}, {pct}. O günden beri değişim {degisim}.'**
   String toughestDaySinceA11y(String satir, String pct, String degisim);
+
+  /// En iyi gün satırının altındaki gri satır: o gün portföyü en çok yükselten varlık ve TL etkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'O gün en çok taşıyan: {ad} {tutar}'**
+  String bestDayMover(String ad, String tutar);
+
+  /// En zor gün satırının altındaki gri satır: o gün portföyü en çok düşüren varlık ve TL etkisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'O gün en çok düşüren: {ad} {tutar}'**
+  String toughestDayMover(String ad, String tutar);
+
+  /// No description provided for @dayRowA11y.
+  ///
+  /// In tr, this message translates to:
+  /// **'{satir}, {pct}.'**
+  String dayRowA11y(String satir, String pct);
 
   /// Ücretsiz kullanıcıda en iyi gün kartı: yalnız tarih açık, yüzde kilitli.
   ///

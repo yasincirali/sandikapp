@@ -470,7 +470,10 @@ class PeriodSummaryView extends StatelessWidget {
       varliklar.insert(
           i + 1,
           _EnIyiGunKarti(
-              gunler: gunler, kilitli: enIyiGunKilitli, simdi: simdi));
+              gunler: gunler,
+              kilitli: enIyiGunKilitli,
+              simdi: simdi,
+              baz: baz));
     }
 
     final neden = <Widget>[
@@ -1187,11 +1190,18 @@ class _VarlikSatiri extends StatelessWidget {
 /// yok.
 class _EnIyiGunKarti extends StatelessWidget {
   const _EnIyiGunKarti(
-      {required this.gunler, required this.kilitli, this.simdi});
+      {required this.gunler,
+      required this.kilitli,
+      this.simdi,
+      this.baz = const BazPara.lira()});
 
   final ({DonemGunu enIyi, DonemGunu? enZor}) gunler;
   final bool kilitli;
   final DateTime? simdi;
+
+  /// "En çok düşüren: THYAO −₺1.240" tutarı ekranın baz biriminde ve
+  /// bakiye gizliyken maskeli (diğer kartların tutarlarıyla aynı nesne).
+  final BazPara baz;
 
   @override
   Widget build(BuildContext context) {
@@ -1221,6 +1231,7 @@ class _EnIyiGunKarti extends StatelessWidget {
         children: [
           _GunSatiri(
             gun: enIyi,
+            baz: baz,
             metin: enIyi.pct < 0
                 ? l.leastDownDayRow(tarih(enIyi))
                 : l.bestDayRow(tarih(enIyi)),
@@ -1229,6 +1240,7 @@ class _EnIyiGunKarti extends StatelessWidget {
             const SizedBox(height: SandikSpace.sm),
             _GunSatiri(
               gun: enZor,
+              baz: baz,
               metin: enZor.pct > 0
                   ? l.leastUpDayRow(tarih(enZor))
                   : l.toughestDayRow(tarih(enZor)),
@@ -1248,6 +1260,9 @@ class _EnIyiGunKarti extends StatelessWidget {
 /// Gün satırı. [DonemGunu.oGundenBeriPct] doluysa (yalnız en zor gün)
 /// etiketin altına tek gri satır: "O günden beri +%6,1" (sakinlik,
 /// 2026-11-12) — çıplak "−%4,2" o günün sonrasını da söylesin.
+/// [DonemGunu.etkileyen] doluysa bir gri satır daha: "O gün en çok
+/// düşüren: THYAO −₺1.240" / "… taşıyan: …" (Ar-Ge 15 Kas #2) — nedeni de
+/// söylesin. Aynı renksiz kural; ölçülemeyen gün satırsız.
 ///
 /// Alt satır bilerek RENKSİZ (ikincil metin rengi, kazanç/kayıp tonu yok):
 /// toparlanma kutlanmaz, toparlanmama da kırmızıyla vurgulanmaz; yön
@@ -1255,10 +1270,12 @@ class _EnIyiGunKarti extends StatelessWidget {
 /// .oGundenBeriPct]); burası yalnız biçimler. Ekran okuyucu satırı alt
 /// satırla birlikte tek cümle okur.
 class _GunSatiri extends StatelessWidget {
-  const _GunSatiri({required this.gun, required this.metin});
+  const _GunSatiri(
+      {required this.gun, required this.metin, required this.baz});
 
   final DonemGunu gun;
   final String metin;
+  final BazPara baz;
 
   @override
   Widget build(BuildContext context) {
@@ -1268,22 +1285,44 @@ class _GunSatiri extends StatelessWidget {
     final renk = yukari ? context.c.gain : context.c.loss;
     final pct = fmtPctIsaretli(gun.pct, digits: 1);
     final beri = gun.oGundenBeriPct;
-    if (beri == null) return _satir(context, renk, yukari, pct, null);
-    // |x| < 0,05 "+%0,0" değil düz "%0,0" (elde tutma satırının kuralı).
-    final degisim = beri.abs() < 0.05
-        ? fmtPct(0, digits: 1)
-        : fmtPctIsaretli(beri, digits: 1);
     final l = context.l10n;
+    // En çok etkileyen pozisyon (Ar-Ge 15 Kas #2): yön GÜNÜN yönünden —
+    // düşen günde "düşüren", yükselen günde "taşıyan". Hesap serviste
+    // ([PeriodSummaryService.gunEnCokEtkileyen]); yoksa satır yok.
+    final ad = gun.etkileyen;
+    final tl = gun.etkileyenTRY;
+    final etkiSatiri = (ad == null || tl == null)
+        ? null
+        : (yukari ? l.bestDayMover : l.toughestDayMover)(
+            ad, '${tl > 0 ? '+' : '\u2212'}${baz.fmt(tl.abs())}');
+    final String? beriSatiri;
+    final String okunus;
+    if (beri == null) {
+      beriSatiri = null;
+      okunus = l.dayRowA11y(metin, pct);
+    } else {
+      // |x| < 0,05 "+%0,0" değil düz "%0,0" (elde tutma satırının kuralı).
+      final degisim = beri.abs() < 0.05
+          ? fmtPct(0, digits: 1)
+          : fmtPctIsaretli(beri, digits: 1);
+      beriSatiri = l.toughestDaySince(degisim);
+      okunus = l.toughestDaySinceA11y(metin, pct, degisim);
+    }
+    final altlar = [
+      if (beriSatiri != null) beriSatiri,
+      if (etkiSatiri != null) etkiSatiri,
+    ];
+    if (altlar.isEmpty) return _satir(context, renk, yukari, pct, altlar);
     return Semantics(
       container: true,
-      label: l.toughestDaySinceA11y(metin, pct, degisim),
+      label: etkiSatiri == null ? okunus : '$okunus $etkiSatiri',
       excludeSemantics: true,
-      child: _satir(context, renk, yukari, pct, l.toughestDaySince(degisim)),
+      child: _satir(context, renk, yukari, pct, altlar),
     );
   }
 
-  Widget _satir(
-      BuildContext context, Color renk, bool yukari, String pct, String? alt) {
+  Widget _satir(BuildContext context, Color renk, bool yukari, String pct,
+      List<String> altlar) {
     final etiket = Text(
       metin,
       style: context.t.bodyMedium?.copyWith(color: context.c.text90),
@@ -1298,18 +1337,20 @@ class _GunSatiri extends StatelessWidget {
         ),
         const SizedBox(width: SandikSpace.sm),
         Expanded(
-          child: alt == null
+          child: altlar.isEmpty
               ? etiket
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     etiket,
-                    const SizedBox(height: SandikSpace.xs),
-                    Text(
-                      alt,
-                      style: context.t.bodySmall
-                          ?.copyWith(color: context.c.text58),
-                    ),
+                    for (final alt in altlar) ...[
+                      const SizedBox(height: SandikSpace.xs),
+                      Text(
+                        alt,
+                        style: context.t.bodySmall
+                            ?.copyWith(color: context.c.text58),
+                      ),
+                    ],
                   ],
                 ),
         ),

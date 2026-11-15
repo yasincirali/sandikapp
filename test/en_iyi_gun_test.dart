@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/models/position.dart' show positionKey;
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
@@ -259,6 +260,99 @@ void main() {
     });
   });
 
+  group('gunEnCokEtkileyen — o günün en çok etkileyeni (Ar-Ge 15 Kas #2)', () {
+    final t0 = DateTime(2026, 11, 5, 18).millisecondsSinceEpoch;
+    final t1 = DateTime(2026, 11, 6, 18).millisecondsSinceEpoch;
+    String ad(String k) => k.toUpperCase();
+    ({String ad, double tl})? hesap(Map<String, Map<int, double>> p,
+            {double yon = -1, List<Asset> lotlar = const []}) =>
+        PeriodSummaryService.gunEnCokEtkileyen(
+            byPosition: p,
+            lotlar: lotlar,
+            oncekiTs: t0,
+            simdiTs: t1,
+            yon: yon,
+            etiket: ad);
+
+    test('düşen günde en çok TL düşüren; yükselen aday olmaz', () {
+      final r = hesap({
+        'thyao': {t0: 10000, t1: 8760},
+        'asels': {t0: 5000, t1: 4900},
+        'garan': {t0: 3000, t1: 3500},
+      })!;
+      expect(r.ad, 'THYAO');
+      expect(r.tl, closeTo(-1240, 1e-9));
+    });
+
+    test('yükselen günde en çok taşıyan', () {
+      final r = hesap({
+        'thyao': {t0: 10000, t1: 8760},
+        'garan': {t0: 3000, t1: 3500},
+      }, yon: 1)!;
+      expect(r.ad, 'GARAN');
+      expect(r.tl, closeTo(500, 1e-9));
+    });
+
+    test('o gün alınan pozisyonun alım tutarı "taşıdı" sayılmaz', () {
+      final lot = _alim(DateTime(2026, 11, 6, 10));
+      final r = hesap({
+        positionKey(lot): {t1: 520}, // o gün 5 × 100 alındı, akşam 520
+        'garan': {t0: 3000, t1: 3010},
+      }, yon: 1, lotlar: [lot])!;
+      expect(r.ad, positionKey(lot).toUpperCase());
+      expect(r.tl, closeTo(20, 1e-9));
+    });
+
+    test('akışsız eksik slot veri boşluğu: ölçülmez', () {
+      // garan önceki slotta yok ve o gün alım yok → tüm değeri etki
+      // görünürdü; aday değil.
+      final r = hesap({
+        'garan': {t1: 3000},
+        'thyao': {t0: 1000, t1: 1010},
+      }, yon: 1)!;
+      expect(r.ad, 'THYAO');
+      expect(hesap({'garan': {t1: 3000}}, yon: 1), isNull);
+    });
+
+    test('yön tutan aday yoksa ya da ₺0,5 altındaysa null', () {
+      expect(hesap({'thyao': {t0: 100, t1: 120}}), isNull);
+      expect(hesap({'thyao': {t0: 100, t1: 99.8}}), isNull);
+      expect(hesap(const {}), isNull);
+      expect(hesap({'thyao': {t0: 100, t1: 90}}, yon: 0), isNull);
+    });
+
+    test('enIyiEnZorGun: etiket verilirse iki güne de yazar, yoksa yazmaz', () {
+      final g = _haftaIci(DateTime(2026, 11, 2), DateTime(2026, 11, 10));
+      const carpan = [1.0, 1.01, 1.005, 1.02, 0.97, 1.03, 1.002];
+      final s = _seri([for (var i = 0; i < g.length; i++) (g[i], carpan[i])]);
+      // Tek pozisyon = toplam: etki toplamın günlük farkıdır.
+      final p = {'thyao': s};
+      final r = PeriodSummaryService.enIyiEnZorGun(s,
+          lotlar: const [],
+          fromMs: _from,
+          toMs: _to,
+          bugun: _bugun,
+          byPosition: p,
+          etiket: (k) => 'THYAO')!;
+      final ts = s.keys.toList()..sort();
+      expect(r.enZor!.gun, DateTime(2026, 11, 6));
+      expect(r.enZor!.etkileyen, 'THYAO');
+      expect(r.enZor!.etkileyenTRY, closeTo(s[ts[4]]! - s[ts[3]]!, 1e-6));
+      expect(r.enIyi.gun, DateTime(2026, 11, 9));
+      expect(r.enIyi.etkileyen, 'THYAO');
+      expect(r.enIyi.etkileyenTRY, closeTo(s[ts[5]]! - s[ts[4]]!, 1e-6));
+
+      final yok = PeriodSummaryService.enIyiEnZorGun(s,
+          lotlar: const [],
+          fromMs: _from,
+          toMs: _to,
+          bugun: _bugun,
+          byPosition: p)!;
+      expect(yok.enZor!.etkileyen, isNull);
+      expect(yok.enIyi.etkileyen, isNull);
+    });
+  });
+
   group('PeriodSummaryView — en iyi / en zor gün kartı', () {
     final varsayilan = (
       enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2),
@@ -415,6 +509,56 @@ void main() {
     testWidgets('3.1× kilitli satır da taşmaz', (tester) async {
       await kur(tester,
           gorunur: true, kilitli: true, olcek: 3.1, genislik: 320);
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets('en çok düşüren / taşıyan: renksiz satır, a11y cümlesinde',
+        (tester) async {
+      final semantik = tester.ensureSemantics();
+      await kur(tester, gorunur: true, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2,
+            etkileyen: 'GARAN', etkileyenTRY: 812),
+        enZor: DonemGunu(DateTime(2026, 10, 23), -4.2,
+            oGundenBeriPct: 6.1, etkileyen: 'THYAO', etkileyenTRY: -1240),
+      ));
+      final dusuren = find.text('O gün en çok düşüren: THYAO −₺1.240');
+      final tasiyan = find.text('O gün en çok taşıyan: GARAN +₺812');
+      expect(dusuren, findsOneWidget);
+      expect(tasiyan, findsOneWidget);
+      expect(
+          tester.widget<Text>(dusuren).style?.color, SandikPalette.light.text58);
+      expect(
+          find.bySemanticsLabel('En zor gün · 23 Ekim, −%4,2. O günden beri '
+              'değişim +%6,1. O gün en çok düşüren: THYAO −₺1.240'),
+          findsOneWidget);
+      expect(
+          find.bySemanticsLabel(
+              'En iyi gün · 4 Kasım, +%3,2. O gün en çok taşıyan: GARAN +₺812'),
+          findsOneWidget);
+      semantik.dispose();
+    });
+
+    testWidgets('etkileyen yoksa satır yok; kilitliyken de sızmaz',
+        (tester) async {
+      await kur(tester, gorunur: true);
+      expect(find.textContaining('en çok'), findsNothing);
+      await kur(tester, gorunur: true, kilitli: true, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2,
+            etkileyen: 'GARAN', etkileyenTRY: 812),
+        enZor: DonemGunu(DateTime(2026, 10, 23), -4.2,
+            etkileyen: 'THYAO', etkileyenTRY: -1240),
+      ));
+      expect(find.textContaining('THYAO'), findsNothing);
+      expect(find.textContaining('GARAN'), findsNothing);
+    });
+
+    testWidgets('3.1× ve 320 pt: etkileyen satırlarıyla taşma yok',
+        (tester) async {
+      await kur(tester, gorunur: true, olcek: 3.1, genislik: 320, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2,
+            etkileyen: 'GARAN', etkileyenTRY: 812),
+        enZor: DonemGunu(DateTime(2026, 10, 23), -4.2,
+            oGundenBeriPct: 6.1, etkileyen: 'THYAO', etkileyenTRY: -1240),
+      ));
       expect(tester.takeException(), isNull);
     });
   });

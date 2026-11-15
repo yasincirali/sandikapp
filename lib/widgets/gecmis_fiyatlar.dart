@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
+import '../models/asset.dart';
 import '../models/gecmis_fiyatlar.dart';
 import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../providers/premium_provider.dart'
@@ -38,6 +39,17 @@ import 'para_akisi_karti.dart' show KilitSatiri;
 /// → hiçbir şey; `premiumKilitliProvider` → aynı yerde [KilitSatiri]
 /// (kaynak `gecmis_fiyatlar`, paywall rapor kartıyla açılır); aksi halde
 /// açık satır. Paywall kapalıyken canlı kullanıcının ekranı birebir eskisi.
+///
+/// ## Kilit satırı yarım sonuçla (Ar-Ge 15 Kas #3)
+/// Ücretsiz kullanıcı aynı seriden "1 yıl · 248 kapanış · en yüksek 14 Ağu
+/// · tablo Premium'da" görür: sayı ve tarih açık, fiyatlar kilitli (diğer
+/// kilitlerin yarım sonuç deseni). Seri kapanış vermezse eski metin.
+///
+/// ## İşlem günleri (Ar-Ge 15 Kas #1)
+/// [lotlar] verilirse (portföy varlık detayı) tablo satırında kullanıcının
+/// alış/satış günü etiketlenir ve sayfa başında "Son alışın … · o günden
+/// beri …" yazar. Eşleştirme saf ([islemGunleri], [sonAlistanBeri]) ve
+/// dokunuşta bir kez; varlık sayfasında lot yok, tablo eskisi gibi.
 class GecmisFiyatlarSatiri extends ConsumerWidget {
   const GecmisFiyatlarSatiri({
     super.key,
@@ -45,6 +57,7 @@ class GecmisFiyatlarSatiri extends ConsumerWidget {
     required this.bicim,
     required this.donemEtiketi,
     this.gunIci = false,
+    this.lotlar = const [],
   });
 
   /// Grafiğin seçili dönem serisi (epoch ms → birim fiyat).
@@ -58,6 +71,14 @@ class GecmisFiyatlarSatiri extends ConsumerWidget {
 
   final bool gunIci;
 
+  /// Bu varlığın lotları (alım/satım defteri). Boşsa işlem etiketi yok.
+  final List<Asset> lotlar;
+
+  /// Kilit özeti seri başına bir kez ([kilitOzeti]); `build` her
+  /// yeniden çizimde seriyi gezmesin. Seri haritası dönem değişince yeni
+  /// nesne, Expando eskisini kendiliğinden bırakır.
+  static final _kilitOzetleri = Expando<_KilitOzeti>();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (gunIci || seri.length < 2) return const SizedBox.shrink();
@@ -66,8 +87,16 @@ class GecmisFiyatlarSatiri extends ConsumerWidget {
     }
     final l = context.l10n;
     if (ref.watch(premiumKilitliProvider)) {
+      final ozet =
+          (_kilitOzetleri[seri] ??= _KilitOzeti(kilitOzeti(seri))).deger;
       return KilitSatiri(
-        metin: l.gecmisFiyatlarKilitli,
+        metin: ozet == null
+            ? l.gecmisFiyatlarKilitli
+            : l.gecmisFiyatlarKilitliOzet(
+                donemEtiketi,
+                '${ozet.sayi}',
+                fmtGunAy(ozet.enYuksekGun,
+                    dil: context.tarihDili, kisa: true)),
         kaynak: 'gecmis_fiyatlar',
         ozellik: 'gecmis_fiyatlar',
         kilitEtiketi: l.goalDateLockedLabel,
@@ -98,16 +127,41 @@ class GecmisFiyatlarSatiri extends ConsumerWidget {
   }
 
   void _ac(BuildContext context) {
-    final satirlar = gunlukKapanislar(seri);
-    if (satirlar.isEmpty) return;
+    final tum = gunlukKapanislar(seri, azami: 1 << 30);
+    if (tum.isEmpty) return;
+    final satirlar = tum.length > gecmisFiyatlarAzamiSatir
+        ? tum.sublist(0, gecmisFiyatlarAzamiSatir)
+        : tum;
+    final islemler = islemGunleri(lotlar);
+    final sonAlis = sonAlistanBeri(tum, islemler);
     final l = context.l10n;
+    final ozet = sonAlis == null
+        ? null
+        : l.gecmisFiyatlarSonAlis(
+            fmtGunAy(sonAlis.gun, dil: context.tarihDili, kisa: true),
+            // |x| < 0,05 düz "%0,0" (en zor gün "o günden beri" kuralı).
+            sonAlis.pct.abs() < 0.05
+                ? fmtPct(0, digits: 1)
+                : fmtPctIsaretli(sonAlis.pct, digits: 1));
     showSandikSheet<void>(
       context: context,
       baslik: l.gecmisFiyatlarBaslik,
       altMetin: l.gecmisFiyatlarAltMetin(donemEtiketi, '${satirlar.length}'),
-      builder: (_) => GecmisFiyatlarTablosu(satirlar: satirlar, bicim: bicim),
+      builder: (_) => GecmisFiyatlarTablosu(
+        satirlar: satirlar,
+        bicim: bicim,
+        islemler: islemler,
+        ozet: ozet,
+      ),
     );
   }
+}
+
+/// [kilitOzeti] sonucu `null` da olabilir; Expando null tutamadığı için
+/// sarmalanır.
+class _KilitOzeti {
+  const _KilitOzeti(this.deger);
+  final ({int sayi, DateTime enYuksekGun})? deger;
 }
 
 /// Sayfanın gövdesi: sütun başlıkları, satırlar (en yeni üstte), dipnot.
@@ -115,11 +169,22 @@ class GecmisFiyatlarSatiri extends ConsumerWidget {
 /// Yön yalnız renkle verilmez: ok ikonu + işaretli yüzde (`fmtPctIsaretli`),
 /// ekran okuyucu satırı tek cümle okur ("… önceki kapanışa göre %1,20 artış").
 class GecmisFiyatlarTablosu extends StatelessWidget {
-  const GecmisFiyatlarTablosu(
-      {super.key, required this.satirlar, required this.bicim});
+  const GecmisFiyatlarTablosu({
+    super.key,
+    required this.satirlar,
+    required this.bicim,
+    this.islemler = const {},
+    this.ozet,
+  });
 
   final List<GunlukKapanis> satirlar;
   final NumberFormat bicim;
+
+  /// Gün → kullanıcının o günkü alım/satımı ([islemGunleri]).
+  final Map<DateTime, GunIslemi> islemler;
+
+  /// Sütun başlıklarının üstündeki tek satır ("Son alışın …"); yoksa yok.
+  final String? ozet;
 
   @override
   Widget build(BuildContext context) {
@@ -131,6 +196,12 @@ class GecmisFiyatlarTablosu extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (ozet != null)
+          Padding(
+            padding: EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, 0),
+            child: Text(ozet!,
+                style: context.t.bodyMedium?.copyWith(color: c.text90)),
+          ),
         Padding(
           padding: EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, 0),
           child: ExcludeSemantics(
@@ -142,22 +213,30 @@ class GecmisFiyatlarTablosu extends StatelessWidget {
           ),
         ),
         Divider(height: SandikSpace.md, color: c.hairline),
+        // Dipnot listenin SON öğesi (Ar-Ge 15 Kas #1): sabit kalsaydı başa
+        // eklenen "Son alışın …" satırıyla birlikte yazı ×2'de sayfanın
+        // sabit kısmı listeye yer bırakmıyor, Column taşıyordu. Dipnot
+        // tablonun sonunu açıklar; sonunda okunması yeterli.
         Flexible(
           child: ListView.separated(
             shrinkWrap: true,
             padding: EdgeInsets.symmetric(horizontal: yatay),
-            itemCount: satirlar.length,
-            separatorBuilder: (context, i) =>
-                Divider(height: SandikSpace.xxs, color: c.hairline),
-            itemBuilder: (context, i) =>
-                _KapanisSatiri(satir: satirlar[i], bicim: bicim),
+            itemCount: satirlar.length + 1,
+            separatorBuilder: (context, i) => i == satirlar.length - 1
+                ? const SizedBox.shrink()
+                : Divider(height: SandikSpace.xxs, color: c.hairline),
+            itemBuilder: (context, i) => i == satirlar.length
+                ? Padding(
+                    padding: const EdgeInsets.only(
+                        top: SandikSpace.sm, bottom: SandikSpace.lg),
+                    child: Text(l.gecmisFiyatlarDipnot,
+                        style: context.t.bodySmall?.copyWith(color: c.text58)),
+                  )
+                : _KapanisSatiri(
+                    satir: satirlar[i],
+                    bicim: bicim,
+                    islem: islemler[satirlar[i].gun]),
           ),
-        ),
-        Padding(
-          padding:
-              EdgeInsets.fromLTRB(yatay, SandikSpace.sm, yatay, SandikSpace.lg),
-          child: Text(l.gecmisFiyatlarDipnot,
-              style: context.t.bodySmall?.copyWith(color: c.text58)),
         ),
       ],
     );
@@ -165,10 +244,15 @@ class GecmisFiyatlarTablosu extends StatelessWidget {
 }
 
 class _KapanisSatiri extends StatelessWidget {
-  const _KapanisSatiri({required this.satir, required this.bicim});
+  const _KapanisSatiri(
+      {required this.satir, required this.bicim, required this.islem});
 
   final GunlukKapanis satir;
   final NumberFormat bicim;
+
+  /// Bu gün kullanıcının işlemi varsa dolu: tarihin altında ikon + metin
+  /// etiketi (yalnız renk değil) ve a11y cümlesine ek.
+  final GunIslemi? islem;
 
   @override
   Widget build(BuildContext context) {
@@ -204,14 +288,52 @@ class _KapanisSatiri extends StatelessWidget {
           : l.gecmisFiyatlarDusus(fmtPct(pct.abs()));
     }
     final sayi = context.t.numSmall;
+    final i = islem;
+    String miktar(double q) =>
+        i!.ornek.miktarMetni(q, (d, o) => fmtNum(d, digits: o));
+    final islemMetni = i == null
+        ? null
+        : (i.alis && i.satis)
+            ? l.gecmisFiyatlarAlisSatis
+            : i.alis
+                ? l.gecmisFiyatlarAlis(miktar(i.alisMiktar))
+                : l.gecmisFiyatlarSatis(miktar(i.satisMiktar));
+    final satirOkunus = l.gecmisFiyatlarSatirA11y(tarih, fiyat, okunus);
+    final tarihMetni =
+        Text(tarih, style: context.t.bodyMedium?.copyWith(color: c.text90));
     return Semantics(
-      label: l.gecmisFiyatlarSatirA11y(tarih, fiyat, okunus),
+      label: islemMetni == null
+          ? satirOkunus
+          : l.gecmisFiyatlarIslemA11y(satirOkunus, islemMetni),
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
         child: _SatirDuzeni(
-          tarih: Text(tarih,
-              style: context.t.bodyMedium?.copyWith(color: c.text90)),
+          tarih: islemMetni == null
+              ? tarihMetni
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    tarihMetni,
+                    const SizedBox(height: SandikSpace.xxs),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                            i!.alis
+                                ? Icons.add_circle_outline_rounded
+                                : Icons.remove_circle_outline_rounded,
+                            size: SandikSpace.smd,
+                            color: c.amberText),
+                        const SizedBox(width: SandikSpace.xxs),
+                        Text(islemMetni,
+                            style: context.t.labelSmall
+                                ?.copyWith(color: c.amberText)),
+                      ],
+                    ),
+                  ],
+                ),
           kapanis: Text(fiyat, style: sayi.copyWith(color: c.text90)),
           degisim: Row(
             mainAxisSize: MainAxisSize.min,
