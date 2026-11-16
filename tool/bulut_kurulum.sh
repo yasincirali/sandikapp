@@ -194,12 +194,14 @@ log "skill'ler kullanıcı klasöründe: $(ls "$HOME/.claude/skills" | wc -l)"
 #    `rtk init` llm-proxy'yi KURMAZ (API trafiğine girmez). Sürüm indirmesi
 #    SHA-256 ile doğrulanır; tutmazsa kurulmaz.
 #  - caveman (JuliusBrussee/caveman) ve ponytail (DietrichGebert/ponytail):
-#    Claude Code eklentisi (skill + hook). Bilerek VARSAYILAN KAPALI
-#    (defaultMode "off"): caveman yanıtı mağara adamı diline kısaltır,
-#    ponytail her turda "en az kod" kurallarını enjekte eder; ikisi de proje
-#    kurallarıyla (Türkçe, tam cümleli yanıt; kaynak yorumu = karar kaydı)
-#    çakışabilir. İstenen thread'de `/caveman`, `/ponytail` ile açılır;
-#    herkese açmak için aşağıdaki config'te "off" değiştirilir (yasin kararı).
+#    Claude Code eklentisi (skill + hook). İlk taslak varsayılan kapalıydı
+#    (caveman yanıtı mağara adamı diline kısaltır, ponytail her turda "en az
+#    kod" kurallarını enjekte eder; Türkçe tam cümle ve "yorum = karar kaydı"
+#    kurallarıyla çakışabilir). yasin 2026-11-16 kartta "İkisi de açık" seçti:
+#    caveman "caveman" (orta kademe, ultra değil), ponytail "full". Config her
+#    koşuda yazılır ki karar tek yerden yönetilsin; thread'de "stop caveman" /
+#    "stop ponytail" o oturumda kapatır. Proje thread'lerinin entrypoint'i
+#    `remote_projects`; caveman yalnız `sdk-*`'da kendiliğinden kapalı kalır.
 #    ponytail'in webhook'u boş kalır, hiçbir veri makineden çıkmaz.
 EKLENTI=/opt/claude-eklenti
 sabit_klon() {  # $1 = github sahip/ad, $2 = hedef, $3 = commit SHA
@@ -222,8 +224,8 @@ fi
 command -v rtk >/dev/null 2>&1 \
   && { rtk init -g --auto-patch --hook-only </dev/null >/dev/null 2>&1 && log "rtk hook kaydedildi" || log "UYARI: rtk init başarısız"; }
 mkdir -p "$HOME/.config/caveman" "$HOME/.config/ponytail"
-[ -f "$HOME/.config/caveman/config.json" ] || echo '{"defaultMode": "off"}' > "$HOME/.config/caveman/config.json"
-[ -f "$HOME/.config/ponytail/config.json" ] || echo '{"defaultMode": "off"}' > "$HOME/.config/ponytail/config.json"
+echo '{"defaultMode": "caveman"}' > "$HOME/.config/caveman/config.json"
+echo '{"defaultMode": "full"}' > "$HOME/.config/ponytail/config.json"
 if command -v claude >/dev/null 2>&1; then
   for e in "caveman JuliusBrussee/caveman $CAVEMAN_SHA" "ponytail DietrichGebert/ponytail $PONYTAIL_SHA"; do
     set -- $e

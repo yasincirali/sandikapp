@@ -398,8 +398,9 @@ Beşinci sunucu **ruflo** (`ruflo@3.56.10`, eski adı claude-flow; 2026-10-20): 
 orkestrasyonu + kalıcı hafıza, ~360 araç. `-s user` kapsamında kaydedilir ki tüm repolardaki
 thread'ler görsün; sürüm sabit, kendi kendini güncelleme ve daemon kapalı. Yerel `.mcp.json`'da yok.
 Token araçları (2026-11-16, betik adım 5c): **rtk** (Bash çıktısını sıkıştıran hook, açık) ve
-**caveman** / **ponytail** eklentileri (sabit commit, **varsayılan kapalı**; thread'de `/caveman`,
-`/ponytail` ile açılır). Kapalı tutulmalarının nedeni yanıt üslubu ve yorum kuralıyla çakışma; herkese açmak yasin'in kararı.
+**caveman** / **ponytail** eklentileri (sabit commit, **varsayılan açık**: yasin 2026-11-16 "İkisi de açık").
+Çakışmada bu dosya kazanır: kaynak yorumu karar kaydıdır (ponytail "tek satır yorum" yerine), kullanıcıya giden
+Türkçe metin ve `ANLATIM_KURALLARI.md` caveman diliyle yazılmaz; kod, commit, PR ve TestFlight notu normal yazılır.
 
 ---
 **Son güncelleme:** 2026-10-10 (Apple HIG kontrolü kuralı; 2026-10-08: yasal metin: kişisel veri almayan kaynak sayılmaz, "Onay sürümü"; 2026-10-04: yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
