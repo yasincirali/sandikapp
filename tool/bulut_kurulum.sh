@@ -18,7 +18,7 @@
 #
 # Sürümler CI ile aynı: Flutter 3.47.2 (`ci.yml`), codebase-memory-mcp 0.9.0
 # (yerel makinedeki sürüm), ui-ux-pro-mcp 1.5.0, Perplexity MCP 1.3.0,
-# ruflo 3.56.10.
+# ruflo 3.56.10, caveman/ponytail eklentileri ve rtk 0.49.0 (adım 5c).
 set -uo pipefail
 
 REPO="${REPO:-/home/user/sandikapp}"
@@ -27,6 +27,11 @@ CBM_VER=0.9.0
 UIUX_VER=1.5.0
 PPLX_VER=1.3.0
 RUFLO_VER=3.56.10
+# 5c: üçüncü taraf kodu commit'e/sürüme sabit; yükseltme elle (yeni SHA'yı oku, sonra değiştir).
+CAVEMAN_SHA=9b243662ff98d392bc0a95b865a554583d71be75   # caveman 4.1.0
+PONYTAIL_SHA=96608e078b2d5ea607c5c3b8b5a54d1c1fba6846  # ponytail 5.3.3
+RTK_VER=v0.49.0
+RTK_SHA256=7278231dfd7e6a730a4ab7f847b195bcf02289c2d57622b0dab75a6411100c8f  # rtk-x86_64-unknown-linux-musl.tar.gz
 
 log() { echo "[bulut_kurulum] $*"; }
 
@@ -177,6 +182,59 @@ for d in "$REPO" /home/user/*/; do
   done
 done
 log "skill'ler kullanıcı klasöründe: $(ls "$HOME/.claude/skills" | wc -l)"
+
+# 5c) Token tasarrufu araçları (yasin 2026-11-16: "tüm projelerimiz ve
+# thread'lerimizde kullanılmak üzere ekle"). Üçü de üçüncü taraf koddur:
+# README/kurulum betikleri okunup sabit commit'e bağlandı; `curl | bash`
+# ve `@latest` yok, hiçbiri anahtar istemez, telemetri kapalı kalır.
+#  - rtk (rtk-ai/rtk): Bash komut çıktısını (git, test, ls, log) ajan okumadan
+#    sıkıştıran tek ikili + PreToolUse hook'u. Davranışı değiştirmez, yalnız
+#    okunan çıktıyı kısaltır; `cat` → `rtk read` birebir aynı metni verir
+#    (denendi). Telemetri varsayılan kapalı, init onay sormadan izin vermez.
+#    `rtk init` llm-proxy'yi KURMAZ (API trafiğine girmez). Sürüm indirmesi
+#    SHA-256 ile doğrulanır; tutmazsa kurulmaz.
+#  - caveman (JuliusBrussee/caveman) ve ponytail (DietrichGebert/ponytail):
+#    Claude Code eklentisi (skill + hook). Bilerek VARSAYILAN KAPALI
+#    (defaultMode "off"): caveman yanıtı mağara adamı diline kısaltır,
+#    ponytail her turda "en az kod" kurallarını enjekte eder; ikisi de proje
+#    kurallarıyla (Türkçe, tam cümleli yanıt; kaynak yorumu = karar kaydı)
+#    çakışabilir. İstenen thread'de `/caveman`, `/ponytail` ile açılır;
+#    herkese açmak için aşağıdaki config'te "off" değiştirilir (yasin kararı).
+#    ponytail'in webhook'u boş kalır, hiçbir veri makineden çıkmaz.
+EKLENTI=/opt/claude-eklenti
+sabit_klon() {  # $1 = github sahip/ad, $2 = hedef, $3 = commit SHA
+  [ "$(git -C "$2" rev-parse HEAD 2>/dev/null)" = "$3" ] && return 0
+  rm -rf "$2" && mkdir -p "$2" && git -C "$2" init -q \
+    && git -C "$2" fetch -q --depth 1 "https://github.com/$1.git" "$3" \
+    && git -C "$2" checkout -q FETCH_HEAD
+}
+if ! { command -v rtk >/dev/null 2>&1 && rtk --version 2>/dev/null | grep -q "${RTK_VER#v}"; }; then
+  t="$(mktemp -d)"
+  if curl -fsSL -o "$t/rtk.tgz" "https://github.com/rtk-ai/rtk/releases/download/${RTK_VER}/rtk-x86_64-unknown-linux-musl.tar.gz" \
+     && echo "${RTK_SHA256}  $t/rtk.tgz" | sha256sum -c --quiet - \
+     && tar xzf "$t/rtk.tgz" -C "$t" && install -m 755 "$t/rtk" /usr/local/bin/rtk; then
+    log "rtk ${RTK_VER} kuruldu"
+  else
+    log "UYARI: rtk kurulamadı (indirme ya da SHA-256 tutmadı)"
+  fi
+  rm -rf "$t"
+fi
+command -v rtk >/dev/null 2>&1 \
+  && { rtk init -g --auto-patch --hook-only </dev/null >/dev/null 2>&1 && log "rtk hook kaydedildi" || log "UYARI: rtk init başarısız"; }
+mkdir -p "$HOME/.config/caveman" "$HOME/.config/ponytail"
+[ -f "$HOME/.config/caveman/config.json" ] || echo '{"defaultMode": "off"}' > "$HOME/.config/caveman/config.json"
+[ -f "$HOME/.config/ponytail/config.json" ] || echo '{"defaultMode": "off"}' > "$HOME/.config/ponytail/config.json"
+if command -v claude >/dev/null 2>&1; then
+  for e in "caveman JuliusBrussee/caveman $CAVEMAN_SHA" "ponytail DietrichGebert/ponytail $PONYTAIL_SHA"; do
+    set -- $e
+    if sabit_klon "$2" "$EKLENTI/$1" "$3"; then
+      claude plugin marketplace add "$EKLENTI/$1" >/dev/null 2>&1 || true
+      claude plugin install "$1@$1" >/dev/null 2>&1 && log "eklenti hazır: $1" || log "UYARI: eklenti kurulamadı: $1"
+    else
+      log "UYARI: $1 indirilemedi"
+    fi
+  done
+fi
 
 # 6) Paketler — pubspec.lock'u değiştirirse geri al (yerel Flutter meta/matcher'ı kaydırır).
 if [ -f "$REPO/pubspec.yaml" ]; then
