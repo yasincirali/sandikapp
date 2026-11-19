@@ -38,7 +38,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/main.dart' as app;
-import 'package:portfoy_takip/screens/legal_doc_screen.dart';
+import 'package:portfoy_takip/widgets/yasal_adimlar.dart' show YasalIsaretSatiri;
 import 'package:portfoy_takip/screens/onboarding_screen.dart';
 import 'package:portfoy_takip/screens/register_screen.dart'
     show YasalOnayKutusu;
@@ -287,39 +287,23 @@ void main() {
   });
 }
 
-/// Yeniden onay kapısını gerçek kullanıcı gibi geçer: sıradaki her okuma
-/// adımında "Oku ve onayla" → okuyucuda parmakla sona kaydır → en alttaki
-/// onay; kutu adımı varsa kutuyu işaretler; sonra "Okudum, kabul ediyorum".
-/// Adım sayısı sunucudaki eksiklere göre değişir; döngü ekrandakini okur.
+/// Yeniden onay kapısını gerçek kullanıcı gibi geçer: sıradaki her uyarı /
+/// Açık Rıza adımının kendi kutusunu işaretler (2026-11-20'den beri zorunlu
+/// okuma yok, metin isteğe bağlı açılır); kutu adımı varsa kutuyu işaretler;
+/// sonra "Okudum, kabul ediyorum". Adım sayısı sunucudaki eksiklere göre
+/// değişir; döngü ekrandakini okur.
 Future<void> _yasalKapiyiGec(WidgetTester tester, AppLocalizationsTr tr) async {
   final kapi = find.byType(YasalOnayKapisiScreen);
-  final okuDugmesi = find.descendant(
-      of: kapi, matching: find.text(tr.yasalAdimOkuOnayla));
-  final okuyucu = find.byType(LegalDocScreen);
-  final okuyucuListesi =
-      find.descendant(of: okuyucu, matching: find.byType(Scrollable));
-  final etkinOnay = find.descendant(
-      of: okuyucu,
-      matching: find.byIcon(Icons.check_circle_rounded, skipOffstage: false),
-      skipOffstage: false);
+  // Kayıt kutusu da YasalIsaretSatiri'dır ama bağlantılı cümlesi (span) var.
+  final adimKutusu = find.descendant(
+      of: kapi,
+      matching: find.byWidgetPredicate(
+          (w) => w is YasalIsaretSatiri && !w.isaretli && w.span == null));
 
-  for (var adim = 0; adim < 5 && okuDugmesi.evaluate().isNotEmpty; adim++) {
-    await tester.ensureVisible(okuDugmesi.first);
+  for (var adim = 0; adim < 5 && adimKutusu.evaluate().isNotEmpty; adim++) {
+    await tester.ensureVisible(adimKutusu.first);
     await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(okuDugmesi.first);
-    await _bekle(tester, okuyucu, neden: 'zorunlu okuma ($adim)');
-    // Sona ulaşılınca onay düğmesinin kilidi açılır (kilit → onay ikonu).
-    final bitis = DateTime.now().add(const Duration(seconds: 60));
-    while (etkinOnay.evaluate().isEmpty && DateTime.now().isBefore(bitis)) {
-      await tester.drag(okuyucuListesi.first, const Offset(0, -1500));
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-    await _bekle(tester, etkinOnay, neden: 'okuyucu sonundaki onay ($adim)');
-    await tester.ensureVisible(etkinOnay);
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(etkinOnay);
-    await _bekleKosul(tester, () => okuyucu.evaluate().isEmpty,
-        neden: 'okuyucu kapandı ($adim)');
+    await tester.tap(adimKutusu.first);
     // Sıradaki adım açılır ve liste ona kayar (AnimatedSize + kaydırma).
     await tester.pump(const Duration(seconds: 1));
   }
