@@ -5,9 +5,18 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-10-10 (Fon X-Ray uygulandı; kalan dört borç maddesi Olgun Premium 1. bentte); 2026-10-09 (yıllık özet ortak hikâye kabuğuna taşınmadı); 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-11-19 (Xcode 27 / iOS 27 SDK geçişi, son tarih 2027-03-31); 2026-10-10 (Fon X-Ray uygulandı; kalan dört borç maddesi Olgun Premium 1. bentte); 2026-10-09 (yıllık özet ortak hikâye kabuğuna taşınmadı); 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
 
 ---
+
+## 🟡 AÇIK — iOS derlemesi Xcode 27 / iOS 27 SDK'ya geçmeli (2026-11-19, son tarih 2027-03-31)
+
+**Ne:** Apple 1.1.10 yüklemesinde ITMS-90725 uyarısı verdi: build iOS 26.5 SDK ile (Xcode 26.6) derlendi; Nisan 2027'den itibaren App Store Connect yalnız iOS 27 SDK / Xcode 27 ile derlenmiş build'i kabul edecek. Uyarı engelleyici değil.
+**Neden ertelendi:** GitHub'ın barındırdığı macOS koşucularında Xcode 27 henüz kararlı değil. `macos-latest` = `macos-26-arm64` (image 20261102), kurulu Xcode'lar 26.0.1–26.6, varsayılan 26.6; `toolset-26.json`'da 27 yok, `macos-27` image'ı yok. runner-images duyurusu: "Xcode 27 is now available as a public preview" (#14404); önizleme image'ını kararlı yayın hattına (`ios-testflight.yml`) bağlamak "canlıdaki kullanıcı etkilenmez" kuralına aykırı.
+**Kendiliğinden geçiş:** `ios-testflight.yml`, `ios-derleme.yml`, `setup-match.yml` Xcode'u `maxim-lobanov/setup-xcode@v1` + `xcode-version: latest-stable` ile seçiyor. GitHub Xcode 27'yi `macos-latest`'e kararlı olarak koyduğu gün iş akışı değişmeden 27'ye geçer; ilk kıran yer PR'daki `ios-derleme.yml` olur, TestFlight'tan önce görünür.
+**Maliyet / risk:** Flutter 3.47.2 (sabit sürüm) ve pod'ların (Firebase, RevenueCat, widget/Live Activity Swift'i) Xcode 27 ile derlendiği doğrulanmadı. Kırılırsa Flutter sürümü yükseltmek ve `IPHONEOS_DEPLOYMENT_TARGET` (Podfile, şu an 15.0) Xcode 27'nin alt sınırına çekmek gerekebilir.
+**Ne zaman:** 2027-03-31'e kadar. Yoklama: `macos-26-arm64` Readme'sinde Xcode tablosuna 27 girdiğinde ya da `macos-latest` macOS 27'ye geçtiğinde bir `ios-derleme.yml` koşusunun "Select stable Xcode" adımı "Xcode is set to 27.x" demeli; iOS 27 SDK'lı ilk TestFlight yüklemesinde ITMS-90725 e-postası gelmemeli. Mart başında hâlâ 26'daysa önizleme image'ı önce yalnız `ios-derleme.yml`'de denenir.
+**Aynı şart:** Birdie Smash, Harçlıklarım, Rafım, Kepler Drift aynı koşucuyu kullanıyor; Sandık'ta geçiş doğrulanınca aynı adım onlara da uygulanır.
 
 ## 🟡 AÇIK — Android'de silip kurunca cihaz yine e-posta kodu ister (2026-11-05)
 
