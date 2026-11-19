@@ -107,7 +107,7 @@ const List<SurumNotu> surumNotlari = [
   SurumNotu(
     surum: '1.1.10',
     tarih: 'Kasım 2026',
-    // TestFlight hattı 19 Kas'ta sürümü 1.1.10'a çekti (76859d0, [skip ci]);
+    // TestFlight hattı 19 Kas'ta sürümü 1.1.10'a çekti (76859d0, CI atlanarak);
     // not yazılmadığı için surum_notu_test her PR'da kırmızıydı. Kapsam:
     // 1.1.9 notundan (64e60b0, 11 Kas) sonra main'e girenler, git geçmişinden
     // (koordinatör 19 Kas: uydurma yok, en fazla 6 madde). Yama sürümü:
