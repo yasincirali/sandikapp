@@ -105,6 +105,74 @@ class SurumNotu {
 /// bu yana çıkanlar"ı bu listeden baştan itibaren toplar.
 const List<SurumNotu> surumNotlari = [
   SurumNotu(
+    surum: '1.1.10',
+    tarih: 'Kasım 2026',
+    // TestFlight hattı 19 Kas'ta sürümü 1.1.10'a çekti (76859d0, [skip ci]);
+    // not yazılmadığı için surum_notu_test her PR'da kırmızıydı. Kapsam:
+    // 1.1.9 notundan (64e60b0, 11 Kas) sonra main'e girenler, git geçmişinden
+    // (koordinatör 19 Kas: uydurma yok, en fazla 6 madde). Yama sürümü:
+    // yalnız Ayarlar'da. Ücretsiz maddeler önce; Premium maddeleri
+    // `paywall_enabled` bayrağıyla (1.1.9 ile aynı gerekçe).
+    // Bilerek dışarıda: kayıt e-posta yazım önerisi (yeni kurulumda not
+    // gösterilmez), Profil/Portföy tek seferde çizilir (fark edilen ama
+    // anlatılacak bir öğe değil), abonelik hatırlatmaları (yalnız deneme
+    // kullanıcısında, kendi anında söylüyor). 6 madde sınırı.
+    yenilikler: [
+      // 9985e14 (#353): ZekatProfilSatiri, ücretsiz, bayraksız, hep görünür.
+      Yenilik(
+        baslik: 'Zekât hesabı',
+        aciklama: 'Profil\'deki Zekât hesabı satırı portföyünden Diyanet '
+            'ölçüsüyle tahmini zekâtı hesaplar. Bir yıl henüz dolmadıysa '
+            'hangi gün dolacağını yazar.',
+      ),
+      // 9985e14 (#353): Hareketler uzun bas → çoklu seçim, toplu sil, Geri
+      // al. Hareketle açılan şey anlatılmazsa bulunmuyor (1.1.7 gerekçesi).
+      Yenilik(
+        baslik: 'Hareketleri toplu sil',
+        aciklama: 'Hareketler\'de bir satıra uzun bas, diğerlerini dokunarak '
+            'seç ve hepsini birden sil. Silindikten sonra birkaç saniye '
+            'Geri al düğmesi durur.',
+        ikon: YenilikIkonu.liste,
+      ),
+      // 1d19e2b (#392): Face ID'li ve Face ID'siz aynı açılış karesi.
+      Yenilik(
+        baslik: 'Sade açılış',
+        aciklama: 'Uygulama açılırken ekranın ortasında yalnız sandık işareti '
+            'görünür. Face ID açıksa istem aynı karenin üstünde çıkar, '
+            'ayrı bir kilit sayfası açılmaz.',
+      ),
+      // f45b0fc (#384) + eb0d486 (#393). coklu_portfoy varsayılanı 15 Kas'ta
+      // açıldı; madde yalnız Premium görünürken.
+      Yenilik(
+        bayrak: 'paywall_enabled',
+        baslik: 'Birden fazla portföy',
+        aciklama: 'Portföy sekmesindeki Yeni portföy satırıyla ayrı '
+            'portföyler açarsın. Her birinin kendi hedefi, toplamdaki payı '
+            've kâr/zararı görünür. Premium ile.',
+        ikon: YenilikIkonu.liste,
+      ),
+      // 0b283a8 (#389): AdaTutarGizleIntent; yalnız Premium oturumda.
+      Yenilik(
+        bayrak: 'paywall_enabled',
+        baslik: 'Dinamik Ada\'da tutarı gizle',
+        aciklama: 'Genişletilmiş Dinamik Ada\'daki düğmeyle tutarı tek '
+            'dokunuşla gizler ya da gösterirsin. Kilit ekranı kartı da aynı '
+            'seçime uyar. Premium ile.',
+        ikon: YenilikIkonu.bildirim,
+      ),
+      // f0c42d0 (#373) + 6bb875b (#351): iOS 26'da paylaşım hatası ve uzun
+      // geçmişte PDF'in hiç üretilmemesi düzeldi. Döküm Raporlar'da, Premium.
+      Yenilik(
+        bayrak: 'paywall_enabled',
+        baslik: 'Portföy dökümü paylaşımı düzeldi',
+        aciklama: 'Raporlar\'daki portföy dökümü PDF ve Excel olarak hatasız '
+            'paylaşılır. İşlem geçmişi uzun olan hesaplarda da PDF oluşur. '
+            'Premium ile.',
+        ikon: YenilikIkonu.grafik,
+      ),
+    ],
+  ),
+  SurumNotu(
     surum: '1.1.9',
     tarih: 'Kasım 2026',
     // TestFlight hattı 10 Kas'ta sürümü 1.1.9'a çekti (479290a); not
