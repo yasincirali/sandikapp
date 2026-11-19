@@ -11,8 +11,8 @@ const yasalBelgeKaynaklari = <String, String>{
   'legal/tr/TERMS_OF_SERVICE.md': r'''# Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 13 Kasım 2026
-**Sürüm:** 1.13
+**Son güncelleme:** 20 Kasım 2026
+**Sürüm:** 1.14
 **Onay sürümü:** 1.6
 
 ---
@@ -25,8 +25,8 @@ Hesap oluştururken bu Koşulları kabul edersiniz. **Gizlilik Politikası** ve 
 
 Kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da):
 - Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni bağlantı olarak sunulur; dokunduğunuzda tam metni açılır. Bu Koşulları tek bir onay kutusunu işaretleyerek kabul edersiniz; aynı kutuyla 18 yaşından büyük olduğunuzu beyan eder, Gizlilik Politikası ve KVKK Aydınlatma Metni ile bilgilendirildiğinizi belirtirsiniz. Onay kutusu açık rıza içermez.
-- Açık Rıza Metni size tam metniyle gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz.
-- Yatırım uyarısı (§3) tam metniyle gösterilir; sonuna kadar okuduktan sonra en altta onaylarsınız.
+- Açık Rıza Metni bağlantıdan tam metniyle açılır; açık rızanızı bu metne ait ayrı onay kutusuyla verirsiniz.
+- Yatırım uyarısı (§3) bağlantıdan tam metniyle açılır; onayınızı uyarıya ait ayrı onay kutusuyla verirsiniz.
 
 ---
 
@@ -92,7 +92,7 @@ Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
 - Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
 - Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.
 
-Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.
+Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) bağlantıdan açılabilir; onayınızı uyarıya ait ayrı onay kutusuyla verirsiniz. Onayın kaydı yasal kanıt olarak saklanır.
 
 ---
 
@@ -260,7 +260,7 @@ AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesin
 
 Bu Koşulları ve diğer yasal belgeleri değiştirdiğimizde:
 - Yeni metin yeni bir sürüm numarasıyla yayımlanır; web sitesindeki ve uygulamadaki metin her zaman aynıdır.
-- Esaslı değişiklikler ("Onay sürümü" de yeni sürüme çekilir) uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir. Kullanım Koşulları için kabulünüz onay kutusuyla, Açık Rıza Metni için rızanız metnin sonunda yeniden istenir; Gizlilik Politikası ve KVKK Aydınlatma Metni'nin güncel hâliyle bilgilendirildiğinizi aynı kutuda belirtirsiniz.
+- Esaslı değişiklikler ("Onay sürümü" de yeni sürüme çekilir) uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir. Kullanım Koşulları için kabulünüz onay kutusuyla, Açık Rıza Metni için rızanız o metne ait ayrı kutuyla yeniden istenir; Gizlilik Politikası ve KVKK Aydınlatma Metni'nin güncel hâliyle bilgilendirildiğinizi aynı kutuda belirtirsiniz.
 - Hak ve yükümlülüklerinizi ya da kişisel veri işleyişini değiştirmeyen düzeltmelerde yalnızca "Sürüm" değişir; yeniden onay istenmez.
 - Esaslı bir değişikliği onaylamadan uygulamayı kullanmaya devam edemezsiniz; değişikliği kabul etmiyorsanız hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).
 - Hangi sürümü ne zaman kabul ettiğiniz ya da hangi sürümün size ne zaman sunulduğu kayıt altında tutulur.
@@ -280,8 +280,8 @@ Web: `https://yasincirali.github.io/sandikapp`
   'legal/tr/PRIVACY_POLICY.md': r'''# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 7 Kasım 2026
-**Sürüm:** 1.14
+**Son güncelleme:** 20 Kasım 2026
+**Sürüm:** 1.15
 **Onay sürümü:** 1.8
 
 ---
@@ -465,7 +465,7 @@ Rızanızı aynı karttaki "Yapay zekâ yorumunu kapat" ile istediğiniz an geri
 Supabase veritabanı {SUPABASE_ULKEDE}, Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş, e-posta ve mağaza ödeme hizmetleri de küresel altyapıda çalışır. Premium satın alırsanız abonelik kaydınız RevenueCat (ABD) üzerinden doğrulanır. Yapay zekâ portföy yorumunu ya da ekstrenin kelimeleriyle okunmasını kullanırsanız ilgili veriler Anthropic'e (ABD) gönderilir; bu aktarım, özelliği ilk kullandığınızda uygulama içinde ayrıca verdiğiniz açık rızaya dayanır (bkz. §5.4, §5.5). KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:
 
 - **AB üyesi kullanıcılar için:** Standart Sözleşme Maddeleri (SCC) ve sağlayıcıların GDPR uyumluluk taahhütleri çerçevesinde aktarım yapılır.
-- **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile verirsiniz; bu rıza başka bir beyanla birlikte alınmaz.
+- **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) ayrı bir onay kutusuyla onayladığınız "Açık Rıza Metni" ile verirsiniz; bu rıza başka bir beyanla birlikte alınmaz.
 
 Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı **açık rızanıza** dayanmaktadır.
 
@@ -573,7 +573,7 @@ Uygulama mobil ortamda çalıştığı için web çerezleri **kullanılmaz**. Ci
 
 **sandık** bir portföy takip aracıdır. SPK (Sermaye Piyasası Kurulu) lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. Uygulamada gösterilen fiyat, performans, sinyal, grafikler, piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı), yapay zekâ ile hazırlanan varlık notları ve portföy yorumları bilgilendirme amaçlıdır ve yatırım tavsiyesi niteliği taşımaz. Yatırım kararlarınızı SPK lisanslı bir danışmana danışarak veriniz.
 
-Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.
+Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) bağlantıdan açılabilir; onayınızı uyarıya ait ayrı onay kutusuyla verirsiniz. Onayın kaydı yasal kanıt olarak saklanır.
 
 ---
 
@@ -602,8 +602,8 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
   'legal/tr/KVKK_AYDINLATMA_METNI.md': r'''# KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 7 Kasım 2026
-**Sürüm:** 1.14
+**Son güncelleme:** 20 Kasım 2026
+**Sürüm:** 1.15
 **Onay sürümü:** 1.8
 
 ---
@@ -743,7 +743,7 @@ Yapay zekâ portföy yorumunu açık rızanızla kullanırsanız, cihazınızın
 
 Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
 
-Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile, başka bir beyanla birleştirilmeden, belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
+Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) ayrı bir onay kutusuyla onayladığınız "Açık Rıza Metni" ile, başka bir beyanla birleştirilmeden, belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
 
 ### 5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)
 
@@ -869,9 +869,9 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
   'legal/tr/ACIK_RIZA_METNI.md': r'''# Açık Rıza Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Sürüm:** 1.6
+**Sürüm:** 1.7
 
-> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt sırasında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) size tam olarak gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz. Rıza yalnız bu düğmeyle verilir: kayıt ekranındaki onay kutusu Kullanım Koşulları'nın kabulü içindir ve açık rıza içermez. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay istenmez. E bölümündeki rıza uygulama içinde ayrıca istenir.
+> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt ekranında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) bağlantı olarak sunulur ve açıldığında size tam olarak gösterilir; açık rızanızı bu metne ait ayrı onay kutusunu işaretleyerek verirsiniz. Rıza yalnız bu kutuyla verilir: Kullanım Koşulları'nın kabulüne ait onay kutusu açık rıza içermez. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay istenmez. E bölümündeki rıza uygulama içinde ayrıca istenir.
 
 ---
 
@@ -897,7 +897,7 @@ KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPAB
 
 aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
 
-Bu rıza kayıt için zorunludur; metin sonuna kadar okunduktan sonra metnin sonundaki düğmeyle verilir (kayıt ekranında ya da Apple veya Google ile ilk girişte açılan onay ekranında).
+Bu rıza kayıt için zorunludur; bu metne ait ayrı onay kutusuyla verilir (kayıt ekranında ya da Apple veya Google ile ilk girişte açılan onay ekranında).
 
 ---
 
@@ -968,7 +968,7 @@ beyan ve kabul ederim.
 ---
 
 **Tarih:** Onay anında otomatik kaydedilir
-**Sürüm:** 1.6
+**Sürüm:** 1.7
 **Platform:** Android / iOS, uygulama sürümü ve dil onay anında otomatik kaydedilir
 
 ---

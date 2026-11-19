@@ -73,6 +73,13 @@ String yasalAdimAdi(AppLocalizations l, YasalAdim a) {
 /// okumadan işaretlenebiliyordu; onay KAYDI aynı kaldı — `KayitOnayBaglami`,
 /// `kapiOgeleri`.)
 ///
+/// ## Okuma şartı kalktı (yasin 2026-11-20, "okuma şartı kalksın")
+/// Uyarı ve Açık Rıza eskiden tam ekran açılıp sonuna kadar kaydırılınca
+/// onaylanıyordu. GA'da metinler kişi başı 5,5 kez, ~6 saniye açılıyordu;
+/// kayıt ekranını açan 267 kişiden 8'i kod adımına geldi. Artık adımın
+/// içinde metnin bağlantısı (salt okunur) ve kendi kutusu var. Rıza yine
+/// AYRI kutuda, başka beyanla paketlenmez (KVKK m.5(1)).
+///
 /// ## Okuma süresi neden yok
 /// Taslakta "~2 dk" yer tutucuydu. Gösterilecek süre metnin kelime
 /// sayısından hesaplanabilirdi, ama bölen (dakikada kaç kelime) yine bir
@@ -92,6 +99,7 @@ class YasalAdimListesi extends StatefulWidget {
     required this.kutuIsaretli,
     required this.kutu,
     required this.onOku,
+    required this.onOnayDegistir,
     required this.onBelgeAc,
     this.acilanlar = const {},
     this.hata,
@@ -100,20 +108,23 @@ class YasalAdimListesi extends StatefulWidget {
   final YasalAdimPlani plan;
   final String baslik;
 
-  /// Sonuna kadar okunup sonunda onaylanan türler (`YasalTur`).
+  /// Kutusuyla onaylanan metinler (`YasalTur`: uyarı, Açık Rıza).
   final Set<String> onaylananlar;
   final bool kutuIsaretli;
 
   /// Kutu adımının içeriği — `YasalOnayKutusu`.
   final Widget kutu;
 
-  /// Okunacak adımın metnini zorunlu okumada açar.
+  /// Adımın metnini salt okunur açar.
   final ValueChanged<YasalAdimTuru> onOku;
+
+  /// Adımın kutusu işaretlendi ya da işareti kaldırıldı.
+  final ValueChanged<YasalAdimTuru> onOnayDegistir;
 
   /// Bilgi amaçlı belgeyi salt okunur açar.
   final ValueChanged<YasalBelge> onBelgeAc;
 
-  /// Bağlantıyla açılan belgeler (`YasalBelge.tur`) — "Açıldı" izi.
+  /// Bağlantıyla açılan metinler (`YasalTur`) — "Açıldı" izi.
   final Set<String> acilanlar;
 
   /// Verilirse kart kırmızı çerçeve alır ve metin adımların altında
@@ -290,18 +301,30 @@ class _YasalAdimListesiState extends State<YasalAdimListesi> {
       height: 1.45,
     );
     if (a.tur.okunur) {
-      if (durum != YasalAdimDurumu.aktif) return null;
+      // Kutu gibi: sırası gelince görünür, tamamlanınca da durur (işaret
+      // kaldırılabilir).
+      if (durum == YasalAdimDurumu.bekliyor) return null;
+      final riza = a.tur == YasalAdimTuru.acikRiza;
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            a.tur == YasalAdimTuru.acikRiza
-                ? l.yasalAdimRizaAciklama
-                : l.yasalAdimUyariAciklama,
+            riza ? l.yasalAdimRizaAciklama : l.yasalAdimUyariAciklama,
             style: aciklamaStili,
           ),
-          const SizedBox(height: SandikSpace.sm2),
-          _OkuDugmesi(onTap: () => widget.onOku(a.tur)),
+          _BelgeBaglantisi.metin(
+            ikon: riza
+                ? yasalBelgeIkonu(YasalBelge.acikRiza)
+                : Icons.warning_amber_rounded,
+            adaylar: [l.yasalAdimMetniOku],
+            acildi: widget.acilanlar.contains(a.tur.anahtar),
+            onTap: () => widget.onOku(a.tur),
+          ),
+          YasalIsaretSatiri(
+            isaretli: widget.onaylananlar.contains(a.tur.anahtar),
+            metin: riza ? l.zorunluOkumaRizaVer : l.zorunluOkumaOnayla,
+            onToggle: () => widget.onOnayDegistir(a.tur),
+          ),
         ],
       );
     }
@@ -597,74 +620,28 @@ class _Daire extends StatelessWidget {
   }
 }
 
-/// Sıradaki okuma adımının düğmesi — amber, en az [SandikTouch.min].
-class _OkuDugmesi extends StatelessWidget {
-  const _OkuDugmesi({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Semantics(
-        button: true,
-        child: SandikTappable(
-          soluk: true,
-          haptic: SandikHaptic.none,
-          onTap: onTap,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: context.c.amberFill,
-              borderRadius: SandikRadius.mdAll,
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: SandikTouch.min),
-              child: Center(
-                widthFactor: 1,
-                heightFactor: 1,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: SandikSpace.md, vertical: SandikSpace.sm),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          context.l10n.yasalAdimOkuOnayla,
-                          style: context.t.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: context.c.onAmber,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: SandikSpace.xs2),
-                      ExcludeSemantics(
-                        child: Icon(Icons.chevron_right_rounded,
-                            size: 18, color: context.c.onAmber),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Bilgi amaçlı belge bağlantısı — salt okunur açılır; açıldıysa hafif
 /// "Açıldı" izi (onay değil: `belge_acildi` kanıt notu).
 class _BelgeBaglantisi extends StatelessWidget {
-  const _BelgeBaglantisi({
-    required this.belge,
+  _BelgeBaglantisi({
+    required YasalBelge belge,
     required this.acildi,
     required this.onTap,
-  });
+  })  : ikon = yasalBelgeIkonu(belge),
+        adaylar = null,
+        belge = belge;
 
-  final YasalBelge belge;
+  /// Belge olmayan metin (uyarı) ya da kendi yazımıyla bağlantı.
+  const _BelgeBaglantisi.metin({
+    required this.ikon,
+    required List<String> this.adaylar,
+    required this.acildi,
+    required this.onTap,
+  }) : belge = null;
+
+  final YasalBelge? belge;
+  final IconData ikon;
+  final List<String>? adaylar;
   final bool acildi;
   final VoidCallback onTap;
 
@@ -682,14 +659,13 @@ class _BelgeBaglantisi extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: SandikTouch.min),
           child: Row(
             children: [
-              Icon(yasalBelgeIkonu(belge),
-                  size: 18, color: context.c.amberText),
+              Icon(ikon, size: 18, color: context.c.amberText),
               const SizedBox(width: SandikSpace.smd),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
                   child: SiganMetin(
-                    yasalBelgeAdaylari(l, belge),
+                    adaylar ?? yasalBelgeAdaylari(l, belge!),
                     style: context.t.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: context.c.amberText,
@@ -708,6 +684,89 @@ class _BelgeBaglantisi extends StatelessWidget {
               const SizedBox(width: SandikSpace.xs),
               Icon(Icons.chevron_right_rounded,
                   size: 18, color: context.c.text36),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Yasal onay kutusunun işaret satırı — kayıttaki tek kutu
+/// (`YasalOnayKutusu`) ve uyarı / Açık Rıza adımlarının kutusu aynı çizimi
+/// kullanır (2026-11-20). Satırın tamamı dokunma alanıdır, en az
+/// [SandikTouch.min] yüksek.
+///
+/// Erişilebilirlik (2026-10-05): kutu kendi çizimimiz; durumunu ekran
+/// okuyucuya bildirmezse TalkBack/VoiceOver onu kutu olarak okumaz ve yasal
+/// onay sesle verilemez. Cümledeki belge bağlantıları ([span]) ayrı düğüm
+/// olarak kalır (container).
+class YasalIsaretSatiri extends StatelessWidget {
+  const YasalIsaretSatiri({
+    super.key,
+    required this.isaretli,
+    required this.metin,
+    required this.onToggle,
+    this.span,
+    this.hata = false,
+  });
+
+  final bool isaretli;
+  final String metin;
+
+  /// Bağlantılı cümle; verilirse [metin] yerine çizilir.
+  final InlineSpan? span;
+  final bool hata;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final stil = context.t.titleSmall?.copyWith(
+      color: hata ? context.c.loss : context.c.text58,
+    );
+    return Semantics(
+      container: true,
+      checked: isaretli,
+      onTap: onToggle,
+      child: GestureDetector(
+        onTap: onToggle,
+        behavior: HitTestBehavior.opaque,
+        // Kare 26 px, çerçevesi amber (eskiden 22 px, `text36` gri çerçeve:
+        // koyu temada zemine karışıyordu — kullanıcı geri bildirimi
+        // 2026-10-05).
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AnimatedContainer(
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.enter,
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: isaretli
+                      ? context.c.amberText
+                      : context.c.amberText.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
+                  border: Border.all(
+                    color: hata && !isaretli
+                        ? context.c.loss
+                        : context.c.amberText,
+                    width: 2,
+                  ),
+                ),
+                child: isaretli
+                    ? Icon(Icons.check_rounded,
+                        size: 18, color: context.c.onAmber)
+                    : null,
+              ),
+              const SizedBox(width: SandikSpace.smd),
+              Expanded(
+                child: span != null
+                    ? Text.rich(span!, style: stil)
+                    : Text(metin, style: stil),
+              ),
             ],
           ),
         ),

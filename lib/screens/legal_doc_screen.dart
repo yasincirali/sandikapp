@@ -156,8 +156,12 @@ class ZorunluMetin {
 /// kapıdaki bilgilendirme/kabul belgeleri (Koşullar, Gizlilik, KVKK) ve
 /// geçerli rızası olan kullanıcıda Açık Rıza Metni. Ayarlar'daki belgelerle
 /// aynı görünüş; ad ve ikon [ZorunluMetin.belge]'den (liste satırıyla aynı).
-Future<void> belgeyiAc(BuildContext context, YasalBelge b) {
-  final m = ZorunluMetin.belge(context.l10n, b);
+Future<void> belgeyiAc(BuildContext context, YasalBelge b) =>
+    metniAc(context, ZorunluMetin.belge(context.l10n, b));
+
+/// [m]'yi SALT OKUNUR açar. 2026-11-20'den beri kayıt ve kapıdaki Açık Rıza
+/// Metni ile yatırım uyarısı da böyle açılır; onay ekrandaki kutudadır.
+Future<void> metniAc(BuildContext context, ZorunluMetin m) {
   return pushGuarded<void>(
     context,
     adaptiveRoute(

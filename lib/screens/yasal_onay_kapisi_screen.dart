@@ -103,7 +103,8 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
   /// Bağlantıyla açılan belgeler (`belge_acildi` kanıt notu, "Açıldı" izi).
   final Set<String> _acilanlar = {};
 
-  /// Sonuna kadar okunup sonunda onaylanan türler.
+  /// Kutusuyla onaylanan metinler (uyarı, Açık Rıza; 2026-11-20'ye kadar
+  /// sonuna kadar okunup sonunda onaylananlar).
   final Set<String> _onaylananlar = {};
 
   late final YasalKutuBaglantilari _kutuBaglantilari =
@@ -126,15 +127,17 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
       _plan.adimlar.length -
       _plan.eksikler(onaylananlar: _onaylananlar, kutuIsaretli: _kutu).length;
 
-  Future<void> _zorunluOku(YasalAdimTuru tur) async {
+  /// Adımın metnini SALT OKUNUR açar; onay adımdaki kutuyla (kayıt
+  /// ekranıyla aynı, 2026-11-20 "okuma şartı kalksın").
+  Future<void> _metniAc(YasalAdimTuru tur) async {
     final m = ZorunluMetin.adim(context.l10n, tur);
     setState(() => _acilanlar.add(m.tur));
-    final sonuc = await zorunluOkumaAc(context, m);
-    if (!mounted || sonuc == null) return;
-    if (sonuc.onaylandi && sonuc.sonunaKadarOkundu) {
-      setState(() => _onaylananlar.add(m.tur));
-    }
+    await metniAc(context, m);
   }
+
+  void _onayDegistir(YasalAdimTuru tur) => setState(() {
+        if (!_onaylananlar.remove(tur.anahtar)) _onaylananlar.add(tur.anahtar);
+      });
 
   /// Bağlantı belgesini salt okunur açar (kayıt ekranıyla aynı yol).
   Future<void> _belgeyiAc(YasalBelge b) async {
@@ -176,7 +179,7 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
         durum: widget.durum,
         belgeDegiskenleri: LegalDocs.yerTutucuDegerleri(),
         acilanBelgeler: _acilanlar,
-        sonunaKadarOkunanlar: {..._onaylananlar},
+        isaretlenenler: {..._onaylananlar},
         kutu: kutu,
         yatirimUyarisiDahil: widget.yatirimUyarisiDahil,
         locale: locale,
@@ -239,7 +242,8 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
         onaylananlar: _onaylananlar,
         kutuIsaretli: _kutu,
         acilanlar: _acilanlar,
-        onOku: _zorunluOku,
+        onOku: _metniAc,
+        onOnayDegistir: _onayDegistir,
         onBelgeAc: _belgeyiAc,
         kutu: _kutuWidget(context),
       ),

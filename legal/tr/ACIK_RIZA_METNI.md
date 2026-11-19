@@ -1,9 +1,9 @@
 # Açık Rıza Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Sürüm:** 1.6
+**Sürüm:** 1.7
 
-> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt sırasında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) size tam olarak gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz. Rıza yalnız bu düğmeyle verilir: kayıt ekranındaki onay kutusu Kullanım Koşulları'nın kabulü içindir ve açık rıza içermez. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay istenmez. E bölümündeki rıza uygulama içinde ayrıca istenir.
+> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt ekranında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) bağlantı olarak sunulur ve açıldığında size tam olarak gösterilir; açık rızanızı bu metne ait ayrı onay kutusunu işaretleyerek verirsiniz. Rıza yalnız bu kutuyla verilir: Kullanım Koşulları'nın kabulüne ait onay kutusu açık rıza içermez. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay istenmez. E bölümündeki rıza uygulama içinde ayrıca istenir.
 
 ---
 
@@ -29,7 +29,7 @@ KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPAB
 
 aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
 
-Bu rıza kayıt için zorunludur; metin sonuna kadar okunduktan sonra metnin sonundaki düğmeyle verilir (kayıt ekranında ya da Apple veya Google ile ilk girişte açılan onay ekranında).
+Bu rıza kayıt için zorunludur; bu metne ait ayrı onay kutusuyla verilir (kayıt ekranında ya da Apple veya Google ile ilk girişte açılan onay ekranında).
 
 ---
 
@@ -100,7 +100,7 @@ beyan ve kabul ederim.
 ---
 
 **Tarih:** Onay anında otomatik kaydedilir
-**Sürüm:** 1.6
+**Sürüm:** 1.7
 **Platform:** Android / iOS, uygulama sürümü ve dil onay anında otomatik kaydedilir
 
 ---

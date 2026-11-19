@@ -21,8 +21,8 @@ istatistiği (GA4)" raporunda "Kayıt hunisi" tablosu da çıkar.
 
 - [ ] **~4 Aralık:** analytics.google.com › Raporlar › Etkileşim ›
       Etkinlikler (son 14 gün) CSV'sini gönder ya da Pazartesi raporuna bak.
-      Okuma sırası: `kayit_basladi` → `kayit_okuma_uyari` / `kayit_okuma_riza`
-      (`kayit_okuma_yarim_*` = metni onaylamadan geri döndü) → `kayit_kutu` →
+      Okuma sırası: `kayit_basladi` → `kayit_onay_uyari` / `kayit_onay_riza`
+      (metnin kutusu işaretlendi; `kayit_metin_*` = metni açıp okudu) → `kayit_kutu` →
       `kayit_istek` (`kayit_eksik_*` = düğmeye eksikle bastı; son ek hangi
       alan) → `sign_up`. En çok düşen adım düzeltilecek yerdir.
 - [ ] (İsteğe bağlı, 1 dk) Hata nedenini görmek için Yönetici › Özel

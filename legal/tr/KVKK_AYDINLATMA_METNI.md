@@ -1,8 +1,8 @@
 # KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 7 Kasım 2026
-**Sürüm:** 1.14
+**Son güncelleme:** 20 Kasım 2026
+**Sürüm:** 1.15
 **Onay sürümü:** 1.8
 
 ---
@@ -142,7 +142,7 @@ Yapay zekâ portföy yorumunu açık rızanızla kullanırsanız, cihazınızın
 
 Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
 
-Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile, başka bir beyanla birleştirilmeden, belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
+Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) ayrı bir onay kutusuyla onayladığınız "Açık Rıza Metni" ile, başka bir beyanla birleştirilmeden, belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
 
 ### 5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)
 

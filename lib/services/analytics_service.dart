@@ -446,8 +446,9 @@ class AnalyticsService {
   /// geriye dönük değildir; olay adı ise "Etkinlikler" raporunda hemen,
   /// boyutsuz okunur. 23 Eki–19 Kas ölçümünde kayıt ekranını 267 kişi
   /// açtı, kod ekranına 8 kişi geldi; aradaki düşüşün hangi adımda olduğu
-  /// bu adlarla görünür. Adlar: `kayit_basladi` (ilk harf), `kayit_okuma_*`
-  /// (zorunlu metin onaylandı / yarıda bırakıldı), `kayit_kutu`,
+  /// bu adlarla görünür. Adlar: `kayit_basladi` (ilk harf), `kayit_metin_*`
+  /// (zorunlu metin açıldı), `kayit_onay_*` (metnin kutusu işaretlendi;
+  /// 2026-11-20 okuma şartı kalktı), `kayit_kutu`,
   /// `kayit_eksik_*` (düğmeye eksikle basıldı, ilk eksik), `kayit_gonderildi`.
   /// Kişisel veri yok: yalnız adım adı.
   Future<void> logKayitAdimi(String adim) => _log('kayit_$adim');
