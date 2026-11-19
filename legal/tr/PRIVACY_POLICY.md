@@ -1,8 +1,8 @@
 # Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 7 Kasım 2026
-**Sürüm:** 1.14
+**Son güncelleme:** 20 Kasım 2026
+**Sürüm:** 1.15
 **Onay sürümü:** 1.8
 
 ---
@@ -186,7 +186,7 @@ Rızanızı aynı karttaki "Yapay zekâ yorumunu kapat" ile istediğiniz an geri
 Supabase veritabanı {SUPABASE_ULKEDE}, Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş, e-posta ve mağaza ödeme hizmetleri de küresel altyapıda çalışır. Premium satın alırsanız abonelik kaydınız RevenueCat (ABD) üzerinden doğrulanır. Yapay zekâ portföy yorumunu ya da ekstrenin kelimeleriyle okunmasını kullanırsanız ilgili veriler Anthropic'e (ABD) gönderilir; bu aktarım, özelliği ilk kullandığınızda uygulama içinde ayrıca verdiğiniz açık rızaya dayanır (bkz. §5.4, §5.5). KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:
 
 - **AB üyesi kullanıcılar için:** Standart Sözleşme Maddeleri (SCC) ve sağlayıcıların GDPR uyumluluk taahhütleri çerçevesinde aktarım yapılır.
-- **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile verirsiniz; bu rıza başka bir beyanla birlikte alınmaz.
+- **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) ayrı bir onay kutusuyla onayladığınız "Açık Rıza Metni" ile verirsiniz; bu rıza başka bir beyanla birlikte alınmaz.
 
 Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı **açık rızanıza** dayanmaktadır.
 
@@ -294,7 +294,7 @@ Uygulama mobil ortamda çalıştığı için web çerezleri **kullanılmaz**. Ci
 
 **sandık** bir portföy takip aracıdır. SPK (Sermaye Piyasası Kurulu) lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. Uygulamada gösterilen fiyat, performans, sinyal, grafikler, piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı), yapay zekâ ile hazırlanan varlık notları ve portföy yorumları bilgilendirme amaçlıdır ve yatırım tavsiyesi niteliği taşımaz. Yatırım kararlarınızı SPK lisanslı bir danışmana danışarak veriniz.
 
-Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.
+Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) bağlantıdan açılabilir; onayınızı uyarıya ait ayrı onay kutusuyla verirsiniz. Onayın kaydı yasal kanıt olarak saklanır.
 
 ---
 

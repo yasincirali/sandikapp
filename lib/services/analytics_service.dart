@@ -439,6 +439,30 @@ class AnalyticsService {
     await _log('signup_step', {'step': step});
   }
 
+  /// Kayıt formunun ince adımları (2026-11-20, ekran ölçümü A).
+  ///
+  /// Neden ayrı olay ADLARI (`signup_step` parametresi değil): GA'da
+  /// parametre kırılımı ancak özel boyut tanımlandıktan SONRA toplanır ve
+  /// geriye dönük değildir; olay adı ise "Etkinlikler" raporunda hemen,
+  /// boyutsuz okunur. 23 Eki–19 Kas ölçümünde kayıt ekranını 267 kişi
+  /// açtı, kod ekranına 8 kişi geldi; aradaki düşüşün hangi adımda olduğu
+  /// bu adlarla görünür. Adlar: `kayit_basladi` (ilk harf), `kayit_metin_*`
+  /// (zorunlu metin açıldı), `kayit_onay_*` (metnin kutusu işaretlendi;
+  /// 2026-11-20 okuma şartı kalktı), `kayit_kutu`,
+  /// `kayit_eksik_*` (düğmeye eksikle basıldı, ilk eksik), `kayit_gonderildi`.
+  /// Kişisel veri yok: yalnız adım adı.
+  Future<void> logKayitAdimi(String adim) => _log('kayit_$adim');
+
+  /// Kayıt/giriş hatasının SINIFI (`HuniKaydi.hataKodu`; mesaj asla).
+  /// Sunucu hunisi Remote Config `kayit_hunisi` arkasında; bu olay her
+  /// zaman gider ki düşüş nedeni GA'da da görünsün.
+  Future<void> logKayitHatasi({required String asama, required String kod}) =>
+      _log('kayit_hatasi', {'asama': asama, 'kod': kod});
+
+  /// Şifremi unuttum akışı: `kod_gonderildi`, `kod_hatasi`, `yenilendi`,
+  /// `dogrulama_hatasi`. 90 kişi ekranı açtı ama sonucunu bilmiyorduk.
+  Future<void> logSifreSifirlama(String adim) => _log('sifre_sifirlama_$adim');
+
   Future<void> logDemoOpened() => _log('demo_opened');
 
   /// Ana ekran özellik önerisi kartı (`ozellik_onerisi.dart`): hangi öneri,

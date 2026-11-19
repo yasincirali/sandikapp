@@ -12,6 +12,23 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-20 Kayıt hunisi ölçümü: iki hafta sonra tek bakış, sen
+
+23 Eki–19 Kas: kayıt ekranını 267 kişi açtı, 194'ü demodan "Hesap oluştur"la
+geldi; GA'da kayıt sayısı hiç yoktu (`sign_up` gönderilmiyordu). Bu sürümden
+sonra kayıt formunun her adımı ayrı olay adıyla gider; Pazartesi "Ekran
+istatistiği (GA4)" raporunda "Kayıt hunisi" tablosu da çıkar.
+
+- [ ] **~4 Aralık:** analytics.google.com › Raporlar › Etkileşim ›
+      Etkinlikler (son 14 gün) CSV'sini gönder ya da Pazartesi raporuna bak.
+      Okuma sırası: `kayit_basladi` → `kayit_onay_uyari` / `kayit_onay_riza`
+      (metnin kutusu işaretlendi; `kayit_metin_*` = metni açıp okudu) → `kayit_kutu` →
+      `kayit_istek` (`kayit_eksik_*` = düğmeye eksikle bastı; son ek hangi
+      alan) → `sign_up`. En çok düşen adım düzeltilecek yerdir.
+- [ ] (İsteğe bağlı, 1 dk) Hata nedenini görmek için Yönetici › Özel
+      tanımlar › Özel boyut oluştur: `asama` ve `kod` (kapsam Etkinlik).
+      Geriye dönük değildir, erken açmak iyi.
+
 ## ⏳ 2026-11-19 Haftalık ekran istatistiği (GA4) için üç adım, sen
 
 Pazartesi 10:30'da "Ekran istatistiği (GA4)" işi ekran, `ozellik_kullanildi`

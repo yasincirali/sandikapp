@@ -20,8 +20,18 @@ class KayitOnayBaglami {
     this.kvkkBelgesiAcildi = false,
     this.gizlilikBelgesiAcildi = false,
     this.sonunaKadarOkunanlar = const {},
+    this.isaretlenenler = const {},
+    this.acilanMetinler = const {},
     this.yatirimUyarisiOnaylandi = false,
   });
+
+  // 2026-11-20 (yasin, "okuma şartı kalksın"): Açık Rıza ve uyarı artık
+  // kayıt ekranında kendi kutusuyla onaylanır ([isaretlenenler]); metin
+  // bağlantıdan açılır, sonuna kadar okutulmaz. GA ölçümü: legal_doc kişi
+  // başı 5,5 kez, ~6 sn açılıyordu, kayıt ekranını açan 267 kişiden 8'i kod
+  // adımına geldi. [sonunaKadarOkunanlar] eski zorunlu okuma yolu için
+  // durur (boş gelir); kayıt ne olduysa onu yazar: `belge_acildi`
+  // açıldıysa, `sonuna_kadar_okundu` artık false.
 
   // NOT: `rizaBelgesiAcildi` 2026-10-05'te kalktı (okuma sadeleştirme):
   // Açık Rıza Metni yalnız sonuna kadar okunup sonunda onaylanınca kayda
@@ -53,6 +63,12 @@ class KayitOnayBaglami {
   /// 1.4'ten beri Açık Rıza Metni ve yatırım uyarısı. Açık Rıza Metni
   /// YALNIZ burada varsa kayda girer.
   final Set<String> sonunaKadarOkunanlar;
+
+  /// Kendi kutusuyla onaylanan metinler (`YasalTur`: Açık Rıza, uyarı).
+  final Set<String> isaretlenenler;
+
+  /// Bağlantıdan en az bir kez açılan metinler (`YasalTur`).
+  final Set<String> acilanMetinler;
 
   /// Yatırım uyarısının TAM metni (`disclaimerText`) kayıt ekranında
   /// sonuna kadar okunup onaylandı. Yalnız o zaman `yatirim_uyarisi` öğesi
@@ -89,19 +105,25 @@ class KayitOnayBaglami {
           YasalBelge.kvkk => kvkkBelgesiAcildi,
           YasalBelge.acikRiza => true,
         };
+    bool onayli(String t) =>
+        sonunaKadarOkunanlar.contains(t) || isaretlenenler.contains(t);
+    bool metinAcildi(String t) =>
+        sonunaKadarOkunanlar.contains(t) || acilanMetinler.contains(t);
     return [
       YasalMetinKatalogu.kayitTekKutu(dil)
           .rpcOgesi({'SUPABASE_ULKE': kutuUlkesi}),
       for (final b in YasalBelge.kutuylaAlinanlar)
         YasalOnayService.belgeOgesi(b, belgeDegiskenleri,
             acildi: acildi(b), okundu: false),
-      if (sonunaKadarOkunanlar.contains(YasalTur.acikRiza))
+      if (onayli(YasalTur.acikRiza))
         YasalOnayService.belgeOgesi(YasalBelge.acikRiza, belgeDegiskenleri,
-            acildi: true, okundu: true),
+            acildi: metinAcildi(YasalTur.acikRiza),
+            okundu: sonunaKadarOkunanlar.contains(YasalTur.acikRiza)),
       if (yatirimUyarisiOnaylandi)
         YasalMetinKatalogu.yatirimUyarisi().rpcOgesi({
-          'belge_acildi': true,
-          'sonuna_kadar_okundu': true,
+          'belge_acildi': metinAcildi(YasalTur.yatirimUyarisi),
+          'sonuna_kadar_okundu':
+              sonunaKadarOkunanlar.contains(YasalTur.yatirimUyarisi),
         }),
     ];
   }
@@ -466,6 +488,7 @@ class YasalOnayService {
     required Map<String, String> belgeDegiskenleri,
     required Set<String> acilanBelgeler,
     Set<String> sonunaKadarOkunanlar = const {},
+    Set<String> isaretlenenler = const {},
     KapiKutuBaglami? kutu,
     bool yatirimUyarisiDahil = false,
     required String locale,
@@ -475,6 +498,7 @@ class YasalOnayService {
       belgeDegiskenleri: belgeDegiskenleri,
       acilanBelgeler: acilanBelgeler,
       sonunaKadarOkunanlar: sonunaKadarOkunanlar,
+      isaretlenenler: isaretlenenler,
       kutu: kutu,
       yatirimUyarisiDahil: yatirimUyarisiDahil,
     );
@@ -527,10 +551,15 @@ class YasalOnayService {
     required Map<String, String> belgeDegiskenleri,
     required Set<String> acilanBelgeler,
     Set<String> sonunaKadarOkunanlar = const {},
+    Set<String> isaretlenenler = const {},
     KapiKutuBaglami? kutu,
     bool yatirimUyarisiDahil = false,
-  }) =>
-      [
+  }) {
+    // 2026-11-20: Açık Rıza ve uyarı kendi kutusuyla ([isaretlenenler]);
+    // bkz. [KayitOnayBaglami].
+    bool okundu(String t) => sonunaKadarOkunanlar.contains(t);
+    bool acildi(String t) => okundu(t) || acilanBelgeler.contains(t);
+    return [
         if (kutu != null) ...[
           ...kutu.ogeler(),
           for (final b in YasalBelge.kutuylaAlinanlar)
@@ -540,20 +569,23 @@ class YasalOnayService {
                 oncekiEkle: true,
                 oncekiSurum: durum.oncekiSurum[b.tur]),
         ],
-        if (sonunaKadarOkunanlar.contains(YasalTur.acikRiza))
+        if (okundu(YasalTur.acikRiza) ||
+            isaretlenenler.contains(YasalTur.acikRiza))
           belgeOgesi(YasalBelge.acikRiza, belgeDegiskenleri,
-              acildi: true,
-              okundu: true,
+              acildi: acildi(YasalTur.acikRiza),
+              okundu: okundu(YasalTur.acikRiza),
               oncekiEkle: true,
               oncekiSurum: durum.oncekiSurum[YasalTur.acikRiza]),
         if (yatirimUyarisiDahil)
           YasalMetinKatalogu.yatirimUyarisi().rpcOgesi({
-            if (sonunaKadarOkunanlar.contains(YasalTur.yatirimUyarisi)) ...{
+            if (okundu(YasalTur.yatirimUyarisi)) ...{
               'belge_acildi': true,
               'sonuna_kadar_okundu': true,
-            },
+            } else if (acildi(YasalTur.yatirimUyarisi))
+              'belge_acildi': true,
           }),
       ];
+  }
 
   // ── Kayıtlar ───────────────────────────────────────────────────────────
 

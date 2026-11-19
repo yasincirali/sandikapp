@@ -118,11 +118,16 @@ void main() {
       of: find.byType(YasalOnayKutusu),
       matching: find.byType(AnimatedContainer));
 
+  /// Tek kutunun işareti (uyarı / Açık Rıza kutularının işareti sayılmaz).
+  Finder kutuIsareti() => find.descendant(
+      of: find.byType(YasalOnayKutusu),
+      matching: find.byIcon(Icons.check_rounded));
+
   /// Okuma adımlarını (uyarı, Açık Rıza) sırayla açar ve okuyucuyu
   /// "sonuna kadar okundu, onaylandı" ile kapatır — kutu adımı açılır.
   Future<void> okunacaklariOku(WidgetTester tester) async {
-    await adimlariOku(tester, l.yasalAdimOkuOnayla, adet: 2);
-    expect(find.text(l.yasalAdimOkuOnayla), findsNothing);
+    await adimlariOnayla(tester, adet: 2);
+    expect(bekleyenOkumaKutusu, findsNothing);
   }
 
   group('tek kutu', () {
@@ -230,13 +235,13 @@ void main() {
           findsNothing);
       // Açık rızayı vermek (metnin sonunda) kutuyu işaretlemez.
       await okunacaklariOku(tester);
-      expect(find.byIcon(Icons.check_rounded), findsNothing);
+      expect(kutuIsareti(), findsNothing);
       await tester.tap(kare());
       await tester.pump();
-      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      expect(kutuIsareti(), findsOneWidget);
       await tester.tap(kare());
       await tester.pump();
-      expect(find.byIcon(Icons.check_rounded), findsNothing);
+      expect(kutuIsareti(), findsNothing);
     });
 
     testWidgets(
@@ -280,7 +285,7 @@ void main() {
         expect(find.byType(OkumaIpucu), findsNothing);
         Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
         await tester.pumpAndSettle();
-        expect(find.byIcon(Icons.check_rounded), findsNothing);
+        expect(kutuIsareti(), findsNothing);
       }
       // Cümlede "açık rıza" bağlantısı yok.
       expect(tekCumle.toLowerCase(), isNot(contains('açık rıza')));

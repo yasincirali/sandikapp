@@ -138,7 +138,7 @@ void main() {
   /// "sonuna kadar okundu, onaylandı" ile kapatır — kapının akışını
   /// sınamak için; kaydırma ayrı testte.
   Future<void> okunacaklariOku(WidgetTester tester, {int adet = 1}) =>
-      adimlariOku(tester, l.yasalAdimOkuOnayla, adet: adet);
+      adimlariOnayla(tester, adet: adet);
 
   SandikAsyncButton dugme(WidgetTester tester) =>
       tester.widget<SandikAsyncButton>(onayDugmesi());
@@ -189,7 +189,7 @@ void main() {
         '${l.yasalBelgeKosullar}, ${l.yasalBelgeGizlilik}', l.yasalBelgeKvkk));
     expect(find.text(l.yasalBelgeAcikRiza), findsOneWidget);
     expect(find.text(kutuBasligi), findsOneWidget);
-    expect(find.text(l.yasalAdimOkuOnayla), findsOneWidget);
+    expect(bekleyenOkumaKutusu, findsOneWidget);
     expect(kutuCumlesi(), findsNothing);
     expect(find.text(l.yasalAdimSayac(0, 2)), findsOneWidget);
     expect(dugme(tester).onPressed, isNull);
@@ -231,7 +231,9 @@ void main() {
     expect(ogeler[1]['degiskenler']['onceki_surum'], '1.3');
     expect(ogeler[1]['degiskenler']['sonuna_kadar_okundu'], isFalse);
     expect(ogeler[2]['degiskenler']['nitelik'], 'bilgilendirme');
-    expect(ogeler.last['degiskenler']['sonuna_kadar_okundu'], isTrue);
+    // 2026-11-20: rıza kendi kutusuyla; metin okutulmadı, kayıt bunu söyler.
+    expect(ogeler.last['degiskenler']['sonuna_kadar_okundu'], isFalse);
+    expect(ogeler.last['degiskenler']['belge_acildi'], isFalse);
     expect(uyariKayitlari, isEmpty);
   });
 
@@ -334,7 +336,7 @@ void main() {
         findsOneWidget);
     expect(find.text(l.yasalAdimKosulGuncelAciklama), findsOneWidget);
     // Okuma adımı yok: kutu hemen sıradaki adım.
-    expect(find.text(l.yasalAdimOkuOnayla), findsNothing);
+    expect(bekleyenOkumaKutusu, findsNothing);
     expect(sigan(l.yasalBelgeKosullar), findsOneWidget);
     expect(kutuCumlesi(), findsOneWidget);
     // Cümlede yalnız güncellenen belge kalın.

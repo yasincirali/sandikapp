@@ -6475,7 +6475,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.14: Our support and contact address is now support@murphysoft.app; nothing changed in how your data is processed.';
+      'Version 1.15: Explicit consent and the investment disclaimer are now given with their own separate checkboxes instead of at the end of the text; nothing changed in how your data is processed.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';
@@ -6534,7 +6534,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String zorunluOkumaEksik(String belgeler) {
-    return 'To continue, read to the end and accept: $belgeler';
+    return 'To continue, accept: $belgeler';
   }
 
   @override
@@ -6695,11 +6695,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalAdimUyariAciklama =>
-      'A short text explaining that the app is not investment advice. Read it to the end and accept at the bottom.';
+      'A short text explaining that the app is not investment advice.';
 
   @override
   String get yasalAdimRizaAciklama =>
-      'Explicit consent to transferring your data abroad. Read it to the end and give your consent at the bottom.';
+      'Explicit consent to transferring your data abroad. Consent is given only with this box.';
 
   @override
   String get yasalAdimKutuBaslik => 'Accept the Terms of Use';
@@ -6723,10 +6723,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is for your information; reading it is optional. Tick the box to confirm you have been informed.';
 
   @override
-  String get yasalAdimOkuOnayla => 'Read and accept';
+  String get yasalAdimMetniOku => 'Read the text';
 
   @override
-  String get yasalAdimOkunduOnaylandi => 'Read and accepted';
+  String get yasalAdimOkunduOnaylandi => 'Accepted';
 
   @override
   String yasalAdimSemantik(int sira, int toplam, String ad, String durum) {

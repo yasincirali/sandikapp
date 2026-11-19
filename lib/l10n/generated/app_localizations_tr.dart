@@ -6384,7 +6384,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Sürüm 1.14: Destek ve iletişim adresimiz support@murphysoft.app oldu; verilerinin işlenişinde bir şey değişmedi.';
+      'Sürüm 1.15: Açık rıza ve yatırım uyarısı artık metnin sonunda değil, her birine ait ayrı onay kutusuyla veriliyor; verilerinin işlenişinde bir şey değişmedi.';
 
   @override
   String get yasalBelgeKosullar => 'Kullanım Koşulları';
@@ -6443,7 +6443,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String zorunluOkumaEksik(String belgeler) {
-    return 'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: $belgeler';
+    return 'Devam etmek için şunları onaylamalısın: $belgeler';
   }
 
   @override
@@ -6592,11 +6592,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalAdimUyariAciklama =>
-      'Uygulamanın yatırım tavsiyesi olmadığını anlatan kısa metin. Sonuna kadar okuyup en altta onayla.';
+      'Uygulamanın yatırım tavsiyesi olmadığını anlatan kısa metin.';
 
   @override
   String get yasalAdimRizaAciklama =>
-      'Verilerinin yurt dışına aktarılmasına açık rıza. Sonuna kadar okuyup rızanı en altta ver.';
+      'Verilerinin yurt dışına aktarılmasına açık rıza. Rıza yalnız bu kutuyla verilir.';
 
   @override
   String get yasalAdimKutuBaslik => 'Kullanım Koşulları\'nı kabul et';
@@ -6620,10 +6620,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bilgilendirme amaçlıdır; okuman zorunlu değil. Kutuyu işaretleyerek bilgilendirildiğini belirt.';
 
   @override
-  String get yasalAdimOkuOnayla => 'Oku ve onayla';
+  String get yasalAdimMetniOku => 'Metni oku';
 
   @override
-  String get yasalAdimOkunduOnaylandi => 'Okundu ve onaylandı';
+  String get yasalAdimOkunduOnaylandi => 'Onaylandı';
 
   @override
   String yasalAdimSemantik(int sira, int toplam, String ad, String durum) {

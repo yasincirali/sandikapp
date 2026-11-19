@@ -82,7 +82,35 @@ class EkranOlcumu extends NavigatorObserver {
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (route is! PageRoute || previousRoute is! PageRoute) return;
-    _kaydet(_ad(previousRoute) ?? (_sekmelerAcik ? sekmeAdlari[_sekme] : null));
+    _kaydet(_ad(previousRoute) ?? (_sekmelerAcik ? sekmeAdlari[_sekme] : _kok));
+  }
+
+  /// Kök rotada çizilen kapı ekranı (giriş, karşılama, yasal kapı…). Son
+  /// bildirilen ad; üstündeki ekran kapanınca yeniden sayılır.
+  String? _kok;
+
+  /// `_AuthGate`'in seçtiği kök ekran, widget anahtarıyla (2026-11-20).
+  ///
+  /// Neden: GA'da 820 kişi "(not set)" görünüyordu. Kök ekranlar rota
+  /// değil (`_AuthGate` widget değiştirir), adları hiç gitmiyordu; Firebase
+  /// otomatik ekran kaydı da (Info.plist / manifest'te artık kapalı) her
+  /// açılışta adsız `screen_view` yazıyordu. Anahtar `ValueKey('yasal-kapi')`
+  /// → `yasal_kapi`. `splash` ekran değil; `main` sekmelerdir
+  /// ([sekmeDegisti] sayar).
+  void kokEkran(Key? anahtar) {
+    final v = anahtar is ValueKey<String> ? anahtar.value : null;
+    if (v == null || v == 'splash') return;
+    if (v == 'main') {
+      _kok = null;
+      return;
+    }
+    // Kapı her kurulumda çağırır; yalnız kök DEĞİŞİNCE sayılır. Yoksa
+    // giriş ekranının üstünde kayıt açıkken kapının yeniden kurulması
+    // "login" görüntülemesi yazardı.
+    final ad = v.replaceAll('-', '_');
+    if (ad == _kok) return;
+    _kok = ad;
+    _kaydet(ad);
   }
 
   /// Sekme kabuğu (`MainNavigationScreen`) ağaçta mı. Oturum kapalıyken kök
@@ -100,6 +128,7 @@ class EkranOlcumu extends NavigatorObserver {
   /// Sekme kabuğu ağaçtan çıktı (çıkış yapıldı).
   void sekmelerKapandi() {
     _sekmelerAcik = false;
+    _kok = null;
     _son = null;
   }
 }

@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../demo/demo_modu.dart';
 import '../utils/friendly_error.dart' show baglantiHatasiMi;
+import 'analytics_service.dart';
 import 'crash_reporter.dart';
 import 'remote_config_service.dart';
 
@@ -150,8 +151,13 @@ class HuniKaydi {
   /// Kayıt/giriş sırasında alınan hata. [asama]: kayit | otp | otp_tekrar |
   /// giris | sosyal. Detay yalnızca hata SINIFI ve KODU taşır, mesaj asla
   /// (mesaj e-posta içerebilir; sunucu biçimi ayrıca kısıtlar).
-  Future<void> hata(String asama, Object e) =>
-      kaydet(HuniAdimi.kayitHatasi, detay: hataDetayi(asama, e));
+  Future<void> hata(String asama, Object e) {
+    // GA'ya da (bayraksız): sunucu hunisi kapalıyken düşüş nedeni hiçbir
+    // yerde görünmüyordu (2026-11-20).
+    unawaited(AnalyticsService.instance
+        .logKayitHatasi(asama: _parca(asama, 24), kod: _parca(hataKodu(e), 40)));
+    return kaydet(HuniAdimi.kayitHatasi, detay: hataDetayi(asama, e));
+  }
 
   /// Firebase `signup_step` adının huni karşılığı; tanınmayan ad `null`.
   static HuniAdimi? signupStepten(String step) => switch (step) {

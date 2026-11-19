@@ -1,10 +1,10 @@
 # Privacy Policy — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** November 7, 2026
-**Version:** 1.14
+**Last updated:** November 20, 2026
+**Version:** 1.15
 **Consent version:** 1.8
-**Source:** TR 1.14 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.15 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -187,7 +187,7 @@ You can withdraw your consent at any time with "Turn off AI commentary" on the s
 Because the Supabase database is hosted {SUPABASE_ULKEDE} and Firebase in the USA, your data is transferred outside Türkiye. The in-app text shows the country of the server you are connected to. Apple's and Google's notification, sign-in, email and store payment services also run on global infrastructure. If you buy Premium, your subscription record is verified through RevenueCat (USA). If you use the AI portfolio comment or reading a statement by its words, the related data is sent to Anthropic (USA); this transfer relies on the explicit consent you give separately in the App the first time you use the feature (see §5.4, §5.5). Under KVKK Article 9 and GDPR Articles 44-49:
 
 - **For EU/EEA users:** Transfers are made under Standard Contractual Clauses (SCCs) and the providers' GDPR-compliance commitments.
-- **For Turkish users:** **Explicit consent** is collected under KVKK Article 9(1). You give it with the Explicit Consent Notice ("Açık Rıza Metni"), which you read to the end and accept at the end of the text during registration (or on the consent screen at the first sign-in with Apple or Google); this consent is not collected together with any other declaration.
+- **For Turkish users:** **Explicit consent** is collected under KVKK Article 9(1). You give it with the Explicit Consent Notice ("Açık Rıza Metni"), which you accept with its own separate checkbox during registration (or on the consent screen at the first sign-in with Apple or Google); this consent is not collected together with any other declaration.
 
 The destination countries (Supabase: {SUPABASE_ULKE}; Firebase and RevenueCat: USA) are not on the list of countries with adequate protection announced by the Turkish Data Protection Board; therefore international transfer is based on your **explicit consent**.
 
@@ -295,7 +295,7 @@ When you sign out, the session token, your cache and preferences and the widget 
 
 **sandık** is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals, charts, market-movement metrics (money flow, volume radar, buyer pressure), AI-written asset notes and portfolio comments shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.
 
-The full text of this notice is shown to you during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it at the bottom after reading it to the end. The record of your acceptance is kept as legal evidence.
+The full text of this notice can be opened from a link during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it with its own separate checkbox. The record of your acceptance is kept as legal evidence.
 
 ---
 

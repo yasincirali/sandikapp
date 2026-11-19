@@ -1,8 +1,8 @@
 # Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 13 Kasım 2026
-**Sürüm:** 1.13
+**Son güncelleme:** 20 Kasım 2026
+**Sürüm:** 1.14
 **Onay sürümü:** 1.6
 
 ---
@@ -15,8 +15,8 @@ Hesap oluştururken bu Koşulları kabul edersiniz. **Gizlilik Politikası** ve 
 
 Kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da):
 - Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni bağlantı olarak sunulur; dokunduğunuzda tam metni açılır. Bu Koşulları tek bir onay kutusunu işaretleyerek kabul edersiniz; aynı kutuyla 18 yaşından büyük olduğunuzu beyan eder, Gizlilik Politikası ve KVKK Aydınlatma Metni ile bilgilendirildiğinizi belirtirsiniz. Onay kutusu açık rıza içermez.
-- Açık Rıza Metni size tam metniyle gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz.
-- Yatırım uyarısı (§3) tam metniyle gösterilir; sonuna kadar okuduktan sonra en altta onaylarsınız.
+- Açık Rıza Metni bağlantıdan tam metniyle açılır; açık rızanızı bu metne ait ayrı onay kutusuyla verirsiniz.
+- Yatırım uyarısı (§3) bağlantıdan tam metniyle açılır; onayınızı uyarıya ait ayrı onay kutusuyla verirsiniz.
 
 ---
 
@@ -82,7 +82,7 @@ Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
 - Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
 - Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.
 
-Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.
+Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) bağlantıdan açılabilir; onayınızı uyarıya ait ayrı onay kutusuyla verirsiniz. Onayın kaydı yasal kanıt olarak saklanır.
 
 ---
 
@@ -250,7 +250,7 @@ AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesin
 
 Bu Koşulları ve diğer yasal belgeleri değiştirdiğimizde:
 - Yeni metin yeni bir sürüm numarasıyla yayımlanır; web sitesindeki ve uygulamadaki metin her zaman aynıdır.
-- Esaslı değişiklikler ("Onay sürümü" de yeni sürüme çekilir) uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir. Kullanım Koşulları için kabulünüz onay kutusuyla, Açık Rıza Metni için rızanız metnin sonunda yeniden istenir; Gizlilik Politikası ve KVKK Aydınlatma Metni'nin güncel hâliyle bilgilendirildiğinizi aynı kutuda belirtirsiniz.
+- Esaslı değişiklikler ("Onay sürümü" de yeni sürüme çekilir) uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir. Kullanım Koşulları için kabulünüz onay kutusuyla, Açık Rıza Metni için rızanız o metne ait ayrı kutuyla yeniden istenir; Gizlilik Politikası ve KVKK Aydınlatma Metni'nin güncel hâliyle bilgilendirildiğinizi aynı kutuda belirtirsiniz.
 - Hak ve yükümlülüklerinizi ya da kişisel veri işleyişini değiştirmeyen düzeltmelerde yalnızca "Sürüm" değişir; yeniden onay istenmez.
 - Esaslı bir değişikliği onaylamadan uygulamayı kullanmaya devam edemezsiniz; değişikliği kabul etmiyorsanız hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).
 - Hangi sürümü ne zaman kabul ettiğiniz ya da hangi sürümün size ne zaman sunulduğu kayıt altında tutulur.

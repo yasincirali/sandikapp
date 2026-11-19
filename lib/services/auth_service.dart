@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../config/pref_keys.dart';
 import '../models/user_model.dart';
 import '../models/kullanici_adi.dart';
+import 'analytics_service.dart';
 import 'db_logger.dart';
 import 'home_widget_service.dart';
 import 'huni_kaydi.dart';
@@ -676,6 +677,14 @@ class AuthService {
       final user = response.user;
       if (user == null) {
         throw const AuthException('Giriş başarısız.');
+      }
+      // GA `sign_up` (2026-11-20): sosyal girişte kayıt ile giriş aynı çağrı;
+      // hesap az önce açıldıysa kayıttır.
+      // shortcut: 2 dk pencere (cihaz saati kayabilir), sunucu "yeni" bayrağı dönerse ona geç.
+      final acilis = DateTime.tryParse(user.createdAt);
+      if (acilis != null &&
+          DateTime.now().difference(acilis).abs() < const Duration(minutes: 2)) {
+        unawaited(AnalyticsService.instance.logSignup(method: provider.name));
       }
       final email = (user.email ?? cred.email ?? '').toLowerCase().trim();
 

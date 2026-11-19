@@ -346,12 +346,19 @@ void main() {
     expect(kvkk, contains('onayınıza bağlı değildir'));
     expect(gizlilik,
         contains('bilgilendirme amaçlıdır ve kabulünüze bağlı değildir'));
-    expect(riza, isNot(contains('onay kutusunu işaretlersiniz')));
-    expect(riza, isNot(contains('onay kutusuyla verilir')));
-    expect(riza, contains('Rıza yalnız bu düğmeyle verilir'));
-    // Yatırım uyarısı hâlâ tam metniyle okunup onaylanır (§3 / §12 aynen).
+    // 2026-11-20 (okuma şartı kalktı): rıza kendi AYRI kutusuyla; Koşulların
+    // kutusuyla paketlenmez.
+    expect(riza, contains('Rıza yalnız bu kutuyla verilir'));
+    expect(riza, contains("Kullanım Koşulları'nın kabulüne ait onay kutusu "
+        'açık rıza içermez'));
+    for (final m in [kosullar, gizlilik, kvkk, riza]) {
+      expect(m, isNot(contains('sonuna kadar okuyup')));
+      expect(m, isNot(contains('sonuna kadar okunduktan')));
+      expect(m, isNot(contains('sonuna kadar okuduktan')));
+    }
     for (final m in [kosullar, gizlilik]) {
       expect(m, contains('Bu uyarının tam metni kayıt sırasında'));
+      expect(m, contains('onayınızı uyarıya ait ayrı onay kutusuyla'));
     }
     // 0120'den beri Koşullar/Gizlilik/KVKK 1.5; Açık Rıza 1.4'te kaldı.
     for (final b in YasalBelge.values) {

@@ -10573,7 +10573,7 @@ abstract class AppLocalizations {
   /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yalnız en yeni sürümün değişikliğini anlatacak biçimde yeniden yazılır (eski sürümlerin notları silinir; tam geçmiş web'deki belge sürüm notunda); uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.14: Destek ve iletişim adresimiz support@murphysoft.app oldu; verilerinin işlenişinde bir şey değişmedi.'**
+  /// **'Sürüm 1.15: Açık rıza ve yatırım uyarısı artık metnin sonunda değil, her birine ait ayrı onay kutusuyla veriliyor; verilerinin işlenişinde bir şey değişmedi.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
@@ -10687,7 +10687,7 @@ abstract class AppLocalizations {
   /// No description provided for @zorunluOkumaEksik.
   ///
   /// In tr, this message translates to:
-  /// **'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}'**
+  /// **'Devam etmek için şunları onaylamalısın: {belgeler}'**
   String zorunluOkumaEksik(String belgeler);
 
   /// No description provided for @yasalBelgeYatirimUyarisi.
@@ -10904,13 +10904,13 @@ abstract class AppLocalizations {
   /// No description provided for @yasalAdimUyariAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Uygulamanın yatırım tavsiyesi olmadığını anlatan kısa metin. Sonuna kadar okuyup en altta onayla.'**
+  /// **'Uygulamanın yatırım tavsiyesi olmadığını anlatan kısa metin.'**
   String get yasalAdimUyariAciklama;
 
   /// No description provided for @yasalAdimRizaAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Verilerinin yurt dışına aktarılmasına açık rıza. Sonuna kadar okuyup rızanı en altta ver.'**
+  /// **'Verilerinin yurt dışına aktarılmasına açık rıza. Rıza yalnız bu kutuyla verilir.'**
   String get yasalAdimRizaAciklama;
 
   /// No description provided for @yasalAdimKutuBaslik.
@@ -10943,16 +10943,16 @@ abstract class AppLocalizations {
   /// **'Bilgilendirme amaçlıdır; okuman zorunlu değil. Kutuyu işaretleyerek bilgilendirildiğini belirt.'**
   String get yasalAdimBilgiGuncelAciklama;
 
-  /// No description provided for @yasalAdimOkuOnayla.
+  /// No description provided for @yasalAdimMetniOku.
   ///
   /// In tr, this message translates to:
-  /// **'Oku ve onayla'**
-  String get yasalAdimOkuOnayla;
+  /// **'Metni oku'**
+  String get yasalAdimMetniOku;
 
   /// No description provided for @yasalAdimOkunduOnaylandi.
   ///
   /// In tr, this message translates to:
-  /// **'Okundu ve onaylandı'**
+  /// **'Onaylandı'**
   String get yasalAdimOkunduOnaylandi;
 
   /// Ekran okuyucu: adımlar sırayla okunur ("Adım 2/3, Açık Rıza Metni, bekliyor").

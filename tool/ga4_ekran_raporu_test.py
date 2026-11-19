@@ -16,6 +16,13 @@ def _yanit(*rows):
 
 
 class Ga4EkranRaporuTest(unittest.TestCase):
+    def test_huni_hazir_suzgecle_olay_sayar(self):
+        tum, girisli = g.istekler(7, "eventName", g.HUNI)
+        self.assertIs(tum["dimensionFilter"], g.HUNI)
+        self.assertEqual(tum["metrics"][0]["name"], "eventCount")
+        self.assertEqual(girisli["dimensionFilter"]["andGroup"]["expressions"],
+                         [g.HUNI, g.GIRISLI])
+
     def test_birlestir_girisli_payina_gore_siralar_ve_suresi_kisi_basi(self):
         tum = _yanit(("Ana sayfa", 900, 300, 6000), ("Zekat", 12, 4, 400))
         girisli = _yanit(("Ana sayfa", 200), ("Zekat", 2))

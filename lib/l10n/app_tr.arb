@@ -4227,7 +4227,7 @@
   "yasalKapiAciklamaGuncel": "Yasal belgelerimizi güncelledik. Devam etmek için aşağıdaki adımları tamamla.",
   "yasalKapiAciklamaIlk": "Uygulamayı kullanmaya başlamadan önce aşağıdaki adımları tamamla.",
   "yasalKapiNelerDegisti": "Neler değişti",
-  "yasalKapiDegisiklikNotu": "Sürüm 1.14: Destek ve iletişim adresimiz support@murphysoft.app oldu; verilerinin işlenişinde bir şey değişmedi.",
+  "yasalKapiDegisiklikNotu": "Sürüm 1.15: Açık rıza ve yatırım uyarısı artık metnin sonunda değil, her birine ait ayrı onay kutusuyla veriliyor; verilerinin işlenişinde bir şey değişmedi.",
   "@yasalKapiDegisiklikNotu": {
     "description": "Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yalnız en yeni sürümün değişikliğini anlatacak biçimde yeniden yazılır (eski sürümlerin notları silinir; tam geçmiş web'deki belge sürüm notunda); uydurma iddia yazılmaz."
   },
@@ -4255,7 +4255,7 @@
   "zorunluOkumaOnaylaKisa": "Onaylıyorum",
   "zorunluOkumaRizaVer": "Okudum ve açık rıza veriyorum",
   "zorunluOkumaRizaVerKisa": "Açık rıza veriyorum",
-  "zorunluOkumaEksik": "Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}",
+  "zorunluOkumaEksik": "Devam etmek için şunları onaylamalısın: {belgeler}",
   "@zorunluOkumaEksik": {
     "placeholders": {
       "belgeler": {"type": "String"}
@@ -4445,8 +4445,8 @@
       }
     }
   },
-  "yasalAdimUyariAciklama": "Uygulamanın yatırım tavsiyesi olmadığını anlatan kısa metin. Sonuna kadar okuyup en altta onayla.",
-  "yasalAdimRizaAciklama": "Verilerinin yurt dışına aktarılmasına açık rıza. Sonuna kadar okuyup rızanı en altta ver.",
+  "yasalAdimUyariAciklama": "Uygulamanın yatırım tavsiyesi olmadığını anlatan kısa metin.",
+  "yasalAdimRizaAciklama": "Verilerinin yurt dışına aktarılmasına açık rıza. Rıza yalnız bu kutuyla verilir.",
   "yasalAdimKutuBaslik": "Kullanım Koşulları'nı kabul et",
   "yasalAdimGuncellendi": "{belgeler} güncellendi",
   "@yasalAdimGuncellendi": {
@@ -4470,8 +4470,8 @@
   },
   "yasalAdimKosulGuncelAciklama": "Değişiklikleri belgeden okuyabilirsin; okuman zorunlu değil. Devam etmek için kutuyu işaretle.",
   "yasalAdimBilgiGuncelAciklama": "Bilgilendirme amaçlıdır; okuman zorunlu değil. Kutuyu işaretleyerek bilgilendirildiğini belirt.",
-  "yasalAdimOkuOnayla": "Oku ve onayla",
-  "yasalAdimOkunduOnaylandi": "Okundu ve onaylandı",
+  "yasalAdimMetniOku": "Metni oku",
+  "yasalAdimOkunduOnaylandi": "Onaylandı",
   "yasalAdimSemantik": "Adım {sira}/{toplam}, {ad}, {durum}",
   "@yasalAdimSemantik": {
     "description": "Ekran okuyucu: adımlar sırayla okunur (\"Adım 2/3, Açık Rıza Metni, bekliyor\").",

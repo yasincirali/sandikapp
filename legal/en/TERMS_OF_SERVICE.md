@@ -1,10 +1,10 @@
 # Terms of Service — sandık
 
 **Effective date:** October 8, 2026
-**Last updated:** November 13, 2026
-**Version:** 1.13
+**Last updated:** November 20, 2026
+**Version:** 1.14
 **Consent version:** 1.6
-**Source:** TR 1.13 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.14 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -16,8 +16,8 @@ You accept these Terms when you create an account. The **Privacy Policy** and th
 
 During registration (and on the consent screen at the first sign-in with Apple or Google):
 - The Terms of Service, the Privacy Policy and the KVKK Disclosure are offered as links; tapping one opens its full text. You accept these Terms by ticking a single box; with the same box you declare that you are over 18 and state that you have been informed by the Privacy Policy and the KVKK Disclosure. The box does not include explicit consent.
-- The Explicit Consent Notice is shown to you in full; after reading it to the end you give your explicit consent with the button at the end of the text.
-- The investment disclaimer (§3) is shown in full; you accept it at the bottom after reading it to the end.
+- The Explicit Consent Notice opens in full from a link; you give your explicit consent with its own separate checkbox.
+- The investment disclaimer (§3) opens in full from a link; you accept it with its own separate checkbox.
 
 ---
 
@@ -83,7 +83,7 @@ This section applies once Premium is offered for sale in the App.
 - Make your investment decisions **after consulting an SPK-licensed brokerage or investment adviser**.
 - **The Company cannot be held liable for any profit or loss** arising from investment decisions you make based on data shown in the App.
 
-The full text of this notice is shown to you during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it at the bottom after reading it to the end. The record of your acceptance is kept as legal evidence.
+The full text of this notice can be opened from a link during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it with its own separate checkbox. The record of your acceptance is kept as legal evidence.
 
 ---
 
@@ -251,7 +251,7 @@ For EU consumers, the mandatory consumer protection provisions of the country of
 
 When we change these Terms or the other legal documents:
 - The new text is published with a new version number; the text on the website and in the App is always the same.
-- Material changes (the "Consent version" is also moved to the new version) are announced in the App: on the next launch the current documents and a summary of the changes are shown. Your acceptance of the Terms of Service is requested again with the box and your consent under the Explicit Consent Notice at the end of that text; in the same box you state that you have been informed by the current Privacy Policy and KVKK Disclosure.
+- Material changes (the "Consent version" is also moved to the new version) are announced in the App: on the next launch the current documents and a summary of the changes are shown. Your acceptance of the Terms of Service is requested again with the box and your consent under the Explicit Consent Notice with that text's own checkbox; in the same box you state that you have been informed by the current Privacy Policy and KVKK Disclosure.
 - For corrections that do not change your rights and obligations or how personal data is processed, only the "Version" changes; no new confirmation is requested.
 - You cannot continue using the App without accepting a material change; if you do not accept the change, you can delete your account (Profile → Settings → Delete Account).
 - Which version you accepted and when, or which version was presented to you and when, is recorded.

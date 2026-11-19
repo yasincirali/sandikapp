@@ -86,6 +86,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   //    "bilgilendirildim" (bilgilendirme belgeleri onaylatılmaz; KVKK Kurumu
   //    aydınlatmanın rıza gibi alınmasını önermez). Üç belge listede ve
   //    kutu cümlesinde bağlantıdır, salt okunur açılır.
+  // 2026-11-20 (yasin, "okuma şartı kalksın"): 1 ve 2 artık zorunlu okuma
+  // değil: adımda metnin bağlantısı (salt okunur) + kendi kutusu. Rıza
+  // yine ayrı kutuda, Koşulların kutusuyla paketlenmez. Neden: GA'da
+  // metinler kişi başı 5,5 kez, ~6 sn açılıyordu; kayıt ekranını açan 267
+  // kişiden 8'i kod adımına geldi.
   // Kutu metinlere KİLİTLİ DEĞİL: Koşulların kabulü rızanın okunmasına
   // bağlı değil; üçü birbirinden bağımsız eylemlerdir. (Adım düzeninde kutu
   // okumalardan SONRA görünür — üçü de zorunlu olduğundan istenen değişmez,
@@ -114,7 +119,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _kvkkDocOpened = false;
   bool _privacyDocOpened = false;
 
-  /// Sonuna kadar okunup sonunda onaylanan türler (Açık Rıza, uyarı).
+  /// Kutusuyla onaylanan metinler (Açık Rıza, uyarı; 2026-11-20'ye kadar
+  /// sonuna kadar okunup sonunda onaylananlar).
   final Set<String> _onaylananlar = {};
 
   /// "Kayıt ol"a okunması gereken metinler eksikken basıldı.
@@ -159,29 +165,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   /// First missing requirement, in the order the user filled the form.
   /// null → form is valid.
-  String? _firstMissingRequirement() {
+  /// `kod`: ölçüdeki ad (`kayit_eksik_<kod>`), `metin`: kullanıcıya.
+  ({String kod, String metin})? _firstMissingRequirement() {
     if (_nameCtrl.text.trim().isEmpty) {
-      return context.l10n.registerUsernameMissing;
+      return (kod: 'ad', metin: context.l10n.registerUsernameMissing);
     }
     if (KullaniciAdi.bicimDenetle(_nameCtrl.text) != null) {
-      return context.l10n.kullaniciAdiHataBicim;
+      return (kod: 'ad', metin: context.l10n.kullaniciAdiHataBicim);
     }
     final adRet = _adRetMetni();
-    if (adRet != null) return adRet;
-    if (!_isValidEmail(_emailCtrl.text)) return context.l10n.registerEmailInvalid;
-    if (_ePostaHatasi() != null) return context.l10n.ePostaKesinHata;
+    if (adRet != null) return (kod: 'ad_ret', metin: adRet);
+    if (!_isValidEmail(_emailCtrl.text)) {
+      return (kod: 'eposta', metin: context.l10n.registerEmailInvalid);
+    }
+    if (_ePostaHatasi() != null) {
+      return (kod: 'eposta', metin: context.l10n.ePostaKesinHata);
+    }
     final passError = AuthService.validatePassword(_passCtrl.text);
-    if (passError != null) return passError;
+    if (passError != null) return (kod: 'sifre', metin: passError);
     if (_passCtrl.text != _passConfirmCtrl.text) {
-      return context.l10n.registerPasswordsMismatch;
+      return (kod: 'sifre_tekrar', metin: context.l10n.registerPasswordsMismatch);
     }
     // Eksik adım: hangi metnin okunmadığını adıyla söyle (girdi kuralı
     // istemcide — kullanıcı neyin eksik olduğunu basmadan önce bilir);
     // okumalar tamamsa son adım, kutu.
     if (!_belgelerTamam) {
-      return context.l10n.zorunluOkumaEksik(_eksikAdlari(context.l10n));
+      return (
+        kod: 'okuma',
+        metin: context.l10n.zorunluOkumaEksik(_eksikAdlari(context.l10n)),
+      );
     }
-    if (!_kutuIsaretli) return context.l10n.tekOnayGerekli;
+    if (!_kutuIsaretli) return (kod: 'kutu', metin: context.l10n.tekOnayGerekli);
     return null;
   }
 
@@ -244,22 +258,38 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// değil (bkz. yukarıdaki karar notu).
   void _kutuDegistir() => setState(() {
         _kutuIsaretli = !_kutuIsaretli;
-        if (_kutuIsaretli) _kutuHatasi = false;
+        if (_kutuIsaretli) {
+          _kutuHatasi = false;
+          unawaited(AnalyticsService.instance.logKayitAdimi('kutu'));
+        }
       });
 
-  /// Okuma adımının metnini (Açık Rıza Metni ya da yatırım uyarısı)
-  /// zorunlu okumada açar; sonuna kadar okunup sonunda onaylanırsa adım
-  /// tamamlanır.
-  Future<void> _zorunluOku(YasalAdimTuru tur) async {
+  /// Uyarı ya da Açık Rıza Metni bağlantıdan açıldı (`belge_acildi`).
+  final Set<String> _acilanMetinler = {};
+
+  static String _olcuAdi(YasalAdimTuru tur) =>
+      tur == YasalAdimTuru.acikRiza ? 'riza' : 'uyari';
+
+  /// Adımın metnini SALT OKUNUR açar (2026-11-20: okuma şartı kalktı,
+  /// onay adımdaki kutuyla).
+  Future<void> _metniAc(YasalAdimTuru tur) async {
     final m = ZorunluMetin.adim(context.l10n, tur);
-    final sonuc = await zorunluOkumaAc(context, m);
-    if (!mounted || sonuc == null) return;
-    if (sonuc.onaylandi && sonuc.sonunaKadarOkundu) {
-      setState(() {
-        _onaylananlar.add(m.tur);
-        if (_belgelerTamam) _belgeHatasi = false;
-      });
-    }
+    setState(() => _acilanMetinler.add(m.tur));
+    unawaited(AnalyticsService.instance.logKayitAdimi('metin_${_olcuAdi(tur)}'));
+    await metniAc(context, m);
+  }
+
+  /// Uyarı / Açık Rıza kutusu.
+  void _onayDegistir(YasalAdimTuru tur) {
+    final t = tur.anahtar;
+    setState(() {
+      if (!_onaylananlar.remove(t)) {
+        _onaylananlar.add(t);
+        unawaited(
+            AnalyticsService.instance.logKayitAdimi('onay_${_olcuAdi(tur)}'));
+      }
+      if (_belgelerTamam) _belgeHatasi = false;
+    });
   }
 
   @override
@@ -278,7 +308,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passConfirmCtrl.addListener(_rebuild);
   }
 
-  void _rebuild() => setState(() {});
+  /// Forma ilk harf yazıldı mı (`kayit_basladi` bir kez).
+  bool _basladiBildirildi = false;
+
+  void _rebuild() {
+    if (!_basladiBildirildi &&
+        (_nameCtrl.text.isNotEmpty || _emailCtrl.text.isNotEmpty)) {
+      _basladiBildirildi = true;
+      unawaited(AnalyticsService.instance.logKayitAdimi('basladi'));
+    }
+    setState(() {});
+  }
 
 
   @override
@@ -344,7 +384,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       kosulBelgesiAcildi: _termsDocOpened,
       kvkkBelgesiAcildi: _kvkkDocOpened,
       gizlilikBelgesiAcildi: _privacyDocOpened,
-      sonunaKadarOkunanlar: {..._onaylananlar},
+      isaretlenenler: {..._onaylananlar},
+      acilanMetinler: {..._acilanMetinler},
       yatirimUyarisiOnaylandi:
           _onaylananlar.contains(YasalTur.yatirimUyarisi),
     );
@@ -424,9 +465,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       acilanlar: {
         for (final b in YasalBelge.values)
           if (_acildi(b)) b.tur,
+        ..._acilanMetinler,
       },
       hata: hata,
-      onOku: _zorunluOku,
+      onOku: _metniAc,
+      onOnayDegistir: _onayDegistir,
       onBelgeAc: _belgeyiAc,
       // ── Tek onay (kutu 1.1) — son adımın içinde ──────────────────────
       // Koşulların kabulü + 18+ + Gizlilik/KVKK ile bilgilendirildim; üç
@@ -703,10 +746,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       : () async {
                           final missing = _firstMissingRequirement();
                           if (missing != null) {
+                            unawaited(AnalyticsService.instance
+                                .logKayitAdimi('eksik_${missing.kod}'));
                             _eksikleriGoster();
-                            showAppError(context, AuthException(missing));
+                            showAppError(context, AuthException(missing.metin));
                             return;
                           }
+                          unawaited(AnalyticsService.instance.logKayitAdimi('istek'));
                           await _register();
                         },
                   child: Text(
@@ -964,74 +1010,12 @@ class YasalOnayKutusu extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          // Erişilebilirlik (2026-10-05): kutu kendi çizimimiz; durumunu
-          // ekran okuyucuya bildirmezse TalkBack/VoiceOver onu kutu olarak
-          // okumaz ve yasal onay sesle verilemez. Cümledeki belge
-          // bağlantıları ayrı düğüm olarak kalır (container).
-          Semantics(
-            container: true,
-            checked: accepted,
-            onTap: onToggle,
-            child: GestureDetector(
-              // 2026-09: "belgeyi açıp sonuna kadar kaydır" zorunluluğu
-              // kaldırıldı. 2026-10-04 (bayrak `zorunlu_okuma`) TÜM metinler
-              // için geri geldi ve kutu metinlere kilitlendi. 2026-10-05
-              // (okuma sadeleştirme): sonuna kadar okuma yalnız Açık Rıza
-              // Metni'nde ve uyarıda kaldı; kutu kilitsiz.
-              onTap: onToggle,
-              behavior: HitTestBehavior.opaque,
-              // Kare 26 px, çerçevesi amber (eskiden 22 px, `text36` gri
-              // çerçeve: koyu temada zemine karışıyordu — kullanıcı geri
-              // bildirimi 2026-10-05). Satırın tamamı dokunma alanıdır ve
-              // en az [SandikTouch.min] yüksekliktedir.
-              child: ConstrainedBox(
-                constraints:
-                    const BoxConstraints(minHeight: SandikTouch.min),
-                child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AnimatedContainer(
-                    duration: SandikMotion.stateOf(context),
-                    curve: SandikMotion.enter,
-                    width: 26,
-                    height: 26,
-                    decoration: BoxDecoration(
-                      color: accepted
-                          ? context.c.amberText
-                          : context.c.amberText.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      border: Border.all(
-                        color: error && !accepted
-                            ? context.c.loss
-                            : context.c.amberText,
-                        width: 2,
-                      ),
-                    ),
-                    child: accepted
-                        ? Icon(Icons.check_rounded,
-                            size: 18, color: context.c.onAmber)
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: checkboxSpan != null
-                        ? Text.rich(
-                            checkboxSpan!,
-                            style: context.t.titleSmall?.copyWith(
-                              color: error ? context.c.loss : context.c.text58,
-                            ),
-                          )
-                        : Text(
-                            checkboxLabel,
-                            style: context.t.titleSmall?.copyWith(
-                              color: error ? context.c.loss : context.c.text58,
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-              ),
-            ),
+          YasalIsaretSatiri(
+            isaretli: accepted,
+            metin: checkboxLabel,
+            span: checkboxSpan,
+            hata: error,
+            onToggle: onToggle,
           ),
           if (error) ...[
             const SizedBox(height: 8),

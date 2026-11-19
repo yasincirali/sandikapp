@@ -28,6 +28,12 @@
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules">
+        <!-- Firebase otomatik ekran kaydı kapalı (2026-11-20): MainActivity'yi
+             adsız screen_view olarak yazıyordu, GA'da "(not set)". Ekran
+             adları EkranOlcumu'ndan gelir. -->
+        <meta-data
+            android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -11,6 +11,7 @@ import 'package:portfoy_takip/services/yasal_metin_katalogu.dart';
 import 'package:portfoy_takip/services/yasal_onay_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:portfoy_takip/widgets/sigan_metin.dart';
 
 import 'helpers/yasal_adim.dart';
 
@@ -97,16 +98,18 @@ void main() {
       }
       expect(y, [...y]..sort(), reason: 'yukarıdan aşağı aynı sıra');
 
-      await adimlariOku(tester, tr.yasalAdimOkuOnayla, adet: 1);
+      await adimlariOnayla(tester, adet: 1);
       expect(
           find.bySemanticsLabel(
               'Adım 1/3, ${tr.yasalBelgeYatirimUyarisi}, tamamlandı'),
           findsOneWidget);
       expect(find.bySemanticsLabel('Adım 2/3, ${tr.yasalBelgeAcikRiza}, '
           'bekliyor'), findsOneWidget);
-      // Eylem başlıktan SONRA gelir ve düğme olarak okunur.
-      final dugme = find.text(tr.yasalAdimOkuOnayla);
-      expect(tester.getSemantics(dugme), isSemantics(isButton: true));
+      // Eylem başlıktan SONRA gelir ve kutu olarak okunur (2026-11-20:
+      // zorunlu okuma yerine adımın kendi kutusu).
+      final dugme = bekleyenOkumaKutusu;
+      expect(tester.getSemantics(dugme),
+          isSemantics(hasCheckedState: true, isChecked: false, hasTapAction: true));
       expect(tester.getRect(dugme).top,
           greaterThan(tester.getRect(find.bySemanticsLabel(
               'Adım 2/3, ${tr.yasalBelgeAcikRiza}, bekliyor')).top));
@@ -135,13 +138,16 @@ void main() {
             boyut: const Size(320, 2400), olcek: olcek);
         Size boyutu(Finder f) => tester.getSize(f);
         await tester.scrollUntilVisible(
-            find.text(tr.yasalAdimOkuOnayla), 200,
+            bekleyenOkumaKutusu, 200,
             scrollable: find.byType(Scrollable).first);
-        final dugme = find.ancestor(
-            of: find.text(tr.yasalAdimOkuOnayla),
-            matching: find.byType(SandikTappable));
+        final dugme = bekleyenOkumaKutusu.first;
         expect(boyutu(dugme).height, greaterThanOrEqualTo(SandikTouch.min));
         expect(boyutu(dugme).width, greaterThanOrEqualTo(SandikTouch.min));
+        final metin = find.ancestor(
+            of: find.byWidgetPredicate((w) =>
+                w is SiganMetin && w.adaylar.contains(tr.yasalAdimMetniOku)).first,
+            matching: find.byType(SandikTappable));
+        expect(boyutu(metin).height, greaterThanOrEqualTo(SandikTouch.min));
         await tester.scrollUntilVisible(
             find.text(tr.yasalAdimDigerBelgeler(3)), 200,
             scrollable: find.byType(Scrollable).first);
@@ -190,7 +196,7 @@ void main() {
                   boyut: boyut, olcek: olcek, dil: dil);
               await tester.pump(const Duration(seconds: 1));
               expect(tester.takeException(), isNull);
-              await adimlariOku(tester, ll.yasalAdimOkuOnayla, adet: okuma);
+              await adimlariOnayla(tester, adet: okuma);
               expect(tester.takeException(), isNull);
               final liste = find.byType(Scrollable).first;
               final diger = find.textContaining(
@@ -226,7 +232,7 @@ void main() {
           tester.state<ScrollableState>(liste).position.pixels;
       expect(ofset(), 0);
       // Uyarı → Açık Rıza: iki okuma, ardından kutu adımı sıradaki.
-      await adimlariOku(tester, tr.yasalAdimOkuOnayla, adet: 2);
+      await adimlariOnayla(tester, adet: 2);
       expect(ofset(), greaterThan(0),
           reason: 'kullanıcı kaydırmadan sıradaki adıma gelinmeli');
       final kare = find.descendant(
@@ -259,7 +265,7 @@ void main() {
     await tester.tap(find.text(tr.yasalKapiNelerDegisti));
     await tester.pumpAndSettle();
     expect(find.text(tr.yasalKapiDegisiklikNotu), findsNothing);
-    await adimlariOku(tester, tr.yasalAdimOkuOnayla, adet: 2);
+    await adimlariOnayla(tester, adet: 2);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.byType(YasalOnayKutusu), findsOneWidget);
