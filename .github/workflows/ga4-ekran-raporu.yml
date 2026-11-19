@@ -1,0 +1,34 @@
+# Haftalık ekran istatistiği (tool/ga4_ekran_raporu.py): ekran, özellik ve
+# widget kırılımı, son 7/30 gün. Sonuç işin "Summary" sayfasında tablo olarak.
+#
+# Neden (yasin 2026-11-19): az kullanılan ekranı ayıklamak; mağaza özetiyle
+# aynı pazartesi sabahı gelsin. Ayrı akış: GA kurulumu eksikken kırmızı yansa
+# mağaza özetini etkilemesin. Repo herkese açık → yalnız toplu sayı basılır.
+name: Ekran istatistiği (GA4)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 7 * * 1"  # Pazartesi 10:30 TR
+
+permissions:
+  contents: read
+
+jobs:
+  ekran:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pyjwt cryptography
+      - run: python -m unittest tool/ga4_ekran_raporu_test.py
+      - name: Rapor
+        env:
+          # Ayrı hesap açılmadıysa Play hizmet hesabı kullanılır (GA mülkünde
+          # Görüntüleyici yapılması yeter).
+          GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON || secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+        run: python tool/ga4_ekran_raporu.py

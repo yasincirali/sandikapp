@@ -12,6 +12,28 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-19 Haftalık ekran istatistiği (GA4) için üç adım, sen
+
+Pazartesi 10:30'da "Ekran istatistiği (GA4)" işi ekran, `ozellik_kullanildi`
+ve `widget_tapped` kırılımını son 7/30 gün için basar (işin Summary sayfası).
+Yeni anahtar gerekmez: Play'e yükleme yapan hizmet hesabı kullanılır.
+
+- [ ] **API'yi aç:** console.cloud.google.com › üstten Play hizmet hesabının
+      projesini seç › APIs & Services › Library › "Google Analytics Data API"
+      › Enable.
+- [ ] **Yetki ver:** analytics.google.com › sol alt Yönetici (dişli) › mülk
+      sütununda sandık › Mülk erişim yönetimi › sağ üst + › Kullanıcı ekle ›
+      hizmet hesabının e-postası (…@….iam.gserviceaccount.com; Play Console ›
+      Kullanıcılar ve izinler'de görünür) › rol **Görüntüleyici** › bildirim
+      e-postası kutusunu kaldır › Ekle.
+- [ ] **Mülk kimliği:** aynı Yönetici › Mülk ayrıntıları › sağ üstteki
+      sayısal "Mülk kimliği"ni kopyala › GitHub › sandikapp › Settings ›
+      Secrets and variables › Actions › New repository secret › ad
+      `GA4_PROPERTY_ID`.
+- [ ] Denemek için Actions › "Ekran istatistiği (GA4)" › Run workflow.
+      Kırmızı yanar ve logda `HTTP 403 PERMISSION_DENIED` yazarsa ilk iki
+      adımdan biri eksiktir (izin birkaç dakikada işler).
+
 ## ⏳ 2026-11-14 Kayıt e-posta kapısını aç (tek adım, sen)
 
 0185 Frankfurt'a dağıtıldıktan sonra: Supabase panel › Authentication ›
