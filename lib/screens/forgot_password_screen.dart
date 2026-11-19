@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
@@ -13,6 +15,7 @@ import 'package:flutter/material.dart'
         Scaffold,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -70,12 +73,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     setState(() => _loading = true);
     try {
       await AuthService.instance.sendPasswordResetOtp(_emailCtrl.text);
+      unawaited(AnalyticsService.instance.logSifreSifirlama('kod_gonderildi'));
       if (!mounted) return;
       setState(() {
         _loading = false;
         _codeSent = true;
       });
     } catch (e) {
+      unawaited(AnalyticsService.instance.logSifreSifirlama('kod_hatasi'));
       if (!mounted) return;
       setState(() => _loading = false);
       showAppError(context, e);
@@ -91,6 +96,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         otp: _otpCtrl.text,
         newPassword: _passCtrl.text,
       );
+      unawaited(AnalyticsService.instance.logSifreSifirlama('yenilendi'));
       if (!mounted) return;
       await showAppSuccess(
         context,
@@ -104,6 +110,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       // kök'e dönmek yeterli.
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
+      unawaited(AnalyticsService.instance.logSifreSifirlama('dogrulama_hatasi'));
       if (!mounted) return;
       setState(() => _loading = false);
       showAppError(context, e);

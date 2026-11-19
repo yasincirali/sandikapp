@@ -178,7 +178,9 @@ Future<ZorunluOkumaSonucu?> zorunluOkumaAc(
     pushGuarded<ZorunluOkumaSonucu>(
       context,
       adaptiveRoute(
-        settings: const RouteSettings(name: 'legal_doc'),
+        // Ayrı ad (2026-11-20): zorunlu okuma ile salt okunur belge GA'da
+        // aynı `legal_doc` satırına düşüyor, kayıttaki sürtünme ayrılamıyordu.
+        settings: const RouteSettings(name: 'legal_doc_okuma'),
         builder: (_) => LegalDocScreen(
           title: m.adaylar.first,
           icon: m.ikon,

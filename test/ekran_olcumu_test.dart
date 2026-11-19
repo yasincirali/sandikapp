@@ -77,6 +77,31 @@ void main() {
       o.didPop(kayit, kok);
       expect(gonderilen, ['sekme_ana', 'register']);
     });
+
+    // GA "(not set)" (2026-11-20): kapı ekranları rota değil, adları
+    // widget anahtarından gelir.
+    test('kök kapı ekranı anahtarıyla sayılır, yalnız değişince', () {
+      final kok = _rota('/');
+      final kayit = _rota('register');
+      o.kokEkran(const ValueKey('splash'));
+      o.kokEkran(const ValueKey('karsilama'));
+      o.didPush(kayit, kok);
+      // Kayıt açıkken kapı yeniden kurulur: aynı kök yeniden sayılmaz.
+      o.kokEkran(const ValueKey('karsilama'));
+      o.didPop(kayit, kok); // dönüş karşılamayı sayar
+      o.kokEkran(const ValueKey('login'));
+      o.kokEkran(const ValueKey('yasal-kapi'));
+      o.kokEkran(const ValueKey('main')); // sekmeler kendi sayar
+      o.sekmeDegisti(0);
+      expect(gonderilen, [
+        'karsilama',
+        'register',
+        'karsilama',
+        'login',
+        'yasal_kapi',
+        'sekme_ana',
+      ]);
+    });
   });
 
   test('her adaptiveRoute çağrısı ekran adı taşır', () {

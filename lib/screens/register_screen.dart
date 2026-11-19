@@ -159,29 +159,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   /// First missing requirement, in the order the user filled the form.
   /// null → form is valid.
-  String? _firstMissingRequirement() {
+  /// `kod`: ölçüdeki ad (`kayit_eksik_<kod>`), `metin`: kullanıcıya.
+  ({String kod, String metin})? _firstMissingRequirement() {
     if (_nameCtrl.text.trim().isEmpty) {
-      return context.l10n.registerUsernameMissing;
+      return (kod: 'ad', metin: context.l10n.registerUsernameMissing);
     }
     if (KullaniciAdi.bicimDenetle(_nameCtrl.text) != null) {
-      return context.l10n.kullaniciAdiHataBicim;
+      return (kod: 'ad', metin: context.l10n.kullaniciAdiHataBicim);
     }
     final adRet = _adRetMetni();
-    if (adRet != null) return adRet;
-    if (!_isValidEmail(_emailCtrl.text)) return context.l10n.registerEmailInvalid;
-    if (_ePostaHatasi() != null) return context.l10n.ePostaKesinHata;
+    if (adRet != null) return (kod: 'ad_ret', metin: adRet);
+    if (!_isValidEmail(_emailCtrl.text)) {
+      return (kod: 'eposta', metin: context.l10n.registerEmailInvalid);
+    }
+    if (_ePostaHatasi() != null) {
+      return (kod: 'eposta', metin: context.l10n.ePostaKesinHata);
+    }
     final passError = AuthService.validatePassword(_passCtrl.text);
-    if (passError != null) return passError;
+    if (passError != null) return (kod: 'sifre', metin: passError);
     if (_passCtrl.text != _passConfirmCtrl.text) {
-      return context.l10n.registerPasswordsMismatch;
+      return (kod: 'sifre_tekrar', metin: context.l10n.registerPasswordsMismatch);
     }
     // Eksik adım: hangi metnin okunmadığını adıyla söyle (girdi kuralı
     // istemcide — kullanıcı neyin eksik olduğunu basmadan önce bilir);
     // okumalar tamamsa son adım, kutu.
     if (!_belgelerTamam) {
-      return context.l10n.zorunluOkumaEksik(_eksikAdlari(context.l10n));
+      return (
+        kod: 'okuma',
+        metin: context.l10n.zorunluOkumaEksik(_eksikAdlari(context.l10n)),
+      );
     }
-    if (!_kutuIsaretli) return context.l10n.tekOnayGerekli;
+    if (!_kutuIsaretli) return (kod: 'kutu', metin: context.l10n.tekOnayGerekli);
     return null;
   }
 
@@ -244,7 +252,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// değil (bkz. yukarıdaki karar notu).
   void _kutuDegistir() => setState(() {
         _kutuIsaretli = !_kutuIsaretli;
-        if (_kutuIsaretli) _kutuHatasi = false;
+        if (_kutuIsaretli) {
+          _kutuHatasi = false;
+          unawaited(AnalyticsService.instance.logKayitAdimi('kutu'));
+        }
       });
 
   /// Okuma adımının metnini (Açık Rıza Metni ya da yatırım uyarısı)
@@ -253,6 +264,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _zorunluOku(YasalAdimTuru tur) async {
     final m = ZorunluMetin.adim(context.l10n, tur);
     final sonuc = await zorunluOkumaAc(context, m);
+    // Ölçü: metin onaylandı mı, yoksa onaysız geri mi dönüldü (legal_doc
+    // kişi başı 5,5 kez açılıyordu; 2026-11-20).
+    final olcuAdi = tur == YasalAdimTuru.acikRiza ? 'riza' : 'uyari';
+    final onay = sonuc != null && sonuc.onaylandi && sonuc.sonunaKadarOkundu;
+    unawaited(AnalyticsService.instance
+        .logKayitAdimi(onay ? 'okuma_$olcuAdi' : 'okuma_yarim_$olcuAdi'));
     if (!mounted || sonuc == null) return;
     if (sonuc.onaylandi && sonuc.sonunaKadarOkundu) {
       setState(() {
@@ -278,7 +295,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passConfirmCtrl.addListener(_rebuild);
   }
 
-  void _rebuild() => setState(() {});
+  /// Forma ilk harf yazıldı mı (`kayit_basladi` bir kez).
+  bool _basladiBildirildi = false;
+
+  void _rebuild() {
+    if (!_basladiBildirildi &&
+        (_nameCtrl.text.isNotEmpty || _emailCtrl.text.isNotEmpty)) {
+      _basladiBildirildi = true;
+      unawaited(AnalyticsService.instance.logKayitAdimi('basladi'));
+    }
+    setState(() {});
+  }
 
 
   @override
@@ -703,10 +730,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       : () async {
                           final missing = _firstMissingRequirement();
                           if (missing != null) {
+                            unawaited(AnalyticsService.instance
+                                .logKayitAdimi('eksik_${missing.kod}'));
                             _eksikleriGoster();
-                            showAppError(context, AuthException(missing));
+                            showAppError(context, AuthException(missing.metin));
                             return;
                           }
+                          unawaited(AnalyticsService.instance.logKayitAdimi('istek'));
                           await _register();
                         },
                   child: Text(

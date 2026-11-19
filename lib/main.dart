@@ -2293,6 +2293,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// Hesap geçişi perdesi bekliyorsa ve çizilen ekran splash değilse
   /// perdeye "hazırım" de (kare sonunda; build'de yan etki olmasın).
   Widget _ekranHazirBildir(Widget ekran) {
+    // Kök kapı ekranının adı ölçüye (aynı ad arka arkaya sayılmaz).
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => EkranOlcumu.instance.kokEkran(ekran.key));
     final hazir = HesapGecisi.instance.yeniEkranHazir;
     if (!hazir.value && ekran.key != const ValueKey('splash')) {
       WidgetsBinding.instance.addPostFrameCallback((_) => hazir.value = true);

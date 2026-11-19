@@ -2,6 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Firebase otomatik ekran kaydı kapalı (2026-11-20): tek
+	     FlutterViewController'ı adsız screen_view olarak yazıyordu, GA'da
+	     "(not set)" satırı (820 kişi). Ekran adları EkranOlcumu'ndan. -->
+	<key>FirebaseAutomaticScreenReportingEnabled</key>
+	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>

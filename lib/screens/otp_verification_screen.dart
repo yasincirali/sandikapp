@@ -242,6 +242,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       //   adımda "düşmüş" görünürdü. Ad ekranı (sosyal giriş / eski hesap)
       //   kendi olayını `KullaniciAdiScreen`'de gönderir.
       unawaited(AnalyticsService.instance.logSignupStep('otp_verified'));
+      // GA standart `sign_up` olayı hiç gönderilmiyordu (metot vardı, çağıran
+      // yoktu); kayıt sayısı GA'da okunamıyordu (2026-11-20).
+      unawaited(AnalyticsService.instance.logSignup(method: 'email'));
       if (onayKaydedildi) {
         unawaited(
             AnalyticsService.instance.logSignupStep('disclaimer_accepted'));

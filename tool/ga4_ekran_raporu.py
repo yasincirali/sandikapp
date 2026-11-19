@@ -28,13 +28,21 @@ API = "https://analyticsdata.googleapis.com/v1beta/properties/{}:runReport"
 KAPSAM = "https://www.googleapis.com/auth/analytics.readonly"
 ESIK = 0.03
 DONEMLER = (7, 30)
-# (başlık, boyut, olay süzgeci, sayı metriği etiketi)
+# Kayıt hunisi (2026-11-20): kayıt formunun ince adımları ayrı olay ADI
+# olarak gider (`AnalyticsService.logKayitAdimi`), boyut tanımı gerekmez.
+HUNI = {"orGroup": {"expressions": [
+    {"filter": {"fieldName": "eventName",
+                "stringFilter": {"matchType": "BEGINS_WITH", "value": on}}}
+    for on in ("kayit_", "sifre_sifirlama_", "sign_up", "demo_", "login")]}}
+# (başlık, boyut, olay süzgeci: ad ya da hazır ifade, sayı metriği etiketi)
 KIRILIMLAR = (
     ("Ekranlar", "unifiedScreenName", None, "görüntüleme"),
     ("Özellik kullanımı (ozellik_kullanildi)", "customEvent:ozellik",
      "ozellik_kullanildi", "olay"),
     ("Widget dokunuşu (widget_tapped)", "customEvent:surface",
      "widget_tapped", "olay"),
+    ("Kayıt hunisi (girişten önce: girişli payı burada anlamsız)", "eventName",
+     HUNI, "olay"),
 )
 GIRISLI = {"filter": {"fieldName": "signedInWithUserId",
                       "stringFilter": {"value": "yes"}}}
@@ -65,6 +73,8 @@ def _ve(*parcalar):
 
 
 def _olay(ad):
+    if isinstance(ad, dict):
+        return ad
     return ad and {"filter": {"fieldName": "eventName",
                               "stringFilter": {"value": ad}}}
 
