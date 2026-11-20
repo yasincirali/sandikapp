@@ -47,9 +47,11 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     if (ref.watch(premiumKilitliProvider)) {
-      // Kilit satırı kullanıcının kendi defteriyle konuşur: yalnız ADET
+      // Kart kullanıcının kendi defteriyle konuşur: yalnız ADET
       // (satış/temettü), tutar yok (yasin 2026-11-13). Sayım servis
-      // katmanında (`yillikKayitSayimi`); kaydı yoksa genel cümle.
+      // katmanında (`yillikKayitSayimi`). Ar-Ge 20 Kas tur 2 #3: sayım
+      // kilit satırından `kisisel:` satırına taşındı (öteki kilit
+      // kartlarıyla aynı yer); kilit satırı genel kalır.
       final sayim = yillikKayitSayimi(
           ref.watch(portfolioProvider).valueOrNull?.assets ?? const [],
           ref.watch(authProvider).valueOrNull?.id ?? '');
@@ -60,8 +62,9 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
             ikon: Icons.receipt_long_rounded,
             baslik: l.yrKilitBaslik,
             govde: l.yrKilitGovde,
-            kilitMetni: yillikRaporKilitMetni(l, sayim),
+            kilitMetni: l.yrKilitSatir,
             kaynak: 'yillik_rapor',
+            kisisel: yillikRaporKisisel(l, sayim),
           ),
         ),
       );
@@ -341,17 +344,18 @@ class _KayitSatiri extends StatelessWidget {
   }
 }
 
-/// Kilitli ekranın satırı. Sıfır olan parça yazılmaz ("0 temettün" bir
-/// şey söylemez); ikisi de sıfırsa ya da sayım yoksa bugünkü genel cümle.
-/// Yıl `String` geçer: `int` placeholder'ı "2.026" diye biçimlenirdi.
-String yillikRaporKilitMetni(
+/// Kilitli kartın kişisel satırı. Sıfır olan parça yazılmaz ("0 temettün"
+/// bir şey söylemez); ikisi de sıfırsa ya da sayım yoksa `null` (satır yok,
+/// kilit satırının genel cümlesi yeter). Yıl `String` geçer: `int`
+/// placeholder'ı "2.026" diye biçimlenirdi.
+String? yillikRaporKisisel(
     AppLocalizations l, ({int yil, int satis, int temettu})? sayim) {
-  if (sayim == null) return l.yrKilitSatir;
+  if (sayim == null) return null;
   final parcalar = [
     if (sayim.satis > 0) l.yrKilitSatisParca(sayim.satis),
     if (sayim.temettu > 0) l.yrKilitTemettuParca(sayim.temettu),
   ];
-  if (parcalar.isEmpty) return l.yrKilitSatir;
+  if (parcalar.isEmpty) return null;
   final kayitlar = parcalar.length == 2
       ? l.yrKilitVe(parcalar[0], parcalar[1])
       : parcalar[0];

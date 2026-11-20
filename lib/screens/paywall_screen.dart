@@ -11,8 +11,12 @@ import '../models/portfoy_grubu.dart';
 import '../models/position.dart' show aggregatePositions, aktifLotlar;
 import '../providers/auth_provider.dart' show partnersProvider;
 import '../providers/portfolio_provider.dart' show portfolioProvider;
+import '../providers/premium_provider.dart' show satinAlmaServisiProvider;
 import '../providers/preferences_provider.dart'
-    show kKarsilastirmaEnFazla, ortakSiniriDoluProvider;
+    show
+        effectivePremiumProvider,
+        kKarsilastirmaEnFazla,
+        ortakSiniriDoluProvider;
 import '../providers/signal_provider.dart' show activeSignalsProvider;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
@@ -152,8 +156,23 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   }
 
   Future<void> _teklifiYukle() async {
-    final t = await SatinAlmaService.instance.teklif();
+    final t = await ref.read(satinAlmaServisiProvider).teklif();
     if (mounted && t != null) setState(() => _teklif = t);
+  }
+
+  /// Hak paywall açıkken başka yoldan geldi (Aile onayı sonradan onaylandı,
+  /// başka cihazda alındı): açık paywall kilidi kalkmış özelliğin üstünde
+  /// kalmasın, kendini `true` ile kapatsın (Ar-Ge 20 Kas #3). Satın alma ya
+  /// da geri yükleme sürerken (`_busy`) kapanışı o akış yapar.
+  void _hakGeldiyseKapat(bool? onceki, bool simdi) {
+    if (!simdi || onceki == true || _busy || !mounted) return;
+    final rota = ModalRoute.of(context);
+    if (rota == null || !rota.isActive) return;
+    final gezgin = Navigator.of(context);
+    // Üstte açık bir belge/sayfa varsa önce o kapanır; `pop` en üsttekini
+    // kapatırdı, paywall'u değil.
+    gezgin.popUntil((r) => r == rota);
+    gezgin.pop(true);
   }
 
   Package? get _seciliPaket =>
@@ -161,6 +180,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<bool>(effectivePremiumProvider, _hakGeldiyseKapat);
     final rc = RemoteConfigService.instance;
     final aylikUrun = _teklif?.aylik?.storeProduct;
     final yillikUrun = _teklif?.yillik?.storeProduct;
@@ -213,17 +233,30 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   Future<void> _satinAl() async {
     if (_busy) return;
-    final paket = _seciliPaket;
+    var paket = _seciliPaket;
     if (paket == null) {
-      sandikSnack(context, context.l10n.pwKullanilamaz);
-      return;
+      // Açılıştaki teklif okuması düşmüş olabilir (ağ, mağaza geç yanıt):
+      // düğme etkin göründüğü için bir kez daha sor, ancak yine yoksa
+      // "kullanılamıyor" de (Ar-Ge 20 Kas #1). Başarı uydurulmaz.
+      setState(() => _busy = true);
+      try {
+        await _teklifiYukle();
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
+      if (!mounted) return;
+      paket = _seciliPaket;
+      if (paket == null) {
+        sandikSnack(context, context.l10n.pwKullanilamaz);
+        return;
+      }
     }
     setState(() => _busy = true);
     // Mağaza diyaloğu sürerken başarı sayfasının sayıları hazırlansın
     // (sayfa açılınca beklemesin); sonuç ne olursa olsun bırakılır.
     final isitmayiBirak = premiumAcildiIsit(ref);
     try {
-      final sonuc = await SatinAlmaService.instance.satinAl(paket);
+      final sonuc = await ref.read(satinAlmaServisiProvider).satinAl(paket);
       if (!mounted) return;
       switch (sonuc) {
         case SatinAlmaSonucu.basarili:
@@ -240,7 +273,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         case SatinAlmaSonucu.vazgecti:
           break;
         case SatinAlmaSonucu.beklemede:
+          // Aile onayı (Ask to Buy): onay dakikalar/saatler sonra gelir.
+          // Snack kök ScaffoldMessenger'da kalır; paywall `false` ile kapanır
+          // ki kullanıcı beklemede asılı kalmasın (Ar-Ge 20 Kas #3). Onay
+          // gelince kilitler hakkı izlediği için kendiliğinden kalkar.
           sandikSnack(context, context.l10n.pwBeklemede);
+          Navigator.of(context).pop(false);
         case SatinAlmaSonucu.hata:
           sandikSnack(context, context.l10n.pwHata);
         case SatinAlmaSonucu.kullanilamaz:
@@ -258,9 +296,15 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     try {
       // Ortak akış (Profil › Premium da aynısını kullanır): mağazaya sor,
       // sonucu söyle, sunucu haklarını tazele.
-      final bulundu = await satinAlimlariGeriYukle(context, ref);
+      final bulundu =
+          await satinAlimlariGeriYukle(context, ref, basariSnack: false);
       if (!mounted) return;
-      if (bulundu == true) Navigator.of(context).pop(true);
+      // Satın almayla aynı yol (Ar-Ge 20 Kas #2): "Premium açıldı" sayfası
+      // kısa görünür, paywall `pop(true)` ile kapanır. Eskiden yalnız snack
+      // + pop vardı; iki yol farklı davranıyordu.
+      if (bulundu == true) {
+        await premiumAcildiAkisi(context, kaynak: widget.source);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -304,26 +348,38 @@ class _BottomBar extends StatelessWidget {
             // Tek yükleniyor davranışı (2026-10-08): kilit ve gösterge
             // [SandikAsyncButton]'da. `busy` (ekranın `_busy`'si) yalnız
             // satın alma sürerken "Geri yükle"yi kapatmak için kalır.
-            SandikAsyncButton(
-              height: 56,
-              onPressed: onSubscribe,
-              mesgul: busy,
-              style: FilledButton.styleFrom(
-                backgroundColor: context.c.amberFill,
-                foregroundColor: context.c.onAmber,
-                disabledBackgroundColor:
-                    context.c.amberFill.withValues(alpha: 0.35),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(SandikRadius.md)),
+            // Meşgulken etiket görünmez; ekran okuyucu düğmenin beklediğini
+            // değerden duyar (Ar-Ge 20 Kas #6).
+            MergeSemantics(
+                child: Semantics(
+              value: busy ? context.l10n.loadingUpper : null,
+              child: SandikAsyncButton(
+                height: 56,
+                onPressed: onSubscribe,
+                mesgul: busy,
+                style: FilledButton.styleFrom(
+                  backgroundColor: context.c.amberFill,
+                  foregroundColor: context.c.onAmber,
+                  disabledBackgroundColor:
+                      context.c.amberFill.withValues(alpha: 0.35),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(SandikRadius.md)),
+                ),
+                // Büyük yazıda (3.1×) etiket taşmaz, sığacak kadar küçülür;
+                // düğme boyu sabit (Ar-Ge 20 Kas #5).
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    etiket,
+                    maxLines: 1,
+                    // Renk açıkça `onAmber` — `text90` düğme rengini
+                    // ezerdi (açık tema denetimi 2026-10-08).
+                    style: context.t.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600, color: context.c.onAmber),
+                  ),
+                ),
               ),
-              child: Text(
-                etiket,
-                // Renk açıkça `onAmber` — `text90` düğme rengini
-                // ezerdi (açık tema denetimi 2026-10-08).
-                style: context.t.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600, color: context.c.onAmber),
-              ),
-            ),
+            )),
             if (geriYukleGoster) ...[
               const SizedBox(height: 8),
               TextButton(

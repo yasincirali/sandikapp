@@ -356,6 +356,31 @@ XrayFonPayi fonPayi({
       fonSayisi: fonlar.length, pay: toplam > 0 ? fon / toplam * 100 : 0);
 }
 
+/// Tek bir fonun portföy toplamındaki payı, metinde gösterilecek tam sayı
+/// yüzde (Ar-Ge 20 Kas tur 2 #3: fon kilit kartında "Bu fon portföyünün
+/// %X'i"). Saf; [fonPayi] ile aynı pozisyon ve değer kuralı. Fon tutulmuyorsa
+/// ya da pay yuvarlanınca sıfıra iniyorsa `null` ([XrayFonPayi.yuvarlakPay]
+/// gerekçesi: "%0" fonu yok sayar, "%1" sayı uydurur).
+int? tekFonPayi({
+  required List<Position> pozisyonlar,
+  required PozisyonDegeri deger,
+  required String kod,
+}) {
+  var toplam = 0.0;
+  var fon = 0.0;
+  for (final p in pozisyonlar) {
+    final d = deger(p);
+    if (d == null || !d.isFinite || d <= 0) continue;
+    toplam += d;
+    final a = p.representative;
+    if (a.type != AssetType.fon && a.type != AssetType.bes) continue;
+    if (fonKoduOf(tur: a.type, ticker: a.ticker) == kod) fon += d;
+  }
+  if (toplam <= 0 || fon <= 0) return null;
+  final r = (fon / toplam * 100).round();
+  return r < 1 ? null : r.clamp(1, 100);
+}
+
 /// Hesap. [dagilimlar] ve [kalemler] fon koduna göre (`fonKoduOf`).
 PortfoyXray portfoyXray({
   required List<Position> pozisyonlar,

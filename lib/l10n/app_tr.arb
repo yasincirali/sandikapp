@@ -5349,7 +5349,7 @@
   "pwBeklemede": "Ödemen onay bekliyor. Onaylanınca Premium kendiliğinden açılır.",
   "pwHata": "Satın alma tamamlanamadı. Ücret alınmadıysa yeniden deneyebilirsin.",
   "pwGeriYuklendi": "Aboneliğin geri yüklendi.",
-  "pwGeriYukBulunamadi": "Bu hesapta etkin bir abonelik bulunamadı.",
+  "pwGeriYukBulunamadi": "Bu hesapta etkin bir abonelik bulunamadı. Aynı mağaza hesabıyla giriş yaptığından emin ol.",
   "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.",
   "assetTypeEurobond": "Eurobond",
   "tickerHintEurobond": "Listeden seç ya da ISIN yaz, örn. US900123DF45",
@@ -6922,5 +6922,12 @@
   "prmKiyasEnZayif": "{arti, plural, =0{Bu ay son {n} ayın en zayıfı.} other{Bu ay son {n} ayın en zayıfı; {n} ayda {arti} ay artıdaydın.}}",
   "@prmKiyasEnZayif": {"placeholders": {"arti": {"type": "int"}, "n": {"type": "int"}}},
   "prmKiyasOrta": "{arti, plural, =0{Son {n} ayda artıda kapanan ay olmadı; bu ay {n} ay içinde {sira}. sırada.} other{Son {n} ayda {arti} ay artıdaydın; bu ay {n} ay içinde {sira}. sırada.}}",
-  "@prmKiyasOrta": {"placeholders": {"arti": {"type": "int"}, "n": {"type": "int"}, "sira": {"type": "int"}}}
+  "@prmKiyasOrta": {"placeholders": {"arti": {"type": "int"}, "n": {"type": "int"}, "sira": {"type": "int"}}},
+  "kilitli": "Kilitli",
+  "kilitDenemeSatiri": "{gun} gün ücretsiz dene",
+  "@kilitDenemeSatiri": {"description": "Kilit satırının ikinci satırı; yalnız mağaza deneme hakkı uygun dediğinde.", "placeholders": {"gun": {"type": "int"}}},
+  "xrKilitFonKisisel": "Bu fon portföyünün {pay}'{ek}.",
+  "@xrKilitFonKisisel": {"placeholders": {"pay": {"type": "String"}, "ek": {"type": "String"}}},
+  "ziKilitKisisel": "Bu portföyün {pay}'{ek} fon ve BES'te.",
+  "@ziKilitKisisel": {"placeholders": {"pay": {"type": "String"}, "ek": {"type": "String"}}}
 }

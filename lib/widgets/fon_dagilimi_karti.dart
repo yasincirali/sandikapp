@@ -12,6 +12,7 @@ import '../services/fon_karnesi.dart' show fonKoduOf;
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart' show trSayiIyelikEki;
 import 'premium_kilit_karti.dart';
 import 'sandik_skeleton.dart';
 
@@ -26,8 +27,11 @@ import 'sandik_skeleton.dart';
 ///   · Premium özellikleri görünmüyor (paywall kapalı, admin değil) → HİÇ.
 ///     Canlıdaki kullanıcı bugün hiçbir şey görmez.
 ///   · Varlık fon/BES değil ya da fon kodu yok → hiç.
-///   · Kilitli (paywall açık, Premium değil) → sayısız kilit kartı; veri
-///     okunmaz bile (RLS zaten vermez, istek boşa gitmesin).
+///   · Kilitli (paywall açık, Premium değil) → sayısız kilit kartı, YALNIZ
+///     fonun dağılımı varsa (0187 `fon_dagilimi_var_mi`, yalnız evet/hayır;
+///     Ar-Ge 20 Kas tur 2 #2: ödeyince boş çıkan vaat satılmasın). Sorgu
+///     düşerse eski davranış: kart görünür. Dağılımın kendisi okunmaz (RLS
+///     vermez). Fon portföydeyse kişisel satır "Bu fon portföyünün %X'i".
 ///   · Açık + veri yok (TEFAS'ta dağılım yayımlamayan fon) → hiç. Yükleme
 ///     için iskelet yok: kart ek bilgidir (fon karnesi kararı).
 ///   · Açık + veri → yığılmış çubuk + kova listesi + "TEFAS · tarih".
@@ -61,7 +65,9 @@ class FonDagilimiKarti extends ConsumerWidget {
     if (!ref.watch(fonXrayGorunurProvider)) return false;
     final kod = fonKoduOf(tur: tur, ticker: ticker);
     if (kod == null) return false;
-    if (ref.watch(premiumKilitliProvider)) return true;
+    if (ref.watch(premiumKilitliProvider)) {
+      return ref.watch(fonDagilimiVarMiProvider(kod)).valueOrNull == true;
+    }
     return ref.watch(fonDagilimiProvider(kod)).valueOrNull != null;
   }
 
@@ -78,6 +84,11 @@ class FonDagilimiKarti extends ConsumerWidget {
     final l = context.l10n;
 
     if (ref.watch(premiumKilitliProvider)) {
+      // Yanıt gelene kadar yer kaplamaz; gelince akarak belirir.
+      if (ref.watch(fonDagilimiVarMiProvider(kod)).valueOrNull != true) {
+        return const SizedBox.shrink();
+      }
+      final pay = ref.watch(xrayTekFonPayiProvider(kod));
       return Padding(
         padding: dis,
         child: PremiumKilitKarti(
@@ -86,6 +97,10 @@ class FonDagilimiKarti extends ConsumerWidget {
           govde: l.xrKilitGovde,
           kilitMetni: l.xrKilitSatir,
           kaynak: 'fon_xray',
+          kisisel: pay == null
+              ? null
+              : l.xrKilitFonKisisel(
+                  fmtPct(pay.toDouble(), digits: 0), trSayiIyelikEki(pay)),
         ),
       );
     }

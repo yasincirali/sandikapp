@@ -52,6 +52,27 @@ final fonDagilimiProvider =
   }
 });
 
+/// Kilitli kart için: fonun dağılımı var mı (0187 `fon_dagilimi_var_mi`,
+/// Ar-Ge 20 Kas tur 2 #2). Ödeyince boş çıkacak fonda Premium satılmasın.
+/// Hata (RPC henüz dağıtılmadı, eski sunucu, çevrimdışı) → `true`: eski
+/// davranış, kart görünür; Crashlytics'e non-fatal. Okuyucu testte
+/// geçersiz kılınır.
+final fonDagilimiVarMiOkuyucuProvider =
+    Provider<Future<bool> Function(String)>(
+        (_) => SupabaseService.instance.fonDagilimiVarMi);
+
+final fonDagilimiVarMiProvider =
+    FutureProvider.autoDispose.family<bool, String>((ref, kod) async {
+  try {
+    final sonuc = await ref.read(fonDagilimiVarMiOkuyucuProvider)(kod);
+    _tut(ref);
+    return sonuc;
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'fonDagilimiVarMiProvider');
+    return true;
+  }
+});
+
 /// Bir fonun en yeni KAP kalem listesi (Katman A). Bayrak kapalıyken
 /// sunucuya hiç gidilmez.
 final fonKalemleriProvider =
@@ -181,6 +202,21 @@ final xrayFonPayiProvider = Provider.autoDispose<XrayFonPayi?>((ref) {
   return fonPayi(
     pozisyonlar: ref.watch(xrayPozisyonlariProvider),
     deger: _xrayDegeri(durum),
+  );
+});
+
+/// Bir fonun kullanıcının portföyündeki payı (tam sayı yüzde), fon kilit
+/// kartının kişisel satırı için (Ar-Ge 20 Kas tur 2 #3). Sunucuya GİTMEZ;
+/// [xrayFonPayiProvider] ile aynı pozisyon ve değer kuralı. Tutulmuyorsa null.
+final xrayTekFonPayiProvider =
+    Provider.autoDispose.family<int?, String>((ref, kod) {
+  final uid = ref.watch(authProvider).valueOrNull?.id;
+  final durum = ref.watch(portfolioProvider).valueOrNull;
+  if (uid == null || durum == null) return null;
+  return tekFonPayi(
+    pozisyonlar: ref.watch(xrayPozisyonlariProvider),
+    deger: _xrayDegeri(durum),
+    kod: kod,
   );
 });
 

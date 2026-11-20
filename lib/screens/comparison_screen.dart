@@ -45,6 +45,7 @@ import '../widgets/fiyat_grafigi.dart' show FiyatOrtalamasi;
 import '../widgets/grafik_arac_cubugu.dart';
 import '../widgets/percent_comparison_chart.dart';
 import '../widgets/quick_adjust_dialog.dart';
+import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import 'add_asset_screen.dart';
 import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
@@ -1388,30 +1389,18 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     );
   }
 
-  /// Kilitli çipin yarım sonucu: tek satır, dokununca paywall. Satırın
-  /// tamamı hedef (≥44 pt); sağdaki ok dokunulabilir olduğunu söyler.
+  /// Kilitli çipin yarım sonucu: tek satır, dokununca paywall. Ortak
+  /// [KilitSatiri] (Ar-Ge 20 Kas tur 2 #5): eskiden kendi klonunu çiziyordu
+  /// (ham 44, ikon 16/18, w400 bodyMedium). Analitik adı `compare_series`
+  /// kalır ki kapı/paywall serileri bölünmesin.
   Widget _kilitliOnizlemeSatiri(
       SandikPalette p, ({String ad, double pct}) o) {
-    final metin =
-        context.l10n.cmpKilitliOnizleme(o.ad, fmtPctIsaretli(o.pct));
-    return SandikTappable(
-      semanticLabel: metin,
-      onTap: _paywallAc,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 44),
-        padding: const EdgeInsets.only(top: SandikSpace.sm),
-        alignment: Alignment.centerLeft,
-        child: Row(
-          children: [
-            Icon(Icons.lock_outline_rounded, size: 16, color: p.amberText),
-            const SizedBox(width: SandikSpace.sm),
-            Expanded(
-              child: Text(metin,
-                  style: context.t.bodyMedium?.copyWith(color: p.text90)),
-            ),
-            Icon(Icons.chevron_right_rounded, size: 18, color: p.text58),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: KilitSatiri(
+        metin: context.l10n.cmpKilitliOnizleme(o.ad, fmtPctIsaretli(o.pct)),
+        kaynak: 'compare_series',
+        ozellik: 'compare_series',
       ),
     );
   }

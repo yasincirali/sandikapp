@@ -7800,7 +7800,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pwGeriYuklendi => 'Aboneliğin geri yüklendi.';
 
   @override
-  String get pwGeriYukBulunamadi => 'Bu hesapta etkin bir abonelik bulunamadı.';
+  String get pwGeriYukBulunamadi =>
+      'Bu hesapta etkin bir abonelik bulunamadı. Aynı mağaza hesabıyla giriş yaptığından emin ol.';
 
   @override
   String get pwGeriYukHata =>
@@ -11760,5 +11761,23 @@ class AppLocalizationsTr extends AppLocalizations {
           'Son $n ayda artıda kapanan ay olmadı; bu ay $n ay içinde $sira. sırada.',
     );
     return '$_temp0';
+  }
+
+  @override
+  String get kilitli => 'Kilitli';
+
+  @override
+  String kilitDenemeSatiri(int gun) {
+    return '$gun gün ücretsiz dene';
+  }
+
+  @override
+  String xrKilitFonKisisel(String pay, String ek) {
+    return 'Bu fon portföyünün $pay\'$ek.';
+  }
+
+  @override
+  String ziKilitKisisel(String pay, String ek) {
+    return 'Bu portföyün $pay\'$ek fon ve BES\'te.';
   }
 }

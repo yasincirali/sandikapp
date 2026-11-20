@@ -1,4 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../config/pref_keys.dart';
+import '../demo/demo_modu.dart';
 
 import '../services/crash_reporter.dart';
 import '../services/deneme_hatirlatici.dart';
@@ -171,23 +177,123 @@ final premiumSunucuAyariProvider =
   }
 });
 
+/// Son bilinen hak satırları, cihazda (Ar-Ge 20 Kas tur 2 #1).
+///
+/// Neden: hak listesi yüklenirken ya da okunamazken (soğuk açılış,
+/// çevrimdışı, zayıf bağlantı) boş liste "Premium değil" sayılıyordu;
+/// bildirimden Temettü tahmini ya da Aylık rapor açan abone kilit kartı
+/// görüyor, dokununca paywall açılıyordu. Artık o anlarda son başarılı
+/// okumanın satırları kullanılır. Satırlar ham (sunucudaki biçim) tutulur,
+/// bitişleri [PremiumHakki.gecerli] ile yine sınanır: süresi geçmiş önbellek
+/// kimseyi Premium yapmaz. Güvenlik değişmez: ücretli içerik sunucuda RLS
+/// ile korunur, bu yalnız kilit kartının görünüp görünmeyeceğidir.
+///
+/// Tek anahtar, içinde sahibinin kimliği: başka hesapla okunursa yok
+/// sayılır (hesap değişimi), oturum kapanınca silinir. Yeni anahtar; eski
+/// hiçbir değer taşınmaz (ekleme).
+class PremiumHakOnbellegi {
+  const PremiumHakOnbellegi();
+
+  static const _anahtar = PrefKeys.premiumSonBilinenHaklar;
+
+  /// [uid]'nin son bilinen satırları; yoksa, başkasınınsa ya da okunamazsa
+  /// null. Senkron: ilk çizimde (yükleme sürerken) gerekir.
+  List<Map<String, dynamic>>? oku(String uid) {
+    try {
+      final ham = tercihlerSenkron()?.getString(_anahtar);
+      if (ham == null) return null;
+      final m = jsonDecode(ham) as Map<String, dynamic>;
+      if (m['uid'] != uid) return null;
+      return [
+        for (final r in m['satirlar'] as List)
+          Map<String, dynamic>.from(r as Map)
+      ];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> yaz(String uid, List<Map<String, dynamic>> satirlar) async {
+    if (DemoModu.aktif) return;
+    try {
+      final p = tercihlerSenkron() ?? await SharedPreferences.getInstance();
+      await p.setString(
+          _anahtar, jsonEncode({'uid': uid, 'satirlar': satirlar}));
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'PremiumHakOnbellegi.yaz');
+    }
+  }
+
+  Future<void> sil() async {
+    try {
+      final p = tercihlerSenkron() ?? await SharedPreferences.getInstance();
+      await p.remove(_anahtar);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'PremiumHakOnbellegi.sil');
+    }
+  }
+}
+
+/// Testte bellek içi önbellekle geçersiz kılınır.
+final premiumHakOnbellegiProvider =
+    Provider<PremiumHakOnbellegi>((_) => const PremiumHakOnbellegi());
+
+/// Hak satırlarının okuyucusu; testte geçersiz kılınır (emsal
+/// [premiumAyarOkuyucuProvider]).
+final premiumHakOkuyucuProvider =
+    Provider<Future<List<Map<String, dynamic>>> Function()>(
+        (_) => SupabaseService.instance.premiumHaklari);
+
+List<PremiumHakki> _haklar(List<Map<String, dynamic>> satirlar) =>
+    satirlar.map(PremiumHakki.satirdan).nonNulls.toList();
+
 /// Oturumdaki kullanıcının hakları. autoDispose DEĞİL: kalıcı
 /// `effectivePremiumProvider` bunu izler; oturum değişince `authProvider`
-/// üzerinden yenilenir. Hata → boş liste + Crashlytics non-fatal:
-/// okuyamadığımız hak "Premium değil" sayılır (2026-11-01'e kadar hediye
-/// güvencesi bunu eski hesapta askıya alıyordu; hediye kalktı, kural tek).
+/// üzerinden yenilenir. Hata → son bilinen satırlar ([PremiumHakOnbellegi];
+/// hiç yoksa boş liste) + Crashlytics non-fatal. Eskiden hata doğrudan boş
+/// listeydi ("Premium değil"); ödeyen kullanıcı çevrimdışıyken kilit
+/// görüyordu (Ar-Ge 20 Kas tur 2 #1). Bilinen son hak, "hiç bilmiyorum"dan
+/// daha doğru (aynı gerekçe: [premiumAyariHatada]).
 /// Liste süresi geçmiş satırları da içerir (abonelik yönetimi satırı için).
 final premiumHaklariProvider = FutureProvider<List<PremiumHakki>>((ref) async {
   if (!ref.watch(paywallVisibleProvider)) return const [];
-  final uid = ref.watch(authProvider).valueOrNull?.id;
-  if (uid == null) return const [];
-  try {
-    final satirlar = await SupabaseService.instance.premiumHaklari();
-    return satirlar.map(PremiumHakki.satirdan).nonNulls.toList();
-  } catch (e, st) {
-    CrashReporter.report(e, st, reason: 'premiumHaklariProvider');
+  final auth = ref.watch(authProvider);
+  final uid = auth.valueOrNull?.id;
+  final onbellek = ref.read(premiumHakOnbellegiProvider);
+  if (uid == null) {
+    // Oturum KESİN kapalıysa (auth yüklenmiş, kullanıcı yok) önbellek
+    // silinir; auth henüz yüklenirken silinmez (soğuk açılış).
+    if (auth.hasValue) await onbellek.sil();
     return const [];
   }
+  try {
+    final satirlar = await ref.read(premiumHakOkuyucuProvider)();
+    await onbellek.yaz(uid, satirlar);
+    return _haklar(satirlar);
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'premiumHaklariProvider');
+    return _haklar(onbellek.oku(uid) ?? const []);
+  }
+});
+
+/// Hak listesi henüz gelmemişken (ilk yükleme) kullanılacak son bilinen
+/// haklar: oturumdaki kullanıcının önbelleği, yoksa boş.
+final sonBilinenPremiumHaklariProvider = Provider<List<PremiumHakki>>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return const [];
+  final uid = ref.watch(authProvider).valueOrNull?.id;
+  if (uid == null) return const [];
+  return _haklar(ref.read(premiumHakOnbellegiProvider).oku(uid) ?? const []);
+});
+
+/// Kullanıcının ücretsiz deneme hakkı varsa süresi (gün), yoksa null
+/// (Ar-Ge 20 Kas tur 2: kilit satırında "7 gün ücretsiz dene"). Uygulama
+/// oturumu boyunca bir kez sorulur (autoDispose değil): her kilit satırı
+/// mağazaya istek atmasın. Hesap değişince yeniden sorulur. Hata, bilinmeyen
+/// ya da uygun değil → null, satır bugünkü metinle kalır.
+final denemeHakkiGunuProvider = FutureProvider<int?>((ref) async {
+  if (!ref.watch(paywallVisibleProvider)) return null;
+  if (ref.watch(authProvider).valueOrNull?.id == null) return null;
+  return ref.read(satinAlmaServisiProvider).denemeHakkiGunu();
 });
 
 /// Mağaza servisi (RevenueCat). Ekran tekil örneği doğrudan değil bu
@@ -235,7 +341,11 @@ final denemeHatirlaticiProvider = Provider<DenemeHatirlatici>(
 
 /// Geçerli hak (abonelik önce, sonra hediye, sonra manuel); yoksa null.
 final gecerliPremiumHakkiProvider = Provider<PremiumHakki?>((ref) {
-  final haklar = ref.watch(premiumHaklariProvider).valueOrNull ?? const [];
+  // Yüklenirken son bilinen haklar (Ar-Ge 20 Kas tur 2 #1): soğuk açılışta
+  // abone bir an "Premium değil" sayılıp kilit görmesin.
+  final List<PremiumHakki> haklar =
+      ref.watch(premiumHaklariProvider).valueOrNull ??
+          ref.watch(sonBilinenPremiumHaklariProvider);
   final simdi = DateTime.now();
   const sira = ['revenuecat', 'erken_kullanici', 'manuel'];
   final gecerli = haklar.where((h) => h.gecerli(simdi)).toList()

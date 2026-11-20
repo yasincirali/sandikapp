@@ -193,6 +193,10 @@ class PrefKeys {
   /// değer bitişin UTC ISO'su (Ar-Ge 14 Kas #1). Kişiye özel.
   static const premiumBittiSoylenen = 'pref_premium_bitti_soylenen';
 
+  /// Son bilinen Premium hak satırları + sahibinin kimliği (JSON, Ar-Ge
+  /// 20 Kas tur 2 #1). Hak okunamazken/yüklenirken kilit kararı buna düşer.
+  static const premiumSonBilinenHaklar = 'pref_premium_son_bilinen_haklar';
+
   /// Portföy ve Performans'ta seçili portföy (çoklu portföy, 0133): `''`
   /// Tümü, `ana` Ana, uuid adlandırılmış portföy. Kişiye özel (`perUser`):
   /// portföy kimlikleri hesaba aittir, aynı cihazdaki başka hesapta anlamsız.

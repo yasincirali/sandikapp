@@ -20,7 +20,10 @@ import '../utils/sandik_snack.dart';
 /// gidilmez, "kullanılamıyor" denir; sunucu hakları yine tazelenir (eski
 /// Profil davranışı kaybolmasın). Dönüş: true = hak bulundu, false = yok,
 /// null = soru sorulamadı/hata. Sayfayı kapatma kararı çağıranda.
-Future<bool?> satinAlimlariGeriYukle(BuildContext context, WidgetRef ref) async {
+/// [basariSnack] false: başarıyı çağıran kendisi gösteriyor (paywall'da
+/// "Premium açıldı" sayfası), "geri yüklendi" şeridi tekrar etmesin.
+Future<bool?> satinAlimlariGeriYukle(BuildContext context, WidgetRef ref,
+    {bool basariSnack = true}) async {
   final servis = ref.read(satinAlmaServisiProvider);
   final l = context.l10n;
   if (!servis.yapilandirildi) {
@@ -30,6 +33,10 @@ Future<bool?> satinAlimlariGeriYukle(BuildContext context, WidgetRef ref) async 
   }
   final bulundu = await servis.geriYukle();
   if (!context.mounted) return bulundu;
+  if (bulundu == true && !basariSnack) {
+    ref.invalidate(premiumHaklariProvider);
+    return bulundu;
+  }
   sandikSnack(
     context,
     switch (bulundu) {
