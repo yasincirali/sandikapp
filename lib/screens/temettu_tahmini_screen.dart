@@ -142,7 +142,7 @@ class _GovdeState extends State<_Govde> {
               // ve tutardan da okunur (renk körlüğü, HIG).
               Text(
                   ay == null
-                      ? l.ttToplamEtiket
+                      ? '${l.ttToplamEtiket} · ${temettuAralikEtiketi(DateTime.now(), dil)}'
                       : l.ttAyEtiket(
                           DateFormat.MMMM(dil).format(DateTime(2000, ay))),
                   style: context.t.bodyMedium?.copyWith(color: c.text58)),

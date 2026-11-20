@@ -147,6 +147,14 @@ class AylikRaporScreen extends ConsumerWidget {
                 child: SandikSkeletonList(rows: 3),
               );
             }
+            // Özet hatası "henüz hazır değil" diye okunmaz (Ar-Ge 20 Kas
+            // tur 3 #2): neden ve yeniden dene.
+            if (buAy.isEmpty && ozetHal.hasError) {
+              return SandikErrorView(
+                error: ozetHal.error!,
+                onRetry: () => ref.invalidate(aylikRaporOzetiProvider(donem)),
+              );
+            }
             if (buAy.isEmpty && (ozet == null || ozet.bos)) {
               return _Bos(metin: l10n.anzAylikBos);
             }

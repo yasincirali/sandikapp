@@ -19,6 +19,8 @@ import '../widgets/premium_kilit_karti.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_bos_durum.dart';
+import '../widgets/sandik_error_view.dart';
+import '../widgets/sandik_skeleton.dart';
 import '../widgets/sandik_segment.dart';
 
 /// Yıllık kâr, temettü ve masraf raporu (Premium, yasin 2026-10-10).
@@ -70,7 +72,22 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
       );
     }
     final uid = ref.watch(authProvider).valueOrNull?.id ?? '';
-    final lotlar = ref.watch(portfolioProvider).valueOrNull?.assets ?? const [];
+    final portfoy = ref.watch(portfolioProvider);
+    final durum = portfoy.valueOrNull;
+    // Yükleniyor / okunamadı "kayıt yok" DEĞİLDİR (Ar-Ge 20 Kas tur 3 #1):
+    // ödeyen kullanıcı soğuk açılışta boş rapor görmesin. Boş durum yalnız
+    // veri gelip yıl çıkmazsa.
+    if (durum == null) {
+      return Scaffold(
+        appBar: SandikAppBar(title: l.yrBaslik),
+        body: portfoy.hasError
+            ? SandikErrorView(
+                error: portfoy.error!,
+                onRetry: () => ref.invalidate(portfolioProvider))
+            : const SandikSkeletonList(rows: 4),
+      );
+    }
+    final lotlar = durum.assets;
     final yillar = raporYillari(lotlar, uid);
     if (yillar.isEmpty) {
       return Scaffold(
@@ -102,7 +119,14 @@ class _YillikRaporScreenState extends ConsumerState<YillikRaporScreen> {
               oge: (ctx, i, secili) => Text('${yillar[i]}'),
             ),
             const SizedBox(height: SandikSpace.md),
-          ],
+          ] else
+            // Tek yıllı kullanıcı hangi yılın raporunu gördüğünü okusun
+            // (raporlar tarih aralığını söyler); yeni ayar yok.
+            Padding(
+              padding: const EdgeInsets.only(bottom: SandikSpace.md),
+              child:
+                  Text('$yil', style: t.titleMedium?.copyWith(color: c.text58)),
+            ),
           SandikCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -284,7 +308,7 @@ class _OzetSatiri extends StatelessWidget {
           Text(
             v == null ? (yoksa ?? '—') : fmtTRY(v, digits: 2),
             style: (buyuk ? context.t.numMedium : context.t.numSmall)
-                .copyWith(fontWeight: FontWeight.w700, color: renk),
+                .copyWith(fontWeight: FontWeight.w600, color: renk),
           ),
         ],
       ),
@@ -337,7 +361,7 @@ class _KayitSatiri extends StatelessWidget {
           const SizedBox(width: SandikSpace.smd),
           Text(fmtTRY(tutar, digits: 2),
               style: context.t.numSmall
-                  .copyWith(fontWeight: FontWeight.w700, color: renk)),
+                  .copyWith(fontWeight: FontWeight.w600, color: renk)),
         ],
       ),
     );
