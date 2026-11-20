@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset.dart';
 import '../services/aylik_rapor_ozeti.dart';
+import '../services/crash_reporter.dart';
 import '../services/aylik_rapor_yukleyici.dart';
 import '../services/aylik_getiri_tablosu.dart';
 import '../services/daily_summary.dart';
@@ -35,11 +36,17 @@ final aylikRaporOzetiProvider = FutureProvider.autoDispose
   final durum = ref.read(portfolioProvider).valueOrNull;
   if (durum == null) return null;
   final lotlar = aylikRaporLotlari(durum);
-  return AylikRaporYukleyici.hazirla(
-    donem: donem,
-    lotlar: lotlar,
-    canliToplam: DailySummary.kapsamToplami(durum, lotlar),
-  );
+  try {
+    return await AylikRaporYukleyici.hazirla(
+      donem: donem,
+      lotlar: lotlar,
+      canliToplam: DailySummary.kapsamToplami(durum, lotlar),
+    );
+  } catch (e, st) {
+    // Ekran hata dalı gösterir; Crashlytics'e de non-fatal gider.
+    CrashReporter.report(e, st, reason: 'AylikRapor.ozet');
+    rethrow;
+  }
 });
 
 /// Kilitli aylık rapor kartının kişisel satırı (2026-11-12). `null`:
