@@ -12,6 +12,21 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-11-20 Aylık rapora "geçmişte kaç kez oldu" ölçümü (`analiz-hazirla`)
+
+Aylık varlık raporu artık "önceki 12 dönemde 2 kez" gibi bir sayım da
+taşıyabilir: bu ayki değişim kadar ya da daha büyük bir hareket, önceki
+dönemlerin kaçında görüldü. Yalnız sunucu; migration yok, uygulama build'i
+beklemez (eski sürüm yeni ölçümü kanıt çipi olarak kendiliğinden çizer).
+Not Premium içeriğidir; ücretsiz hesap görmez.
+
+- [ ] PR birleşince Actions › **Supabase deploy** (main, hedef `frankfurt`,
+      migrations: false, functions: `analiz-hazirla`). "Supabase deploy" dersen
+      Claude tetikler. İlk etkisi 1 Aralık 06:00 aylık koşusunda görünür.
+- [ ] 1 Aralık sonrası kontrol:
+      `select ticker, girdi->'olcumler' @> '[{"anahtar":"benzer_hareket"}]' as var from varlik_analizi where tur = 'aylik' order by donem desc limit 30;`
+      ve reddedilen not artmış mı: `select durum, count(*) from varlik_analizi where tur = 'aylik' group by 1;`
+
 ## ⏳ 2026-11-20 Kayıt hunisi ölçümü: iki hafta sonra tek bakış, sen
 
 23 Eki–19 Kas: kayıt ekranını 267 kişi açtı, 194'ü demodan "Hesap oluştur"la

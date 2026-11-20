@@ -384,3 +384,46 @@ Paket SaaS/web kaynaklı — kural yine **"yargısını al, sözdizimini alma"**
 
 Tazeleme: `git clone --depth 1 https://github.com/coreyhaines31/marketingskills.git`
 → yalnız yukarıdaki 20 dizini `.claude/skills/`'e kopyala; bu bölümü koru.
+
+## day-trader-skill (kurulum 2026-11-20)
+
+Kaynak: `github.com/Jakeschincariol/day-trader-skill` (MIT, commit `3d0f4ef`;
+lisans `.claude/skills/DAY_TRADER_SKILL_LICENSE`). yasin: "skilli ekleyelim ve
+uyarlanabilecek kısımları uyarlayalım". Ar-Ge özeti: 11 skill ABD hisselerinde
+gün içi al-sat için; sandık bir takip uygulaması ve rapor dili betimleyici
+(SPK sınırı). Bu yüzden paket **ürün özelliği olarak değil, yöntem kaynağı
+olarak** kuruldu.
+
+**Kurulanlar (11, `tests/` hariç)**
+- Yöntemi alınanlar: `trader-timemachine` (aynı kuralı geçmişte say),
+  `trader-analyst` (bildirilen bilanço rakamı, aynı çeyrek geçen yıl,
+  türetilmiş/tek seferlik işareti), `trader-news` (başlık etiketleme),
+  `trader-risk` (kullanıcının kendi sınırına göre durum).
+- Zincirin geri kalanı (yalnız bütünlük için; projede kullanılmaz):
+  `trader-scanner`, `trader-entry`, `trader-exit`, `trader-budget`,
+  `trader-broker`, `trader-alerts`, `trader-pelosi`.
+
+**Çakışma uyarıları — CLAUDE.md kazanır**
+- Giriş anı, zarar-kes, hedef fiyat, pozisyon boyutu, emir, "hedef önce /
+  zarar-kes önce" olasılığı: uygulamaya ve rapor metnine **girmez**. Dil
+  kapısı (`_shared/analiz.ts` `YASAK`, `portfoy_yorum.ts`) bunları zaten
+  reddeder; kapıyı gevşetme.
+- 10.000 canlandırma gelecek için olasılık üretir (tahmin dili). Alınan
+  yalnız "geçmişte kaç kez oldu" sayımıdır.
+- Veri: skill Yahoo 5 dakikalık mum, SEC EDGAR, House Clerk okur. Uygulamada
+  fiyat kaynağı sözleşmesi (`lib/services/fiyat_kaynagi.dart`) geçerlidir;
+  skill'in kaynağı yeni yüzeye doğrudan bağlanmaz.
+- `trader-broker` aracı kurum bağlayıcısı (Alpaca MCP) ister; kurulu değil,
+  kurulmayacak.
+- Python araçları çalıştırılmadan önce okunur; `trader-pelosi/ptr.py`
+  `pdftotext` çağırır (başka alt süreç yok, 2026-11-20 taraması).
+
+**Uyarlananlar**
+- 2026-11-20: aylık varlık raporuna `benzer_hareket` ölçümü
+  (`_shared/analiz.ts` `fiyatPaketi`): önceki 6–12 aynı uzunluktaki dönemde
+  aynı yönde bu kadar ya da daha büyük değişim kaç kez görüldü.
+- Bekleyen: portföy yorumu ve varlık detayı yorumu (istemci ölçümleri),
+  ABD hisselerine bilanço ölçümü (SEC EDGAR), kişisel sınır kontrolü.
+
+Tazeleme: `git clone --depth 1 https://github.com/Jakeschincariol/day-trader-skill.git`
+→ `trader-*` dizinlerini `.claude/skills/`'e kopyala; bu bölümü koru.
