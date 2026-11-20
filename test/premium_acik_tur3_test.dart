@@ -133,8 +133,8 @@ void main() {
 
   test('temettü aralığı: sonraki aydan 12 ay', () {
     expect(temettuAralikEtiketi(DateTime(2026, 11, 20), 'tr_TR'),
-        'Ara 2026 – Kas 2027');
+        'Ara 2026 - Kas 2027');
     expect(temettuAralikEtiketi(DateTime(2026, 12, 5), 'tr_TR'),
-        'Oca 2027 – Ara 2027');
+        'Oca 2027 - Ara 2027');
   });
 }

@@ -177,12 +177,12 @@ class TemettuTahmini {
   }
 }
 
-/// Tahmin penceresinin takvim aralığı, örn. "Ara 2026 – Kas 2027" (Ar-Ge
+/// Tahmin penceresinin takvim aralığı, örn. "Ara 2026 - Kas 2027" (Ar-Ge
 /// 20 Kas tur 3 #4): "önümüzdeki 12 ay" göreli, Aralık'ın dahil olup
 /// olmadığı okunmuyordu. Pencere [simdi]'den sonraki ay ile başlar.
 String temettuAralikEtiketi(DateTime simdi, String dil) {
   final f = DateFormat('MMM y', dil);
-  return '${f.format(DateTime(simdi.year, simdi.month + 1))} – '
+  return '${f.format(DateTime(simdi.year, simdi.month + 1))} - '
       '${f.format(DateTime(simdi.year, simdi.month + 12))}';
 }
 
