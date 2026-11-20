@@ -7800,7 +7800,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pwGeriYuklendi => 'Aboneliğin geri yüklendi.';
 
   @override
-  String get pwGeriYukBulunamadi => 'Bu hesapta etkin bir abonelik bulunamadı.';
+  String get pwGeriYukBulunamadi =>
+      'Bu hesapta etkin bir abonelik bulunamadı. Aynı mağaza hesabıyla giriş yaptığından emin ol.';
 
   @override
   String get pwGeriYukHata =>

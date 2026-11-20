@@ -5349,7 +5349,7 @@
   "pwBeklemede": "Ödemen onay bekliyor. Onaylanınca Premium kendiliğinden açılır.",
   "pwHata": "Satın alma tamamlanamadı. Ücret alınmadıysa yeniden deneyebilirsin.",
   "pwGeriYuklendi": "Aboneliğin geri yüklendi.",
-  "pwGeriYukBulunamadi": "Bu hesapta etkin bir abonelik bulunamadı.",
+  "pwGeriYukBulunamadi": "Bu hesapta etkin bir abonelik bulunamadı. Aynı mağaza hesabıyla giriş yaptığından emin ol.",
   "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.",
   "assetTypeEurobond": "Eurobond",
   "tickerHintEurobond": "Listeden seç ya da ISIN yaz, örn. US900123DF45",

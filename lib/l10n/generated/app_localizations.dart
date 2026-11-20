@@ -12704,7 +12704,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwGeriYukBulunamadi.
   ///
   /// In tr, this message translates to:
-  /// **'Bu hesapta etkin bir abonelik bulunamadı.'**
+  /// **'Bu hesapta etkin bir abonelik bulunamadı. Aynı mağaza hesabıyla giriş yaptığından emin ol.'**
   String get pwGeriYukBulunamadi;
 
   /// No description provided for @pwGeriYukHata.

@@ -155,7 +155,10 @@ void main() {
     test('paywall satın almayı taklit etmez, eski vaatleri satmaz', () {
       final s = ekranKaynagiSync('lib/screens/paywall_screen.dart');
       expect(s.contains('premiumUnlockedProvider'), isFalse);
-      expect(s.contains('SatinAlmaService.instance.satinAl'), isTrue);
+      // Mağazaya `satinAlmaServisiProvider` (varsayılanı
+      // `SatinAlmaService.instance`) üzerinden gider; sağlayıcı testte
+      // sahte servisle akışın sınanması için (Ar-Ge 20 Kas).
+      expect(s.contains('ref.read(satinAlmaServisiProvider).satinAl'), isTrue);
       expect(s.contains("'7 gün ücretsiz dene'"), isFalse);
       expect(s.contains('Günde 2 sinyal analizi ('), isFalse);
       expect(s.contains("'Sınırsız partner paylaşımı'"), isFalse);

@@ -508,6 +508,9 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
     return DesteKarti(
       zemin: renk.zemin,
       semantik: '$etiket. $baslik',
+      // Kart sabit boylu bir vitrin (çizim + iki satır); 3.1× yazıda içerik
+      // kartı aşıyordu. Yazı 1.3×te durur (paylaşım kartı emsali); kartın
+      // tamamı ekran okuyucuya `semantik` ile okunur (Ar-Ge 20 Kas #5).
       child: _KartIcerik(
         renk: renk,
         etiket: etiket,
@@ -588,8 +591,11 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
                               ),
                             ),
                           ),
+                          // Büyük yazıda (3.1×) rozet fiyatı taşırmaz,
+                          // sığacak kadar küçülür (Ar-Ge 20 Kas #5).
                           if (yillik && widget.oran != null)
-                            Container(
+                            Flexible(
+                                child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: SandikSpace.sm,
                                   vertical: SandikSpace.xxs),
@@ -598,14 +604,18 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
                                 borderRadius:
                                     BorderRadius.circular(SandikRadius.sm),
                               ),
-                              child: Text(
-                                l.prmYillikTasarruf('${widget.oran}'),
-                                style: t.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0,
-                                    color: c.onStatus),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  l.prmYillikTasarruf('${widget.oran}'),
+                                  maxLines: 1,
+                                  style: t.labelMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0,
+                                      color: c.onStatus),
+                                ),
                               ),
-                            ),
+                            )),
                         ],
                       ),
                       const SizedBox(height: SandikSpace.xs),
@@ -704,21 +714,30 @@ class _DesteBaslik extends StatelessWidget {
             Row(
               children: [
                 IconButton(
-                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  // Uygulamanın kendi "Kapat"ı (l10n); Material'in ipucu
+                  // dil ayarından ayrı düşebiliyordu (Ar-Ge 20 Kas #6).
+                  tooltip: l.close,
                   icon: Icon(Icons.close_rounded, color: c.onAmber),
                   onPressed: () => Navigator.of(context).pop(false),
                 ),
                 Expanded(
                   child: Align(
                     alignment: AlignmentDirectional.centerEnd,
-                    child: TextButton(
+                    // İstek atan düğme: mağazaya sorarken etiketin yerinde
+                    // gösterge (tek yükleniyor davranışı; Ar-Ge 20 Kas #4).
+                    // Büyük yazıda etiket kırpılmaz, küçülür (#5).
+                    child: SandikAsyncButton.kompakt(
+                      tur: SandikAsyncTur.metin,
                       onPressed: onGeriYukle,
                       style: TextButton.styleFrom(foregroundColor: c.onAmber),
-                      child: Text(l.restorePurchase,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: t.titleSmall?.copyWith(
-                              color: c.onAmber, fontWeight: FontWeight.w700)),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(l.restorePurchase,
+                            maxLines: 1,
+                            style: t.titleSmall?.copyWith(
+                                color: c.onAmber,
+                                fontWeight: FontWeight.w600)),
+                      ),
                     ),
                   ),
                 ),
@@ -952,7 +971,10 @@ class _KartIcerik extends StatelessWidget {
   final String premium;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3, child: Builder(builder: _icerik));
+
+  Widget _icerik(BuildContext context) {
     final t = context.t;
     final kucuk = t.bodySmall
         ?.copyWith(color: renk.metin, fontWeight: FontWeight.w700, height: 1.3);

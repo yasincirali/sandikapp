@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -126,7 +128,8 @@ Future<void> premiumAcildiAkisi(BuildContext paywallBaglami,
     context: paywallBaglami,
     baslik: paywallBaglami.l10n.premiumUnlocked,
     isScrollControlled: true,
-    builder: (_) => PremiumAcildiSayfasi(kaynak: kaynak),
+    builder: (_) => PremiumAcildiOtomatikKapanis(
+        child: PremiumAcildiSayfasi(kaynak: kaynak)),
   );
   if (!paywallBaglami.mounted) return;
   final gezgin = Navigator.of(paywallBaglami);
@@ -140,6 +143,58 @@ Future<void> premiumAcildiAkisi(BuildContext paywallBaglami,
             tutarGizli: () => kapsayici.read(balanceHiddenProvider)),
         reason: 'premium_acildi_hedef');
   }
+}
+
+/// Sayfanın kendiliğinden kapanma payı (Ar-Ge 20 Kas #2).
+///
+/// Eskiden "Harika" sayfası kapatılmadan paywall kapanmıyordu: açılan özellik
+/// arkada kalıyor, kullanıcı fazladan dokunuyordu. Sayfa bu kadar görünür,
+/// sonra kendiliğinden kapanır ve paywall `pop(true)` der. Hareket değil
+/// okuma payı: hareketi azalt açıkken de aynı süre ([SandikMotion] değil).
+/// Kullanıcı sayfaya dokunursa (satır seçmek, kaydırmak) sayaç durur;
+/// "kaldığın yer" satırları kaybolmaz, sayfa elle kapanır.
+const premiumAcildiBekleme = Duration(seconds: 1, milliseconds: 500);
+
+/// [premiumAcildiBekleme] sonunda içinde bulunduğu sayfayı kapatır;
+/// dokunuşla iptal olur.
+class PremiumAcildiOtomatikKapanis extends StatefulWidget {
+  const PremiumAcildiOtomatikKapanis({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<PremiumAcildiOtomatikKapanis> createState() =>
+      _PremiumAcildiOtomatikKapanisState();
+}
+
+class _PremiumAcildiOtomatikKapanisState
+    extends State<PremiumAcildiOtomatikKapanis> {
+  Timer? _sayac;
+
+  @override
+  void initState() {
+    super.initState();
+    _sayac = Timer(premiumAcildiBekleme, () {
+      if (!mounted) return;
+      // Sayfa zaten kapandıysa ya da üstünde başka rota varsa dokunma.
+      if (ModalRoute.of(context)?.isCurrent ?? false) {
+        Navigator.of(context).pop();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _sayac?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _sayac?.cancel(),
+        child: widget.child,
+      );
 }
 
 /// Satıra dokunulunca sayfanın döndürdüğü seçim.

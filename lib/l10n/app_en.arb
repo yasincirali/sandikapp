@@ -4865,7 +4865,7 @@
   "pwBeklemede": "Your payment is pending. Premium turns on by itself once it is approved.",
   "pwHata": "The purchase could not be completed. If you were not charged, you can try again.",
   "pwGeriYuklendi": "Your subscription has been restored.",
-  "pwGeriYukBulunamadi": "No active subscription was found for this account.",
+  "pwGeriYukBulunamadi": "No active subscription was found for this account. Make sure you're signed in with the same store account.",
   "pwGeriYukHata": "Restore is not possible right now. Please try again shortly.",
   "assetTypeEurobond": "Eurobond",
   "tickerHintEurobond": "Pick from the list or type an ISIN, e.g. US900123DF45",

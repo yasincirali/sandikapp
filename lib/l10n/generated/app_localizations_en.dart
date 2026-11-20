@@ -7913,7 +7913,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwGeriYukBulunamadi =>
-      'No active subscription was found for this account.';
+      'No active subscription was found for this account. Make sure you\'re signed in with the same store account.';
 
   @override
   String get pwGeriYukHata =>

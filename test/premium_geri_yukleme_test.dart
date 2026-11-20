@@ -12,6 +12,8 @@ import 'package:portfoy_takip/services/satin_alma_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/custom_loading_indicator.dart';
 import 'package:portfoy_takip/widgets/premium_abonelik_satiri.dart';
+import 'package:portfoy_takip/widgets/premium_acildi_sayfasi.dart'
+    show premiumAcildiBekleme;
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 
 /// "Satın alımları geri yükle" tek akış (Ar-Ge 12 Kas #1): Profil › Premium
@@ -80,7 +82,11 @@ void main() {
   group('Profil › Premium satırı', () {
     for (final (sonuc, metin) in [
       (true, 'Aboneliğin geri yüklendi.'),
-      (false, 'Bu hesapta etkin bir abonelik bulunamadı.'),
+      (
+        false,
+        'Bu hesapta etkin bir abonelik bulunamadı. Aynı mağaza hesabıyla '
+            'giriş yaptığından emin ol.'
+      ),
       (null, 'Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.'),
     ]) {
       testWidgets('mağazaya sorar, sonucu söyler: $sonuc', (t) async {
@@ -148,8 +154,8 @@ void main() {
           builder: (ctx) => Scaffold(
             body: Center(
               child: TextButton(
-                onPressed: () async => donus =
-                    await PaywallScreen.show(ctx, source: 'test'),
+                onPressed: () async =>
+                    donus = await PaywallScreen.show(ctx, source: 'test'),
                 child: const Text('aç'),
               ),
             ),
@@ -163,21 +169,25 @@ void main() {
       return donus;
     }
 
-    testWidgets('bulundu: snack + paywall true ile kapanır', (t) async {
+    // Ar-Ge 20 Kas #2: geri yükleme satın almayla aynı yolu izler —
+    // "Premium açıldı" sayfası kısa görünür, paywall true ile kapanır;
+    // başarı şeridi tekrar etmez (ayrıntı `paywall_akis_test`).
+    testWidgets('bulundu: Premium açıldı sayfası, paywall kapanır', (t) async {
       final s = _SahteServis(true);
-      final donus = await ac(t, s);
-      debugDefaultTargetPlatformOverride = null;
+      await ac(t, s);
       expect(s.cagri, 1);
-      expect(find.text('Aboneliğin geri yüklendi.'), findsOneWidget);
+      expect(find.text('Aboneliğin geri yüklendi.'), findsNothing);
+      await t.pump(premiumAcildiBekleme);
+      await t.pumpAndSettle();
+      debugDefaultTargetPlatformOverride = null;
       expect(find.byType(PaywallScreen), findsNothing);
-      expect(donus, isTrue);
     });
 
     testWidgets('bulunamadı: snack, paywall açık kalır', (t) async {
       final s = _SahteServis(false);
       await ac(t, s);
       debugDefaultTargetPlatformOverride = null;
-      expect(find.text('Bu hesapta etkin bir abonelik bulunamadı.'),
+      expect(find.textContaining('Bu hesapta etkin bir abonelik bulunamadı.'),
           findsOneWidget);
       expect(find.byType(PaywallScreen), findsOneWidget);
     });
