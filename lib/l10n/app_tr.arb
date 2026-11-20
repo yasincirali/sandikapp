@@ -6929,5 +6929,6 @@
   "xrKilitFonKisisel": "Bu fon portföyünün {pay}'{ek}.",
   "@xrKilitFonKisisel": {"placeholders": {"pay": {"type": "String"}, "ek": {"type": "String"}}},
   "ziKilitKisisel": "Bu portföyün {pay}'{ek} fon ve BES'te.",
-  "@ziKilitKisisel": {"placeholders": {"pay": {"type": "String"}, "ek": {"type": "String"}}}
+  "@ziKilitKisisel": {"placeholders": {"pay": {"type": "String"}, "ek": {"type": "String"}}},
+  "todayGoalDateSaved": "Hedef günün kayıtlı"
 }

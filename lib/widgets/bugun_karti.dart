@@ -811,7 +811,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   ///
   /// Uzun → kısa adaylar (`SiganMetin`): "Piyasa kapalı · Pazartesi 10:00
   /// açılır" → "Kapalı · Pzt 10:00" → "Kapalı". Hangisi sığarsa o, tam.
-  List<String> _durumMetni(BugunSatiri? s, DateTime now) {
+  List<String> _durumMetni(BugunSatiri? s, DateTime now, bool veriYok) {
     final l10n = context.l10n;
     if (s is PiyasaKapaliSatiri) {
       final a = BugunService.sonrakiAcilis(now);
@@ -828,6 +828,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       ];
     }
     if (s is GunlukDegisimSatiri) {
+      // Veri yokken "Canlı" hükümle çelişir ("henüz gelmedi"), ekran
+      // okuyucuya da öyle okunur (Ar-Ge 21 Kas); yalnız tarih kalır.
+      if (veriYok) return const [];
       if (BugunService.seansAcikMi(now)) {
         final kapanisDk = BistTakvimi.yarimGunMu(now)
             ? BistTakvimi.yarimGunKapanisDk
@@ -911,7 +914,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           now: now,
           dil: dil,
           etiket: widget.etiket,
-          durum: _durumMetni(veri.birincil, now),
+          durum: _durumMetni(veri.birincil, now, veriYok),
           acik: veri.birincil is GunlukDegisimSatiri &&
               BugunService.seansAcikMi(now),
           // Nokta yeni rakam gelince nefes alır (bkz. `_CanliNokta`).
@@ -971,6 +974,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           secili: _donem,
           onSec: _donemSec,
           onPerformans: () => _ozeteGit(periodIdx: _donem.index),
+          // Dipnot bir tutarı niteler; tutar yokken yetim kalır.
+          fiyatNotu: !(gunluk ? veriYok : donemVeriYok),
         ),
         // En az iki oynayan (Ar-Ge 7 Kas 14:15 #1): tek varlıkta sıra,
         // başlıktaki tutarı ikinci kez yazıyordu; "en çok" kıyas ister.
@@ -1111,7 +1116,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       }
     }
     return [
-      const SizedBox(height: SandikSpace.md2),
+      // Belirlenmemişte bağlantı en az önemli satır: üstü dar (Ar-Ge 21 Kas).
+      SizedBox(height: s.belirlenmedi ? SandikSpace.xs : SandikSpace.md2),
       _hedefKutusu(s, gizli),
     ];
   }
@@ -1182,6 +1188,11 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         onTap: hedefAc,
       );
     }
+    // Kilitliyken (deneme/abonelik bitti) kayıtlı gün karttan düşmez: sessiz
+    // ek + kilit; dokunuş zaten hedef sayfasını açar (Ar-Ge 21 Kas).
+    final kayitliKilitli = tarih == null &&
+        ref.watch(hedefTarihiDurumuProvider) != OzellikDurumu.acik &&
+        ref.watch(kapsamHedefTarihiProvider(widget.hedefKapsami)) != null;
     final gun = tarih == null
         ? null
         : l10n.goalDateBy(
@@ -1209,12 +1220,20 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             ]
           : [
               if (gun != null) '$kalan · $gun',
+              if (kayitliKilitli) '$kalan · ${l10n.todayGoalDateSaved}',
               kalan,
             ],
+      altKilit: kayitliKilitli,
       // Ekran okuyucu kısa hâli değil, sayfanın tam cümlesini duyar.
       // Tutar sayfadaki gibi tam yazım (kısaltma okunurken anlaşılmaz).
       etiket: ritim == null
-          ? null
+          ? (kayitliKilitli
+              ? [
+                  l10n.todayGoalProgressTitle((s.oran * 100).floor()),
+                  '$kalan · ${l10n.todayGoalDateSaved}',
+                  l10n.kilitli,
+                ].join('. ')
+              : null)
           : [
               l10n.todayGoalProgressTitle((s.oran * 100).floor()),
               gun != null ? '$kalan · $gun' : kalan,
@@ -1398,17 +1417,21 @@ class _KiyasBaslik extends StatelessWidget {
               style: baslikStili,
             ),
           ),
-          const SizedBox(width: SandikSpace.sm),
-          // Canlı noktası: seans açıkken kazanç renginde ve yumuşak bir
-          // nabız (opaklık), kapalıyken sabit gri. Nabız yalnız renk/opaklık;
-          // konum oynamaz (günde onlarca kez görülen yüzey).
-          _CanliNokta(acik: acik, tazelik: tazelik),
-          const SizedBox(width: SandikSpace.xs2),
-          SizedBox(
-            width: durumW,
-            child:
-                SiganMetin(durum, textAlign: TextAlign.end, style: durumStil),
-          ),
+          // Durum yokken (veri gelmedi) nokta da çizilmez: nokta "canlı"
+          // der, hüküm "henüz gelmedi" derdi.
+          if (durum.isNotEmpty) ...[
+            const SizedBox(width: SandikSpace.sm),
+            // Canlı noktası: seans açıkken kazanç renginde ve yumuşak bir
+            // nabız (opaklık), kapalıyken sabit gri. Nabız yalnız
+            // renk/opaklık; konum oynamaz (günde onlarca kez görülen yüzey).
+            _CanliNokta(acik: acik, tazelik: tazelik),
+            const SizedBox(width: SandikSpace.xs2),
+            SizedBox(
+              width: durumW,
+              child: SiganMetin(durum,
+                  textAlign: TextAlign.end, style: durumStil),
+            ),
+          ],
         ],
       );
       return satir;
@@ -1874,8 +1897,10 @@ class _DonemSegmenti extends StatelessWidget {
     required this.secili,
     required this.onSec,
     required this.onPerformans,
+    required this.fiyatNotu,
   });
 
+  final bool fiyatNotu;
   final SummaryPeriod secili;
   final ValueChanged<SummaryPeriod> onSec;
   final VoidCallback onPerformans;
@@ -1916,14 +1941,17 @@ class _DonemSegmenti extends StatelessWidget {
           ),
         ),
         Wrap(
-          alignment: WrapAlignment.spaceBetween,
+          // Dipnot yokken bağlantı yine sağa yaslı kalır.
+          alignment:
+              fiyatNotu ? WrapAlignment.spaceBetween : WrapAlignment.end,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text(
-              l10n.todayMarketOnly,
-              maxLines: 1,
-              style: context.t.labelSmall?.copyWith(color: c.text36),
-            ),
+            if (fiyatNotu)
+              Text(
+                l10n.todayMarketOnly,
+                maxLines: 1,
+                style: context.t.labelSmall?.copyWith(color: c.text36),
+              ),
             SandikTappable(
               onTap: onPerformans,
               semanticLabel: l10n.todayOpenInPerformance,
@@ -2475,8 +2503,11 @@ class _EylemKutusu extends StatelessWidget {
     required this.onTap,
     this.oran,
     this.etiket,
+    this.altKilit = false,
   });
 
+  /// Alt satırın sonunda küçük kilit (kayıtlı ama kilitli veri).
+  final bool altKilit;
   final IconData ikon;
   final String baslik;
 
@@ -2524,10 +2555,21 @@ class _EylemKutusu extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        SiganMetin(
-                          alt,
-                          style:
-                              context.t.labelSmall?.copyWith(color: c.text58),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: SiganMetin(
+                                alt,
+                                style: context.t.labelSmall
+                                    ?.copyWith(color: c.text58),
+                              ),
+                            ),
+                            if (altKilit) ...[
+                              const SizedBox(width: SandikSpace.xs),
+                              Icon(Icons.lock_outline_rounded,
+                                  size: 12, color: c.text58),
+                            ],
+                          ],
                         ),
                         if (oran != null)
                           Padding(

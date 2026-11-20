@@ -18801,6 +18801,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu portföyün {pay}\'{ek} fon ve BES\'te.'**
   String ziKilitKisisel(String pay, String ek);
+
+  /// No description provided for @todayGoalDateSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef günün kayıtlı'**
+  String get todayGoalDateSaved;
 }
 
 class _AppLocalizationsDelegate
