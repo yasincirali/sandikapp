@@ -124,14 +124,18 @@ void main() {
       // Başlık: "Bugün · <tarih>" (sığmazsa "Bugün"); ölçüm bloğu; hedef.
       expect(
           find.byWidgetPredicate(
-              (w) => w is SiganMetin && w.adaylar.last == 'Bugün'),
+              (w) => w is SiganMetin &&
+                  w.adaylar.isNotEmpty &&
+                  w.adaylar.last == 'Bugün'),
           findsOneWidget);
       // Test yazı tipi (Ahem) gerçek yazıdan ~2 kat geniş: hangi yazımın
       // seçildiği ortama bağlı; kural "adaylardan biri TAM yazılır".
       // Benchmark düzeni (2026-10-09): "sadece fiyat etkisi" notu dönem
       // çiplerinin sağında.
       // Not artık düz `Text`; sığmazsa alt satıra düşer (`Wrap`).
-      expect(find.text('sadece fiyat etkisi'), findsOneWidget);
+      // Ar-Ge 21 Kas: tutar yokken dipnot da yok (yetim kalıyordu); tutar
+      // varken görünür hâli `bugun_karti_tur0203_test`te.
+      expect(find.text('sadece fiyat etkisi'), findsNothing);
       // Seri çekici boş dönüyor: gün içi seride gerçek nokta yok. Hüküm
       // "Yerinde saydı · ₺0" değil, veri gelmedi (UX raporu 30 Eki §1).
       expect(find.text('Bugünün verisi henüz gelmedi'), findsOneWidget);

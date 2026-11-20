@@ -11780,4 +11780,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String ziKilitKisisel(String pay, String ek) {
     return 'Bu portföyün $pay\'$ek fon ve BES\'te.';
   }
+
+  @override
+  String get todayGoalDateSaved => 'Hedef günün kayıtlı';
 }

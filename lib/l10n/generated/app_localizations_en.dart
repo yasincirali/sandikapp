@@ -12045,4 +12045,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String ziKilitKisisel(String pay, String ek) {
     return '$pay of this portfolio is in funds and pension funds.';
   }
+
+  @override
+  String get todayGoalDateSaved => 'Your target date is saved';
 }
