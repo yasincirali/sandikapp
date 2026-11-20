@@ -182,3 +182,47 @@ Deno.test('kapı: teknik terim ve açıklanmamış "oynaklık" reddedilir (anla�
   assertEquals(kapidanGecir(madde('Oynaklık, yani fiyatın günlük dalgalanması, düşük kaldı.'), p), { gecti: true });
   assertEquals(kapidanGecir(madde('fiyat_degisim ölçümü sakin.'), p).gecti, false);
 });
+
+// ── Geçmişte ne sıklıkta (2026-11-20, day-trader-skill Ar-Ge'si) ────────────
+
+/// Ekim'den önce, 31 kapanışlık pencerelerin SINIR fiyatları [sinirlar]
+/// (eskiden yeniye) olan basamaklı geçmiş + Ekim'de 100'den [ekimSonu]'na
+/// düz gidiş. Pencere getirisi = ardışık iki sınırın oranı.
+function basamakli(sinirlar: number[], ekimSonu: number): Seri {
+  const gun = (sinirlar.length - 1) * 31 + 1;
+  const bas = new Date(ms('2026-10-01') - gun * GUN).toISOString().slice(0, 10);
+  return [
+    ...seri(bas, gun, (j) => sinirlar[Math.floor(j / 31)]),
+    ...seri('2026-10-01', 31, (i) => 100 + ((ekimSonu - 100) * (i + 1)) / 31),
+  ];
+}
+
+Deno.test('benzer_hareket: aynı yönde en az bu kadar değişim görülen önceki dönemler sayılır', () => {
+  const g = { ticker: 'HISSE:AAPL', kod: 'AAPL', varlik: 'yabanci_hisse' as const, tur: 'aylik' as const,
+    aralik: EKIM, para: 'TRY', kur: null, kaynak: 'Yahoo Finance' as const };
+  // 8 pencere: 0, −%15, +%17,6, 0, −%15, +%17,6, 0, 0.
+  const sinirlar = [100, 100, 85, 100, 100, 85, 100, 100, 100];
+  const dusus = fiyatPaketi({ ...g, seri: basamakli(sinirlar, 90) })!; // Ekim −%10
+  const b = dusus.olcumler.find((x) => x.anahtar === 'benzer_hareket')!;
+  assertEquals(b.gosterim, '8 dönemde 2 kez');
+  assertEquals(b.deger, 2);
+  assert(b.ad.includes('düşüş'));
+  // Yön ayrı sayılır: +%20'lik ayı geçen yükseliş yok.
+  const yukselis = fiyatPaketi({ ...g, seri: basamakli(sinirlar, 120) })!;
+  const y = yukselis.olcumler.find((x) => x.anahtar === 'benzer_hareket')!;
+  assertEquals(y.gosterim, '8 dönemde 0 kez');
+  assert(y.ad.includes('yükseliş'));
+  // Sayı kapısı: gösterimdeki iki sayı yazılabilir, uydurulan üçüncü yazılamaz.
+  const not = (metin: string) => ({ baslik: 'AAPL ayı düşüşle kapattı.', maddeler: [{ metin, kanit: ['benzer_hareket'] }] });
+  assertEquals(kapidanGecir(not('Önceki 8 dönemin 2 tanesinde bu büyüklükte düşüş görüldü.'), dusus), { gecti: true });
+  assertEquals(kapidanGecir(not('Önceki 8 dönemin 3 tanesinde bu büyüklükte düşüş görüldü.'), dusus).gecti, false);
+});
+
+Deno.test('benzer_hareket: geçmiş kısaysa ölçüm yok (az örnekten sıklık çıkmaz)', () => {
+  // 5 pencere: asgari 6'nın altı.
+  const p = fiyatPaketi({
+    ticker: 'HISSE:AAPL', kod: 'AAPL', varlik: 'yabanci_hisse', tur: 'aylik', aralik: EKIM,
+    seri: basamakli([100, 100, 85, 100, 100, 100], 90), para: 'TRY', kur: null, kaynak: 'Yahoo Finance',
+  })!;
+  assertEquals(p.olcumler.find((x) => x.anahtar === 'benzer_hareket'), undefined);
+});

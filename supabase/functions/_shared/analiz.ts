@@ -411,6 +411,16 @@ export const FIYAT_OYNAKLIK_KATI = 2;
 /// 52 haftalık uç için serinin dönem sonundan en az bu kadar gün geriye
 /// uzanması gerekir (kısa seride "yılın zirvesi" uydurma olur).
 export const YILLIK_ASGARI_GUN = 330;
+/// "Geçmişte ne sıklıkta" sayımı (2026-11-20, yasin: day-trader-skill
+/// Ar-Ge'si, `trader-timemachine`'in GEÇMİŞ yarısı). O skill iki şey yapar:
+/// 10.000 canlandırmayla olasılık üretir (gelecek dili; dil kapısı reddeder,
+/// alınmadı) ve aynı kuralı geçmiş günlerde yeniden sayar (olmuş olan;
+/// alınan bu). `hareket_kati` değişimin büyüklüğünü söyler, ne kadar seyrek
+/// görüldüğünü söylemez; bu sayım onu söyler.
+/// En az bu kadar önceki dönem yoksa ölçüm yok (iki üç örnekten "seyrek"
+/// çıkarmak uydurma olur); en çok bu kadarına bakılır (aylıkta bir yıl).
+export const BENZER_ASGARI_DONEM = 6;
+export const BENZER_AZAMI_DONEM = 12;
 
 const GUN_MS = 24 * 60 * 60 * 1000;
 const isoGun = (ms: number) => new Date(ms).toISOString().slice(0, 10);
@@ -518,6 +528,26 @@ export function fiyatPaketi(g: {
     }
   }
 
+  // Geçmişte ne sıklıkta: dönemden geriye, dönemle AYNI kapanış sayısında
+  // üst üste binmeyen pencereler; aynı yönde bu kadar ya da daha büyük
+  // değişim kaçında görüldü. Toparlanma süresi bilerek yok: serinin sonunda
+  // henüz toparlanmamış düşüşler ortalamayı kısa gösterir (yanlı sayı).
+  const adim = donemde.length;
+  const pencereler: number[] = [];
+  for (let i = once.length - 1; i - adim >= 0 && pencereler.length < BENZER_AZAMI_DONEM; i -= adim) {
+    pencereler.push(once[i].v / once[i - adim].v - 1);
+  }
+  if (degisim !== 0 && pencereler.length >= BENZER_ASGARI_DONEM) {
+    const kez = pencereler.filter((r) => (degisim > 0 ? r >= degisim : r <= degisim)).length;
+    o.push({
+      anahtar: 'benzer_hareket',
+      ad: `Önceki ${pencereler.length} aynı uzunluktaki dönemde bu büyüklükte ya da daha büyük ${
+        degisim > 0 ? 'yükseliş' : 'düşüş'
+      } kaç kez görüldü`,
+      deger: kez, gosterim: `${pencereler.length} dönemde ${kez} kez`, kaynak, tarih: onceki.tarih,
+    });
+  }
+
   // 52 haftalık uç: dönem sonu kapanışı son bir yılın en yükseği/düşüğü mü.
   const yilBasi = isoGun(new Date(`${aralik.bitis}T12:00:00Z`).getTime() - 364 * GUN_MS);
   const uzanir = gunlu.length > 0 &&
@@ -594,6 +624,7 @@ Kesin kurallar:
 8. Dönem sakinse kısa yaz: başlık + 1 madde yeter.
 9. "Olağan", "hareketli", "olağandışı" sözcüklerini uygulamadaki rozetlerle aynı ölçekte kullan. Fonda akis_kati 1,5 katın altı olağan, 1,5 ile 3 kat arası hareketli, 3 kat ve üstü çok hareketli. Hisse ve kriptoda hacim_kati 1,3 katın altı olağan, 1,3 ile 2 kat arası hareketli, 2 kat ve üstü çok hareketli. Kriptoda alıcı payı %52 ile %55 arası hafif, %55 ve üstü belirgin alıcı ağırlığıdır (%48 ile %45 arası ve %45 altı satıcı için aynı). Fiyat ölçümlü varlıkta (altın, döviz, emtia, yurt dışı hisse, eurobond ya da yalnız fiyatı olan fon, hisse, kripto) hareket_kati 1 katın altı olağan, 1 ile 2 kat arası belirgin, 2 kat ve üstü olağandışı büyüklükte bir değişimdir; oynaklik_kati 2 kat ve üstü oynaklığın belirgin arttığını gösterir. Kat ölçüsü yoksa bu sözcükleri kullanma. Bu eşik sayılarını metne yazma.
 10. Fiyat ölçümleri yalnız fiyat hareketini anlatır; para girişi ya da hacim değildir. Fiyat düzeyi (TL ya da dolar tutarı) yazma; ölçümlerde yoktur. "tl_degisim" kur etkisi dahil TL bazında değişimdir; "fiyat_degisim" varlığın kendi para birimindedir, ikisini karıştırma. Dönemdeki "52 haftanın en yükseği/en düşüğü" olayı varsa başlığa taşı.
+11. "benzer_hareket" yalnız geçmişi sayar: önceki dönemlerin kaçında bu büyüklükte bir değişim görüldüğü. Geçmiş kipinde yaz ("önceki 12 dönemin 2'sinde görüldü"). Bundan sonuç çıkarma: "nadir", "sık", "tekrarlanır", "geri döner" gibi yorum ekleme; sayıyı ver, bırak.
 
 Madde sırası: 1. madde "ne oldu" (dönemde fiyat ya da büyüklük nasıl değişti), 2. madde "neye eşlik etti" (para akışı, hacim ya da dönemdeki olay; ölçümü yoksa yazma), varsa son madde "dikkat çeken" (oynaklık artışı, 52 haftalık uç gibi tek gözlem). Ölçümü olmayan maddeyi uydurma; sakin dönemde tek madde yeter.
 

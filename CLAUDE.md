@@ -59,6 +59,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 | Paywall / fiyat / abonelik tutma | `paywalls`, `pricing`, `churn-prevention` (**iOS iptal akışı Apple'da**) |
 | Kayıt hunisi / ilk açılış / tavsiye | `signup`, `onboarding`, `referrals` |
 | Ürün analitiği / deney / kullanıcı araştırması | `analytics`, `ab-testing` (araç Remote Config), `customer-research`, `competitor-profiling` |
+| AI rapor/yorum ölçümü (varlık notu, aylık rapor, portföy yorumu) için yöntem | `trader-timemachine`, `trader-analyst`, `trader-news`, `trader-risk` (yalnız **yöntem**; aşağıdaki tuzağa bak) |
 | Uygulamayı çalıştırıp görme | `/run`, `tool/deploy_emulators.sh` |
 
 **Çakışma kuralı — skill CLAUDE.md'yi asla ezmez.** Skill ile bu dosya çeliştiğinde
@@ -72,6 +73,11 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 - Pazarlama skill'leri (`marketingskills`) → SaaS/web varsayar. Mağaza görseli
   **gerçek ekran**, metindeki rakam **gerçek çıktı** (uydurma sayı yasak);
   bayrak arkasındaki özellik metne girmez; yatırım tavsiyesi gibi okunan vaat yok.
+- `trader-*` (day-trader-skill, 2026-11-20) → ABD'de gün içi al-sat için yazıldı:
+  giriş anı, zarar-kes, hedef fiyat, pozisyon boyutu, emir ve olasılık üretir.
+  Bunların **hiçbiri** uygulamaya ya da rapor metnine girmez (SPK sınırı, dil
+  kapısı `YASAK`). Alınan yalnız yöntemdir: olmuş olanı say, sayıyı kod üretsin,
+  yetersiz veride sus. Kod Python; sunucu Deno, istemci Dart — taşınmaz.
 
 Gerekçeler ve kurulmayanların listesi: `.claude/skills/SKILLS_README.md`.
 
