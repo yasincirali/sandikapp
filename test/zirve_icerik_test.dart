@@ -160,7 +160,11 @@ void main() {
     testWidgets('kilitli: kilit kartı, sayı yok, veri okunmaz', (t) async {
       await kur(t, gorunur: true, kilitli: true);
       expect(find.byType(PremiumKilitKarti), findsOneWidget);
-      expect(find.textContaining('%'), findsNothing);
+      // Tek sayı kişisel satır (Ar-Ge 20 Kas tur 2 #3): fon+BES payı zaten
+      // vitrinde görünen pay; kilitli içerik (sınıf yüzdeleri) yazılmaz.
+      final kisisel = find.textContaining("fon ve BES'te");
+      expect(kisisel, findsOneWidget);
+      expect(find.textContaining('%'), findsOneWidget);
       expect(okuma, 0);
     });
 

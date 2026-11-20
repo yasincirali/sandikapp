@@ -12027,4 +12027,22 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get kilitli => 'Locked';
+
+  @override
+  String kilitDenemeSatiri(int gun) {
+    return 'Try free for $gun days';
+  }
+
+  @override
+  String xrKilitFonKisisel(String pay, String ek) {
+    return 'This fund is $pay of your portfolio.';
+  }
+
+  @override
+  String ziKilitKisisel(String pay, String ek) {
+    return '$pay of this portfolio is in funds and pension funds.';
+  }
 }

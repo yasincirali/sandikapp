@@ -227,7 +227,7 @@ Color yonRengi(SandikPalette c, double v) => v > 0
 
 /// Kilitli içerik satırı (S12-B) — radar kartları ve not kutusu ortak
 /// kullanır: ne kilitli olduğunu somut söyler, satın alma ekranını açar.
-class KilitSatiri extends StatelessWidget {
+class KilitSatiri extends ConsumerWidget {
   const KilitSatiri(
       {super.key,
       required this.metin,
@@ -245,37 +245,55 @@ class KilitSatiri extends StatelessWidget {
   /// olay serileri değişmez.
   final String? ozellik;
 
-  /// Kilit ikonunun ekran okuyucu etiketi ("Kilitli"); verilmezse ikon
-  /// sessiz (eski davranış).
+  /// Kilit ikonunun ekran okuyucu etiketi. Verilmezse `l10n.kilitli`
+  /// (Ar-Ge 20 Kas tur 2 #6): 21 çağrının hiçbiri vermiyordu, ikon sessizdi.
   final String? kilitEtiketi;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.c;
-    return SandikTappable(
-      onTap: () {
-        if (ozellik != null) {
-          AnalyticsService.instance.logPremiumGateShown(feature: ozellik!);
-        }
-        PaywallScreen.show(context, source: kaynak);
-      },
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        child: Row(
-          children: [
-            Icon(Icons.lock_outline_rounded,
-                size: SandikSpace.md,
-                color: c.amberText,
-                semanticLabel: kilitEtiketi),
-            const SizedBox(width: SandikSpace.sm),
-            Expanded(
-              child: Text(metin,
-                  style: context.t.bodySmall
-                      ?.copyWith(color: c.text90, fontWeight: FontWeight.w600)),
+    // Deneme hakkı yalnız mağaza "uygun" dediğinde söylenir; bilinmiyor,
+    // uygun değil, hata ya da yükleniyor → satır bugünkü metinle kalır.
+    final denemeGun = ref.watch(denemeHakkiGunuProvider).valueOrNull;
+    // Satırın tamamı tek düğme olarak okunur: "… Premium'da, kilitli, düğme".
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        child: SandikTappable(
+          onTap: () {
+            if (ozellik != null) {
+              AnalyticsService.instance.logPremiumGateShown(feature: ozellik!);
+            }
+            PaywallScreen.show(context, source: kaynak);
+          },
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SandikTouch.min),
+            child: Row(
+              children: [
+                Icon(Icons.lock_outline_rounded,
+                    size: SandikSpace.md,
+                    color: c.amberText,
+                    semanticLabel: kilitEtiketi ?? context.l10n.kilitli),
+                const SizedBox(width: SandikSpace.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(metin,
+                          style: context.t.bodySmall?.copyWith(
+                              color: c.text90, fontWeight: FontWeight.w600)),
+                      if (denemeGun != null)
+                        Text(context.l10n.kilitDenemeSatiri(denemeGun),
+                            style: context.t.bodySmall
+                                ?.copyWith(color: c.amberText)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded,
+                    size: SandikSpace.lgs, color: c.text58),
+              ],
             ),
-            Icon(Icons.chevron_right_rounded,
-                size: SandikSpace.lgs, color: c.text58),
-          ],
+          ),
         ),
       ),
     );

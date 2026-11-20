@@ -11762,4 +11762,22 @@ class AppLocalizationsTr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get kilitli => 'Kilitli';
+
+  @override
+  String kilitDenemeSatiri(int gun) {
+    return '$gun gün ücretsiz dene';
+  }
+
+  @override
+  String xrKilitFonKisisel(String pay, String ek) {
+    return 'Bu fon portföyünün $pay\'$ek.';
+  }
+
+  @override
+  String ziKilitKisisel(String pay, String ek) {
+    return 'Bu portföyün $pay\'$ek fon ve BES\'te.';
+  }
 }

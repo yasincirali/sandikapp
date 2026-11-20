@@ -76,26 +76,26 @@ void main() {
     });
   });
 
-  group('yillikRaporKilitMetni', () {
+  group('yillikRaporKisisel', () {
     final tr = AppLocalizationsTr();
     test('iki parça', () {
-      expect(yillikRaporKilitMetni(tr, (yil: 2026, satis: 4, temettu: 3)),
+      expect(yillikRaporKisisel(tr, (yil: 2026, satis: 4, temettu: 3)),
           "2026 yılında 4 satışın ve 3 temettün kayıtlı · raporun Premium'da hazır");
     });
     test('sıfır parça yazılmaz', () {
-      expect(yillikRaporKilitMetni(tr, (yil: 2025, satis: 1, temettu: 0)),
+      expect(yillikRaporKisisel(tr, (yil: 2025, satis: 1, temettu: 0)),
           "2025 yılında 1 satışın kayıtlı · raporun Premium'da hazır");
-      expect(yillikRaporKilitMetni(tr, (yil: 2025, satis: 0, temettu: 2)),
+      expect(yillikRaporKisisel(tr, (yil: 2025, satis: 0, temettu: 2)),
           "2025 yılında 2 temettün kayıtlı · raporun Premium'da hazır");
     });
-    test('sayım yoksa ya da ikisi sıfırsa genel cümle', () {
-      expect(yillikRaporKilitMetni(tr, null), tr.yrKilitSatir);
-      expect(yillikRaporKilitMetni(tr, (yil: 2025, satis: 0, temettu: 0)),
-          tr.yrKilitSatir);
+    test('sayım yoksa ya da ikisi sıfırsa satır yok', () {
+      expect(yillikRaporKisisel(tr, null), isNull);
+      expect(yillikRaporKisisel(tr, (yil: 2025, satis: 0, temettu: 0)),
+          isNull);
     });
     test('İngilizce tekil/çoğul', () {
       final en = AppLocalizationsEn();
-      expect(yillikRaporKilitMetni(en, (yil: 2026, satis: 1, temettu: 2)),
+      expect(yillikRaporKisisel(en, (yil: 2026, satis: 1, temettu: 2)),
           '1 sale and 2 dividends recorded in 2026 · your report is ready in Premium');
     });
   });
@@ -125,6 +125,8 @@ void main() {
         find.text(
             "2026 yılında 1 satışın ve 2 temettün kayıtlı · raporun Premium'da hazır"),
         findsOneWidget);
+    // Sayım kişisel satırda; kilit satırı genel (Ar-Ge 20 Kas tur 2 #3).
+    expect(find.text("Yıllık rapor Premium'da"), findsOneWidget);
     expect(find.textContaining('₺'), findsNothing);
   });
 }

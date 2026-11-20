@@ -216,6 +216,10 @@ final localeProvider =
 /// "loading → gerçek değer" flash'ı olmaz. main.dart bunu init eder.
 SharedPreferences? _prefsSync;
 
+/// Isıtılmış örnek, preferences dışındaki senkron okuyucular için (ör.
+/// `PremiumHakOnbellegi`); ısıtılmadıysa null.
+SharedPreferences? tercihlerSenkron() => _prefsSync;
+
 Future<void> initPreferencesCache() async {
   _prefsSync = await SharedPreferences.getInstance();
 }

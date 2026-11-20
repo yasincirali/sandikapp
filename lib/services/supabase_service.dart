@@ -2290,6 +2290,22 @@ class SupabaseService {
     ];
   }
 
+  /// Fonun dağılım satırı var mı (0187 `fon_dagilimi_var_mi`, yalnız
+  /// boolean). Ücretsiz kullanıcıya RLS satır vermediği için kilit kartı
+  /// "bu fonda verilecek bir şey var mı"yı buradan öğrenir.
+  Future<bool> fonDagilimiVarMi(String kod) {
+    return _log.log<bool>(
+      source: 'SupabaseService.fonDagilimiVarMi',
+      table: 'fon_dagilimlari',
+      op: 'RPC',
+      request: {'p_fon_kodu': kod},
+      call: () async =>
+          (await _db.rpc<dynamic>('fon_dagilimi_var_mi',
+              params: {'p_fon_kodu': kod})) ==
+          true,
+    );
+  }
+
   /// [kodlar] fonlarının en yeni (beş kontrolden geçmiş) KAP kalem listesi.
   /// Son iki ay okunur: rapor ay sonundan ~6 iş günü sonra geldiği için
   /// ayın ilk haftasında en yeni geçerli rapor iki ay öncesinindir.

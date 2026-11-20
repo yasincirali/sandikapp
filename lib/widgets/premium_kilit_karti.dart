@@ -61,7 +61,7 @@ class PremiumKilitKarti extends StatelessWidget {
               Expanded(
                 child: Text(baslik,
                     style: context.t.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700, color: c.text90)),
+                        fontWeight: FontWeight.w600, color: c.text90)),
               ),
             ],
           ),
@@ -88,7 +88,9 @@ class PremiumKilitKarti extends StatelessWidget {
                   ),
           ),
           const SizedBox(height: SandikSpace.sm),
-          KilitSatiri(metin: kilitMetni, kaynak: kaynak),
+          // `ozellik` = kaynak (Ar-Ge 20 Kas tur 2 #4): altı tam yüzeyde
+          // `premium_gate_shown` yazılmıyordu, Premium hunisi kördü.
+          KilitSatiri(metin: kilitMetni, kaynak: kaynak, ozellik: kaynak),
         ],
       ),
     );

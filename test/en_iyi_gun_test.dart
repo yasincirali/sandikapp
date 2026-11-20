@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
@@ -380,7 +381,9 @@ void main() {
       tester.view.physicalSize = Size(genislik, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MaterialApp(
+      // ProviderScope: kilit satırı deneme hakkını okur (Ar-Ge 20 Kas tur 2).
+      await tester.pumpWidget(ProviderScope(
+          child: MaterialApp(
         theme: ThemeData(
             brightness: Brightness.light, extensions: [SandikPalette.light]),
         home: MediaQuery(
@@ -402,7 +405,7 @@ void main() {
             ),
           ),
         ),
-      ));
+      )));
       await tester.pumpAndSettle();
     }
 

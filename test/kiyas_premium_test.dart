@@ -11,6 +11,7 @@ import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/kiyas_seti.dart';
 import 'package:portfoy_takip/services/symbol_search_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/widgets/para_akisi_karti.dart' show KilitSatiri;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Karşılaştır Premium turu (Ar-Ge 14 Kas 2026 22:03).
@@ -281,9 +282,13 @@ void main() {
       // Çizilmedi: seçim listesinde satırı yok.
       expect(find.text('ALTIN_GRAM'), findsNothing);
       // Satır ≥44 pt dokunma hedefi.
-      expect(tester.getSize(find.ancestor(
-              of: find.text(satir), matching: find.byType(Container)).first)
-          .height, greaterThanOrEqualTo(44));
+      // Ortak KilitSatiri (Ar-Ge 20 Kas tur 2 #5).
+      expect(
+          tester
+              .getSize(find.ancestor(
+                  of: find.text(satir), matching: find.byType(KilitSatiri)))
+              .height,
+          greaterThanOrEqualTo(44));
 
       // Aynı oturumda ikinci kilitli dokunuş seri çekmez (paywall yolu).
       await tester.tap(find.text('Dolar'));

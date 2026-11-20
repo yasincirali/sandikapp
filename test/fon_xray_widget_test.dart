@@ -70,6 +70,8 @@ Future<void> _kur(
   bool kalemAcik = false,
   FonKalemleri? kalemler,
   XrayFonPayi? fonPayi,
+  bool dagilimVar = true,
+  int? tekFonPayi,
   List<Override> ek = const [],
 }) async {
   _okuma = 0;
@@ -92,6 +94,11 @@ Future<void> _kur(
           .overrideWith((ref, kod) async => kalemAcik ? kalemler : null),
       // Fon ayağı (Ar-Ge 14 Kas): varsayılan "bilinmiyor" — genel metin.
       xrayFonPayiProvider.overrideWithValue(fonPayi),
+      // Ar-Ge 20 Kas tur 2: kilit kartı yalnız dağılımı olan fonda (0187),
+      // kişisel satır fonun portföy payından.
+      fonDagilimiVarMiOkuyucuProvider
+          .overrideWithValue((_) async => dagilimVar),
+      xrayTekFonPayiProvider.overrideWith((ref, kod) => tekFonPayi),
       ...ek,
     ],
     child: MaterialApp(
@@ -162,6 +169,34 @@ void main() {
       expect(find.text('Para piyasası / repo'), findsNothing);
       expect(_sayiVar(), isFalse);
       expect(_okuma, 0);
+    });
+
+    testWidgets(
+        'kilitli + fonun dağılımı yok (0187): kilit kartı satılmaz',
+        (t) async {
+      await _kur(t, _kart(),
+          gorunur: true, kilitli: true, dag: _dag, dagilimVar: false);
+      expect(find.byType(PremiumKilitKarti), findsNothing);
+      expect(find.byType(SandikCard), findsNothing);
+    });
+
+    testWidgets('kilitli + sorgu düşer (eski sunucu): eski davranış, kart var',
+        (t) async {
+      await _kur(t, _kart(), gorunur: true, kilitli: true, dag: _dag, ek: [
+        fonDagilimiVarMiOkuyucuProvider
+            .overrideWithValue((_) async => throw Exception('rpc yok')),
+      ]);
+      expect(find.byType(PremiumKilitKarti), findsOneWidget);
+    });
+
+    testWidgets('kilitli + fon portföyde: kişisel satır payı söyler, tutar yok',
+        (t) async {
+      await _kur(t, _kart(),
+          gorunur: true, kilitli: true, dag: _dag, tekFonPayi: 38);
+      expect(find.text("Bu fon portföyünün %38'i."), findsOneWidget);
+      expect(find.textContaining('₺'), findsNothing);
+      await _kur(t, _kart(), gorunur: true, kilitli: true, dag: _dag);
+      expect(find.textContaining('Bu fon portföyünün'), findsNothing);
     });
 
     testWidgets('4) Premium: veri; veri yoksa kart hiç yok', (t) async {

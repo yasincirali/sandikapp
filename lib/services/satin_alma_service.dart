@@ -202,6 +202,31 @@ class SatinAlmaService {
     }
   }
 
+  /// Kullanıcının ücretsiz deneme hakkı varsa deneme süresi (gün), yoksa
+  /// null (Ar-Ge 20 Kas tur 2, kilit satırında deneme). Süre teklifin
+  /// ürününden ([denemeGunu], paywall'la aynı kaynak); hak RevenueCat
+  /// `checkTrialOrIntroductoryPriceEligibility` ile. Uygun DEĞİL, bilinmiyor
+  /// (Android her zaman bilinmiyor döner), hata ya da çevrimdışı → null:
+  /// deneme vaat edilmez. Yalnız ürün ve uygunluk okunur; kurulum kanalı
+  /// OKUNMAZ (mağaza incelemesi = mağaza kullanıcısı kuralı).
+  Future<int?> denemeHakkiGunu() async {
+    if (!_yapilandirildi) return null;
+    try {
+      final t = await teklif();
+      final urun = [t?.yillik?.storeProduct, t?.aylik?.storeProduct]
+          .nonNulls
+          .where((u) => denemeGunu(u) != null)
+          .firstOrNull;
+      if (urun == null) return null;
+      final uygunluk = await Purchases
+          .checkTrialOrIntroductoryPriceEligibility([urun.identifier]);
+      return denemeHakki(denemeGunu(urun), uygunluk[urun.identifier]?.status);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SatinAlmaService.denemeHakkiGunu');
+      return null;
+    }
+  }
+
   /// Geri yükle (cihaz değişikliği, yeniden kurulum). true = hak bulundu.
   Future<bool?> geriYukle() async {
     if (!_yapilandirildi) return null;
@@ -291,6 +316,11 @@ int? denemeGunu(StoreProduct urun) {
   if (serbest != null) return _gun(serbest.unit, serbest.value);
   return null;
 }
+
+/// Saf: deneme süresi yalnız mağaza "uygun" dediğinde döner. Bilinmeyen,
+/// uygun olmayan ya da teklifsiz durumda null (yanıltıcı vaat yok).
+int? denemeHakki(int? gun, IntroEligibilityStatus? durum) =>
+    durum == IntroEligibilityStatus.introEligibilityStatusEligible ? gun : null;
 
 int? _gun(PeriodUnit birim, int adet) => switch (birim) {
       PeriodUnit.day => adet,

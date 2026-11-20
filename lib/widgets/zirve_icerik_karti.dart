@@ -9,6 +9,8 @@ import '../services/fon_dagilimi.dart' show XrayKova;
 import '../services/zirve_icerik.dart';
 import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart' show trSayiIyelikEki;
 import 'fon_dagilimi_karti.dart';
 import 'premium_kilit_karti.dart';
 import 'sandik_skeleton.dart';
@@ -56,6 +58,11 @@ class ZirveIcerikKarti extends ConsumerWidget {
     }
     final l = context.l10n;
     if (ref.watch(premiumKilitliProvider)) {
+      // Kişisel satır (Ar-Ge 20 Kas tur 2 #3): "Bu portföyün %38'i fon ve
+      // BES'te" — kartın açılınca neyi açacağını eldeki paydan söyler, yeni
+      // veri okumaz. Yuvarlanınca sıfırsa satır yok (uydurma yok).
+      final fonPay =
+          ((pay['fon'] ?? 0) + (pay['bes'] ?? 0)).round().clamp(0, 100);
       return Padding(
         padding: dis,
         child: PremiumKilitKarti(
@@ -64,6 +71,10 @@ class ZirveIcerikKarti extends ConsumerWidget {
           govde: l.ziKilitGovde,
           kilitMetni: l.ziKilitSatir,
           kaynak: 'zirve_xray',
+          kisisel: fonPay < 1
+              ? null
+              : l.ziKilitKisisel(fmtPct(fonPay.toDouble(), digits: 0),
+                  trSayiIyelikEki(fonPay)),
         ),
       );
     }

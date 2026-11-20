@@ -18777,6 +18777,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{arti, plural, =0{Son {n} ayda artıda kapanan ay olmadı; bu ay {n} ay içinde {sira}. sırada.} other{Son {n} ayda {arti} ay artıdaydın; bu ay {n} ay içinde {sira}. sırada.}}'**
   String prmKiyasOrta(int arti, int n, int sira);
+
+  /// No description provided for @kilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilitli'**
+  String get kilitli;
+
+  /// Kilit satırının ikinci satırı; yalnız mağaza deneme hakkı uygun dediğinde.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} gün ücretsiz dene'**
+  String kilitDenemeSatiri(int gun);
+
+  /// No description provided for @xrKilitFonKisisel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu fon portföyünün {pay}\'{ek}.'**
+  String xrKilitFonKisisel(String pay, String ek);
+
+  /// No description provided for @ziKilitKisisel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu portföyün {pay}\'{ek} fon ve BES\'te.'**
+  String ziKilitKisisel(String pay, String ek);
 }
 
 class _AppLocalizationsDelegate
