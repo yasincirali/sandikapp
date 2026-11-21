@@ -6203,6 +6203,8 @@
   "pyzHataKapali": "Yapay zekâ yorumu şu an kullanılamıyor.",
   "pyzHataGenel": "Yorum alınamadı. Bağlantını kontrol edip yeniden dene.",
   "pyzKilit": "Portföyünü yapay zekâyla yorumlamak Premium'da.",
+  "pyzKilitVarlik": "{varlik} için bu dönemin yorumu Premium'da.",
+  "@pyzKilitVarlik": {"placeholders": {"varlik": {"type": "String"}}},
   "pyzKilitOzet": "{donem, select, hafta{Geçen hafta} other{Geçen ay}} portföyün {yuzde} {yon, select, artti{arttı} other{azaldı}} · nedenini yapay zekâ Premium'da anlatır.",
   "@pyzKilitOzet": {"description": "Ücretsiz hesapta kilitli AI yorum kartı; dönem değişimi cihazda hesaplanır. donem: hafta|ay, yuzde: '%3,2', yon: artti|azaldi.", "placeholders": {"donem": {"type": "String"}, "yuzde": {"type": "String"}, "yon": {"type": "String"}}},
   "pyzKilitOzetEtkili": "{donem, select, hafta{Geçen hafta} other{Geçen ay}} portföyün {yuzde} {yon, select, artti{arttı} other{azaldı}}, en çok {varlik} etkiledi · nedenini yapay zekâ Premium'da anlatır.",

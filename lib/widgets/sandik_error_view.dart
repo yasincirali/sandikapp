@@ -112,11 +112,17 @@ class SandikErrorView extends StatefulWidget {
   /// verilmezse rotanın adı kullanılır.
   final String? ekranAdi;
 
+  /// Kart içi görünüm (2026-11-21): tam ekran ölçüsü (40 pt simge, 32 pt
+  /// dolgu) küçük bir kartı doldururdu. Kompakt hâl yalnız metin + "Tekrar
+  /// dene" metin düğmesidir; "bize yaz" bağlantısı ve giriş animasyonu yok.
+  final bool kompakt;
+
   const SandikErrorView({
     super.key,
     required this.error,
     this.onRetry,
     this.ekranAdi,
+    this.kompakt = false,
   });
 
   @override
@@ -246,6 +252,24 @@ class _SandikErrorViewState extends State<SandikErrorView> {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final bizeYaz = widget.onRetry != null &&
         HataDenemeKaydi.bagGorunsunMu(_anahtar(context), _dogum);
+
+    if (widget.kompakt) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            friendlyError(widget.error, l10n: context.l10n),
+            style: context.t.bodySmall?.copyWith(color: context.c.text58),
+          ),
+          if (widget.onRetry != null)
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
+              onPressed: _tekrarDene,
+              child: Text(context.l10n.retry),
+            ),
+        ],
+      );
+    }
 
     final content = Center(
       child: Padding(

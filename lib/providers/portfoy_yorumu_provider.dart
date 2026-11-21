@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../models/asset.dart';
 import '../models/position.dart' show positionKey;
+import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/portfoy_yorumu_service.dart';
@@ -66,11 +67,25 @@ Future<PortfoyYorumPaketi?> _kapanmisPaket(Ref ref, YorumTuru tur) async {
   );
 }
 
+/// Saklı yorum okuması: hata kartta "Tekrar dene" olarak görünür; Crashlytics'e
+/// non-fatal burada, provider başına bir kez gider (kartın build'inde değil,
+/// yoksa her yeniden çizimde tekrar bildirilirdi). Sonra aynen fırlatılır.
+Future<T> _kayitOku<T>(String neden, Future<T> Function() oku) async {
+  try {
+    return await oku();
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: neden);
+    rethrow;
+  }
+}
+
 final portfoyYorumuProvider = FutureProvider.autoDispose
     .family<PortfoyYorumDurumu?, YorumTuru>((ref, tur) async {
   final paket = await _kapanmisPaket(ref, tur);
   if (paket == null) return null;
-  final kayit = await PortfoyYorumuService.instance.kayitliYorum(tur, paket.baslangic);
+  final kayit = await _kayitOku(
+      'portfoy_yorumu_kayit',
+      () => PortfoyYorumuService.instance.kayitliYorum(tur, paket.baslangic));
   return PortfoyYorumDurumu(paket: paket, kayit: kayit);
 });
 
@@ -107,11 +122,13 @@ final portfoySeciliYorumProvider = FutureProvider.autoDispose
     canliSon: DailySummary.kapsamToplami(pState, lotlar),
     canliDagilim: DailySummary.kapsamDagilimi(pState, lotlar),
   );
-  final kayit = await svc.kayitliSeciliYorum(
-    kapsam: YorumKapsami.portfoy,
-    donemKodu: paket.donemKodu!,
-    bitis: paket.bitis,
-  );
+  final kayit = await _kayitOku(
+      'portfoy_yorumu_kayit',
+      () => svc.kayitliSeciliYorum(
+            kapsam: YorumKapsami.portfoy,
+            donemKodu: paket.donemKodu!,
+            bitis: paket.bitis,
+          ));
   return PortfoyYorumDurumu(paket: paket, kayit: kayit);
 });
 
@@ -129,10 +146,12 @@ final varlikYorumKaydiProvider = FutureProvider.autoDispose
     .family<PortfoyYorumu?, VarlikYorumAnahtari>((ref, a) async {
   final uid = ref.watch(authProvider.select((s) => s.valueOrNull?.id));
   if (uid == null) return null;
-  return PortfoyYorumuService.instance.kayitliSeciliYorum(
-    kapsam: YorumKapsami.varlik,
-    donemKodu: a.donemKodu,
-    bitis: a.bitis,
-    varlikIzi: a.varlikIzi,
-  );
+  return _kayitOku(
+      'varlik_yorumu_kayit',
+      () => PortfoyYorumuService.instance.kayitliSeciliYorum(
+            kapsam: YorumKapsami.varlik,
+            donemKodu: a.donemKodu,
+            bitis: a.bitis,
+            varlikIzi: a.varlikIzi,
+          ));
 });

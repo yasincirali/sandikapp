@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
 import '../providers/portfoy_yorumu_provider.dart';
+import '../providers/premium_provider.dart' show premiumHaklariProvider;
 import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../services/period_summary_service.dart'
     show PeriodSummaryService, SummaryPeriod;
@@ -16,6 +17,7 @@ import '../utils/friendly_error.dart' show showSandikConfirm;
 import '../utils/tr_format.dart' show dayKey, fmtPct, fmtTarihAraligi;
 import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_async_button.dart';
+import 'sandik_error_view.dart';
 import 'sandik_segment.dart';
 import 'sandik_skeleton.dart';
 import 'yorum_notu_sayfasi.dart';
@@ -121,6 +123,17 @@ class PortfoyYorumuKarti extends ConsumerStatefulWidget {
 mixin _YorumIstegi<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   String? hata;
 
+  /// Hatanın türü; hak dolduysa (kota/kotaAy/tavan) aynı isteği tekrar
+  /// göndermek boşa olur, düğme pasif kalır. `hata` sekme değişince
+  /// sıfırlanır; hak durumu ikisinin birlikte dolu olmasından türer.
+  YorumHataTuru? hataTuru;
+
+  bool get hakDoldu =>
+      hata != null &&
+      (hataTuru == YorumHataTuru.kota ||
+          hataTuru == YorumHataTuru.kotaAy ||
+          hataTuru == YorumHataTuru.tavan);
+
   String _hataMetni(PortfoyYorumHatasi e) => portfoyYorumHataMetni(
       context.l10n, e,
       dil: context.tarihDili, simdi: DateTime.now());
@@ -129,7 +142,10 @@ mixin _YorumIstegi<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   /// [yenile] kaydı yeniden okutur.
   Future<void> yorumIste(Future<PortfoyYorumPaketi?> Function() paket,
       void Function() yenile) async {
-    setState(() => hata = null);
+    setState(() {
+      hata = null;
+      hataTuru = null;
+    });
     final riza = await ref.read(portfoyYorumRizaProvider.future);
     if (riza != true) {
       if (!mounted) return;
@@ -156,7 +172,18 @@ mixin _YorumIstegi<T extends ConsumerStatefulWidget> on ConsumerState<T> {
       await PortfoyYorumuService.instance.yorumla(p);
       yenile();
     } on PortfoyYorumHatasi catch (e) {
-      if (mounted) setState(() => hata = _hataMetni(e));
+      // Sunucu Premium değil diyorsa kırmızı metin yerine hak yeniden
+      // okunur: kart mevcut kilit dalına (KilitSatiri) düşer.
+      if (e.tur == YorumHataTuru.premium) {
+        ref.invalidate(premiumHaklariProvider);
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          hata = _hataMetni(e);
+          hataTuru = e.tur;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => hata = context.l10n.pyzHataGenel);
     }
@@ -242,8 +269,8 @@ class _PortfoyYorumuKartiState extends ConsumerState<PortfoyYorumuKarti>
     } else {
       govde = _durum().when(
         loading: () => const _YorumIskeleti(),
-        error: (_, __) =>
-            Text(l.pyzHataGenel, style: t.bodySmall?.copyWith(color: c.text58)),
+        error: (e, _) => SandikErrorView(
+            error: e, kompakt: true, onRetry: _yenile),
         data: (d) {
           if (d == null || !d.paket.yeterli) {
             return Text(l.pyzVeriYok,
@@ -271,6 +298,7 @@ class _PortfoyYorumuKartiState extends ConsumerState<PortfoyYorumuKarti>
             meta: meta,
             eskidi: kayit != null && !d.guncel ? l.pyzEskidi : null,
             gunAy: gunAy,
+            hakDoldu: hakDoldu,
             onYorumla: () => yorumIste(() async => d.paket, _yenile),
             notu: kayit == null
                 ? null
@@ -305,6 +333,7 @@ class _PortfoyYorumuKartiState extends ConsumerState<PortfoyYorumuKarti>
       govdeAnahtari: ValueKey((tur, widget.secili)),
       govde: govde,
       hata: hata,
+      hakDoldu: hakDoldu,
       kapatGorunur: riza == true && !kilitli,
       onKapat: kapat,
     );
@@ -382,15 +411,22 @@ class _VarlikYorumuKartiState extends ConsumerState<VarlikYorumuKarti>
     if (!kilitli) OzellikOlcumu.say(Ozellik.varlikYorumu);
     Widget govde;
     if (kilitli) {
-      govde = KilitSatiri(metin: l.pyzKilit, kaynak: 'varlik_yorumu');
+      govde = KilitSatiri(
+          metin: widget.varlikAdi == null
+              ? l.pyzKilit
+              : l.pyzKilitVarlik(widget.varlikAdi!),
+          kaynak: 'varlik_yorumu');
     } else if (!seciliYorumlanabilir(widget.period)) {
       govde = Text(l.pyzGunIci, style: t.bodySmall?.copyWith(color: c.text58));
     } else {
       final anahtar = _anahtar;
       govde = ref.watch(varlikYorumKaydiProvider(anahtar)).when(
             loading: () => const _YorumIskeleti(),
-            error: (_, __) => Text(l.pyzHataGenel,
-                style: t.bodySmall?.copyWith(color: c.text58)),
+            error: (e, _) => SandikErrorView(
+                error: e,
+                kompakt: true,
+                onRetry: () =>
+                    ref.invalidate(varlikYorumKaydiProvider(anahtar))),
             data: (kayit) {
               if (kayit == null && !widget.veriHazir) {
                 return Text(l.pyzVeriYok,
@@ -421,6 +457,7 @@ class _VarlikYorumuKartiState extends ConsumerState<VarlikYorumuKarti>
                         varlikAdi: widget.varlikAdi,
                         donemAdi: YorumNotu.donemAdiOf(
                             YorumTuru.secili, widget.period.label)),
+                hakDoldu: hakDoldu,
                 onYorumla: () => yorumIste(widget.paketKur,
                     () => ref.invalidate(varlikYorumKaydiProvider(anahtar))),
               );
@@ -444,6 +481,7 @@ class _VarlikYorumuKartiState extends ConsumerState<VarlikYorumuKarti>
       govdeAnahtari: ValueKey(widget.period),
       govde: govde,
       hata: hata,
+      hakDoldu: hakDoldu,
       kapatGorunur: riza == true && !kilitli,
       onKapat: kapat,
     );
@@ -517,6 +555,7 @@ class _YorumCercevesi extends StatelessWidget {
     required this.govdeAnahtari,
     required this.govde,
     required this.hata,
+    this.hakDoldu = false,
     required this.kapatGorunur,
     required this.onKapat,
   });
@@ -525,6 +564,7 @@ class _YorumCercevesi extends StatelessWidget {
   final Key govdeAnahtari;
   final Widget govde;
   final String? hata;
+  final bool hakDoldu;
   final bool kapatGorunur;
   final VoidCallback onKapat;
 
@@ -548,7 +588,7 @@ class _YorumCercevesi extends StatelessWidget {
               Expanded(
                 child: Text(l.pyzBaslik,
                     style: t.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700, color: c.text90)),
+                        fontWeight: FontWeight.w600, color: c.text90)),
               ),
             ],
           ),
@@ -569,7 +609,12 @@ class _YorumCercevesi extends StatelessWidget {
           ),
           if (hata != null) ...[
             const SizedBox(height: SandikSpace.sm),
-            Text(hata!, style: t.bodySmall?.copyWith(color: c.danger)),
+            Semantics(
+              liveRegion: true,
+              child: Text(hata!,
+                  style: t.bodySmall
+                      ?.copyWith(color: hakDoldu ? c.text58 : c.danger)),
+            ),
           ],
           const SizedBox(height: SandikSpace.md),
           _Uyari(metin: l.pyzUyari),
@@ -611,6 +656,7 @@ class _YorumGovdesi extends StatelessWidget {
     required this.eskidi,
     required this.gunAy,
     required this.onYorumla,
+    this.hakDoldu = false,
     this.notu,
   });
 
@@ -626,6 +672,9 @@ class _YorumGovdesi extends StatelessWidget {
   final DateFormat gunAy;
   final Future<void> Function() onYorumla;
 
+  /// Günlük/aylık/ortak hak doldu: istek düğmeleri pasif.
+  final bool hakDoldu;
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -639,7 +688,7 @@ class _YorumGovdesi extends StatelessWidget {
           Text(aciklama, style: t.bodyMedium?.copyWith(color: c.text58)),
           const SizedBox(height: SandikSpace.md),
           SandikAsyncButton.kompakt(
-            onPressed: onYorumla,
+            onPressed: hakDoldu ? null : onYorumla,
             child: Text(l.pyzYorumla),
           ),
         ],
@@ -672,7 +721,7 @@ class _YorumGovdesi extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           SandikAsyncButton.kompakt(
             tur: SandikAsyncTur.cerceve,
-            onPressed: onYorumla,
+            onPressed: hakDoldu ? null : onYorumla,
             child: Text(l.pyzYeniden),
           ),
         ],
@@ -696,7 +745,7 @@ class _Yorum extends StatelessWidget {
       children: [
         Text(yorum.baslik,
             style: t.bodyLarge
-                ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+                ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
         for (final m in yorum.maddeler) ...[
           const SizedBox(height: SandikSpace.md),
           MergeSemantics(
@@ -762,7 +811,7 @@ class _KanitCipi extends StatelessWidget {
           TextSpan(text: '${olcum.ad} · ', style: TextStyle(color: c.text58)),
           TextSpan(
               text: olcum.gosterim,
-              style: TextStyle(color: c.text90, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: c.text90, fontWeight: FontWeight.w600)),
         ]),
         style: t.labelSmall,
       ),
@@ -824,7 +873,7 @@ class _RizaSayfasi extends StatelessWidget {
           children: [
             Text(l.pyzRizaBaslik,
                 style: t.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
             const SizedBox(height: SandikSpace.sm),
             Text(l.pyzRizaMetin,
                 style: t.bodyMedium?.copyWith(color: c.text58)),
