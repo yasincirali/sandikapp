@@ -5488,6 +5488,8 @@
   "pyzHataKapali": "AI commentary is unavailable right now.",
   "pyzHataGenel": "Couldn't get the comment. Check your connection and try again.",
   "pyzKilit": "AI commentary on your portfolio is part of Premium.",
+  "pyzKilitVarlik": "This period's comment for {varlik} is in Premium.",
+  "@pyzKilitVarlik": {"placeholders": {"varlik": {"type": "String"}}},
   "pyzKilitOzet": "{donem, select, hafta{Last week} other{Last month}} your portfolio {yon, select, artti{rose} other{fell}} {yuzde} · Premium's AI explains why.",
   "@pyzKilitOzet": {"placeholders": {"donem": {"type": "String"}, "yuzde": {"type": "String"}, "yon": {"type": "String"}}},
   "pyzKilitOzetEtkili": "{donem, select, hafta{Last week} other{Last month}} your portfolio {yon, select, artti{rose} other{fell}} {yuzde}, moved most by {varlik} · Premium's AI explains why.",

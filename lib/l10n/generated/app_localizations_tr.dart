@@ -9756,6 +9756,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pyzKilit => 'Portföyünü yapay zekâyla yorumlamak Premium\'da.';
 
   @override
+  String pyzKilitVarlik(String varlik) {
+    return '$varlik için bu dönemin yorumu Premium\'da.';
+  }
+
+  @override
   String pyzKilitOzet(String donem, String yuzde, String yon) {
     String _temp0 = intl.Intl.selectLogic(
       donem,

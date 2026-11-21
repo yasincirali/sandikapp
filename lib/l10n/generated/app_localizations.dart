@@ -15887,6 +15887,12 @@ abstract class AppLocalizations {
   /// **'Portföyünü yapay zekâyla yorumlamak Premium\'da.'**
   String get pyzKilit;
 
+  /// No description provided for @pyzKilitVarlik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{varlik} için bu dönemin yorumu Premium\'da.'**
+  String pyzKilitVarlik(String varlik);
+
   /// Ücretsiz hesapta kilitli AI yorum kartı; dönem değişimi cihazda hesaplanır. donem: hafta|ay, yuzde: '%3,2', yon: artti|azaldi.
   ///
   /// In tr, this message translates to:

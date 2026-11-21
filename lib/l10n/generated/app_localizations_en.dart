@@ -9913,6 +9913,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pyzKilit => 'AI commentary on your portfolio is part of Premium.';
 
   @override
+  String pyzKilitVarlik(String varlik) {
+    return 'This period\'s comment for $varlik is in Premium.';
+  }
+
+  @override
   String pyzKilitOzet(String donem, String yuzde, String yon) {
     String _temp0 = intl.Intl.selectLogic(
       donem,
