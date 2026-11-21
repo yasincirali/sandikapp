@@ -1248,8 +1248,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get basaBasKilitli =>
-      'The rise this position needs to break even is in Premium';
+  String get basaBasKilitli => 'The rise needed to break even is in Premium';
+
+  @override
+  String get portfoyAcikPozisyonYok => 'You have no open positions right now';
+
+  @override
+  String portfoyHedefKayitliKilit(String portfoy) {
+    return 'Your $portfoy goal is saved · progress is in Premium';
+  }
 
   @override
   String get kopyalaKod => 'Copy code';

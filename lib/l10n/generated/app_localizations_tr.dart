@@ -1230,8 +1230,15 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get basaBasKilitli =>
-      'Bu pozisyonun başa baş için gereken yükselişi Premium\'da';
+  String get basaBasKilitli => 'Başa baş için gereken yükseliş Premium\'da';
+
+  @override
+  String get portfoyAcikPozisyonYok => 'Şu an açık pozisyonun yok';
+
+  @override
+  String portfoyHedefKayitliKilit(String portfoy) {
+    return '$portfoy hedefin kayıtlı · ilerlemesi Premium\'da';
+  }
 
   @override
   String get kopyalaKod => 'Kodu kopyala';
