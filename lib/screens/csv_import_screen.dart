@@ -26,6 +26,7 @@ import '../widgets/sandik_async_button.dart';
 import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import '../widgets/sandik_app_bar.dart';
 import '../l10n/l10n.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Ekstre dosyası seç (PDF / Excel / CSV) ya da tablo yapıştır → önizle →
 /// sepete ekle.
@@ -390,6 +391,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       if (metinYolu && !await _aiRizasiAl()) return;
       final govde = metinYolu ? ekstreMetni(e) : ekstreIskeleti(e);
       final ilk = await SupabaseService.instance.ekstreEsle(govde);
+      OzellikOlcumu.say(Ozellik.ekstreAi);
       var yeni = e.aiEslemesiyle(ilk.tablolar, sablondan: ilk.sablondan);
       if (yeni == null && ilk.sablondan) {
         final ikinci = await SupabaseService.instance

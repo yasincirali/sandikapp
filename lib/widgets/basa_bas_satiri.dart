@@ -7,6 +7,7 @@ import '../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../services/ozellik_olcumu.dart';
 import 'para_akisi_karti.dart' show KilitSatiri;
 
 /// Panel bu satırın yuvasını kursun mu: sayı var (pozisyon zararda) VE
@@ -62,6 +63,13 @@ class BasaBasSatiri extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
+    if (!ref.watch(premiumKilitliProvider)) {
+      if (kaynak == 'basa_bas') {
+        OzellikOlcumu.say(Ozellik.basaBas);
+      } else {
+        OzellikOlcumu.say(Ozellik.varlikBasaBas);
+      }
+    }
     if (ref.watch(premiumKilitliProvider)) {
       return KilitSatiri(
         metin: l.basaBasKilitli,

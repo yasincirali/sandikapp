@@ -10,6 +10,7 @@ import '../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../services/ozellik_olcumu.dart';
 import 'para_akisi_karti.dart' show KilitSatiri;
 
 /// Grafiğin altındaki "Tablo olarak gör" satırı → seçili dönemin gün sonu
@@ -86,6 +87,7 @@ class GecmisFiyatlarSatiri extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final l = context.l10n;
+    if (!ref.watch(premiumKilitliProvider)) OzellikOlcumu.say(Ozellik.gecmisFiyatlar);
     if (ref.watch(premiumKilitliProvider)) {
       final ozet =
           (_kilitOzetleri[seri] ??= _KilitOzeti(kilitOzeti(seri))).deger;

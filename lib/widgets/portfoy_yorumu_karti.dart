@@ -19,6 +19,7 @@ import 'sandik_async_button.dart';
 import 'sandik_segment.dart';
 import 'sandik_skeleton.dart';
 import 'yorum_notu_sayfasi.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Fonksiyon hatasının kullanıcı metni. SAF (test `portfoy_yorumu_hata_test`).
 ///
@@ -222,6 +223,7 @@ class _PortfoyYorumuKartiState extends ConsumerState<PortfoyYorumuKarti>
     final gunAy = DateFormat('d MMM', yer);
     final tur = _tur;
 
+    if (!kilitli) OzellikOlcumu.say(Ozellik.portfoyYorumu);
     Widget govde;
     if (kilitli) {
       // Kilit cümlesi cihazda kurulan paketten (2026-11-13): seçili dönem
@@ -377,6 +379,7 @@ class _VarlikYorumuKartiState extends ConsumerState<VarlikYorumuKarti>
     final yer = Localizations.localeOf(context).toString();
     final gunAy = DateFormat('d MMM', yer);
 
+    if (!kilitli) OzellikOlcumu.say(Ozellik.varlikYorumu);
     Widget govde;
     if (kilitli) {
       govde = KilitSatiri(metin: l.pyzKilit, kaynak: 'varlik_yorumu');

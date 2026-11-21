@@ -10,6 +10,7 @@ import '../utils/tr_format.dart';
 import 'sandik_bos_durum.dart';
 import 'sandik_error_view.dart';
 import 'sandik_skeleton.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Profil'deki "Zekât hesabı" satırı (2026-11-12).
 ///
@@ -70,13 +71,16 @@ class ZekatProfilSatiri extends StatelessWidget {
 
 /// Zekât hesabını alt sayfada açar. Hesap `zekatHesapla`'da (saf); sayfa
 /// yalnız gösterir. Borç alanı bellek içi: sayfa kapanınca unutulur.
-Future<void> showZekatSheet(BuildContext context) => showSandikSheet<void>(
+Future<void> showZekatSheet(BuildContext context) {
+  OzellikOlcumu.say(Ozellik.zekat);
+  return showSandikSheet<void>(
       context: context,
       baslik: context.l10n.zkSatirBaslik,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
       builder: (_) => const ZekatSayfasi(),
     );
+}
 
 class ZekatSayfasi extends ConsumerStatefulWidget {
   const ZekatSayfasi({super.key});

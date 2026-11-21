@@ -16,6 +16,7 @@ import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
 import 'review_prompt_sheet.dart';
 import 'share_card.dart';
+import '../services/ozellik_olcumu.dart';
 import 'tam_ekran/grafik_paylasimi.dart' show grafikPaylasimKisaBaglanti;
 
 /// Kapanış özeti sayfası ("Tümünü sat" kaydedildikten sonra; sonradan
@@ -51,6 +52,7 @@ Future<void> showKapanisOzeti(
   bool degerlendirme = true,
 }) async {
   final l = context.l10n;
+  OzellikOlcumu.say(Ozellik.kapanisOzeti);
   final secim = await showSandikSheet<_Secim>(
     context: context,
     baslik: l.kapanisBaslik,

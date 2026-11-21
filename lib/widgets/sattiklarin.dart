@@ -12,6 +12,7 @@ import '../theme/sandik.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import 'kapanis_ozeti_sheet.dart';
+import '../services/ozellik_olcumu.dart';
 import 'para_akisi_karti.dart' show KilitSatiri;
 
 /// Portföy listesinin sonundaki "Sattıkların (n)" satırı (Premium,
@@ -91,11 +92,13 @@ class SattiklarinSatiri extends ConsumerWidget {
 /// `showKapanisOzeti` ile aynı gerekçe). Paylaş kuralı özette aynen: yalnız
 /// kazançta, yalnız yüzde. Değerlendirme istemi sorulmaz (eski kapanış
 /// "mutlu an" değil).
-Future<void> showSattiklarin(BuildContext context, WidgetRef ref) =>
-    showSattiklarinListesi(
+Future<void> showSattiklarin(BuildContext context, WidgetRef ref) {
+  OzellikOlcumu.say(Ozellik.sattiklarin);
+  return showSattiklarinListesi(
       context,
       tutarGizli: () => ref.read(balanceHiddenProvider),
     );
+}
 
 /// [showSattiklarin]'in `WidgetRef` istemeyen hâli. Satın alma sonrası
 /// sayfa listeyi paywall kapandıktan SONRA açar; o an paywall'ın `ref`'i

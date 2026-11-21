@@ -14,6 +14,7 @@ import '../utils/tr_iyelik.dart' show trSayiIyelikEki;
 import 'fon_dagilimi_karti.dart';
 import 'premium_kilit_karti.dart';
 import 'sandik_skeleton.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Zirve portföy ayrıntısında "Fonların içi açılınca" (yasin 2026-10-20):
 /// fonlar ve BES TEFAS dağılımıyla açılmış hâliyle portföyün gerçekte
@@ -57,6 +58,7 @@ class ZirveIcerikKarti extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final l = context.l10n;
+    if (!ref.watch(premiumKilitliProvider)) OzellikOlcumu.say(Ozellik.zirveXray);
     if (ref.watch(premiumKilitliProvider)) {
       // Kişisel satır (Ar-Ge 20 Kas tur 2 #3): "Bu portföyün %38'i fon ve
       // BES'te" — kartın açılınca neyi açacağını eldeki paydan söyler, yeni

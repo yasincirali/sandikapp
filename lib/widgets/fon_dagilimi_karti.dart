@@ -15,6 +15,7 @@ import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart' show trSayiIyelikEki;
 import 'premium_kilit_karti.dart';
 import 'sandik_skeleton.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// "Fonun içinde ne var" — Fon X-Ray kartı (Premium, 2026-10-10).
 ///
@@ -83,6 +84,7 @@ class FonDagilimiKarti extends ConsumerWidget {
     if (kod == null) return const SizedBox.shrink();
     final l = context.l10n;
 
+    if (!ref.watch(premiumKilitliProvider)) OzellikOlcumu.say(Ozellik.fonXray);
     if (ref.watch(premiumKilitliProvider)) {
       // Yanıt gelene kadar yer kaplamaz; gelince akarak belirir.
       if (ref.watch(fonDagilimiVarMiProvider(kod)).valueOrNull != true) {

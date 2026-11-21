@@ -128,4 +128,35 @@ void main() {
         reason: 'adaptiveRoute(settings: const RouteSettings(name: '
             "'ekran_adi'), …) yaz; ad ekran ölçümünde görünür (EkranOlcumu).");
   });
+
+  // yasin 2026-11-21: "hangi featureların kullanıldığını net şekilde
+  // görmeliyiz". Haftalık rapor ekranı Türkçe adıyla basar; adı sözlükte
+  // olmayan yeni ekran raporda çıplak kodla kalırdı, burada kırılır.
+  test('her ekran adı haftalık raporun Türkçe ad sözlüğünde', () {
+    final rapor = File('tool/ga4_ekran_raporu.py').readAsStringSync();
+    final adlar = <String>{
+      ...EkranOlcumu.sekmeAdlari.values,
+    };
+    final rota = RegExp(r"RouteSettings\(\s*name:\s*'([a-z0-9_]+)'");
+    final elle = RegExp(r"logScreenView\(\s*screenName:\s*'([a-z0-9_]+)'");
+    for (final f in Directory('lib').listSync(recursive: true)) {
+      if (f is! File || !f.path.endsWith('.dart')) continue;
+      final s = f.readAsStringSync();
+      adlar.addAll(rota.allMatches(s).map((m) => m.group(1)!));
+      adlar.addAll(elle.allMatches(s).map((m) => m.group(1)!));
+    }
+    // Kök kapı ekranları: `_AuthGate` anahtarı, `-` → `_` (kokEkran).
+    final kok = RegExp(r"ValueKey\('([a-z_-]+)'\)");
+    for (final m in kok.allMatches(File('lib/main.dart').readAsStringSync())) {
+      final v = m.group(1)!;
+      if (v != 'splash' && v != 'main') adlar.add(v.replaceAll('-', '_'));
+    }
+    final eksik = [
+      for (final a in adlar)
+        if (!rapor.contains('"$a": (')) a
+    ]..sort();
+    expect(eksik, isEmpty,
+        reason: 'tool/ga4_ekran_raporu.py EKRANLAR sözlüğüne Türkçe adıyla '
+            'ekle (Premium ise True).');
+  });
 }

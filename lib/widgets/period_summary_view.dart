@@ -24,6 +24,7 @@ import 'sandik_segment.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Özet sekmesinin gövdesi — Sonuç → Neden → Ayrıntı, her dönemde aynı
 /// iskelet.
@@ -1210,6 +1211,7 @@ class _EnIyiGunKarti extends StatelessWidget {
     final bugun = simdi ?? DateTime.now();
     String tarih(DonemGunu g) => fmtGunAy(g.gun, dil: dil, bugun: bugun);
     final enIyi = gunler.enIyi;
+    if (!kilitli) OzellikOlcumu.say(Ozellik.enIyiGun);
     if (kilitli) {
       return _BaglamKarti(
         baslik: l.bestToughestDayTitle,

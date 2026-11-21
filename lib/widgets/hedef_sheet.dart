@@ -35,6 +35,7 @@ import 'review_prompt_sheet.dart';
 import 'sandik_async_button.dart';
 import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import '../utils/tr_format.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Sayfanın "bugün"ü. Kart [BugunKarti.saat] ile aynı anı kullanmalı: kart
 /// sabit saatle test edilirken sayfa gerçek saati okuyunca kalan ay sayısı
@@ -93,6 +94,7 @@ Future<void> showHedefSheet(BuildContext context, WidgetRef ref,
   final saglayici = kapsamHedefiProvider(kapsam);
   final tarihSaglayici = kapsamHedefTarihiProvider(kapsam);
   final mevcut = ref.read(saglayici);
+  OzellikOlcumu.say(Ozellik.hedef);
   final sonuc = await showSandikSheet<_HedefSonucu>(
     context: context,
     isScrollControlled: true,
@@ -228,6 +230,7 @@ class _HedefSheetState extends ConsumerState<_HedefSheet> {
     final l10n = context.l10n;
     final yazilan = parseTrNumber(_ctrl.text);
     final tarihDurumu = ref.watch(hedefTarihiDurumuProvider);
+    if (tarihDurumu == OzellikDurumu.acik) OzellikOlcumu.say(Ozellik.hedefTarihi);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         SandikSpace.screenH(context),

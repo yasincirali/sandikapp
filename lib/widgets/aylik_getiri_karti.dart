@@ -13,6 +13,7 @@ import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart' show trSayiIyelikBelirtmeEki, trSayiIyelikEki;
 import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_acilir.dart';
+import '../services/ozellik_olcumu.dart';
 import 'sandik_skeleton.dart' show SandikIcerikGecisi;
 
 /// Performans'ta "hangi ay kazandım, hangi ay kaybettim" kartı — yıl × ay
@@ -98,6 +99,7 @@ class AylikGetiriKarti extends ConsumerWidget {
     final l = context.l10n;
     final bugun = simdi ?? DateTime.now();
     final aySayisi = aylikGetiriAralikAySayisi(istek.hesapLotlari, bugun);
+    if (!ref.watch(premiumKilitliProvider)) OzellikOlcumu.say(Ozellik.aylikGetiri);
     if (ref.watch(premiumKilitliProvider)) {
       if (!aylikGetiriOnizlemesiGorunur(istek.hesapLotlari, bugun)) {
         return yok;
