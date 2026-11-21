@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,6 +12,7 @@ import '../providers/base_currency_provider.dart';
 import '../providers/ortak_paylasimi_provider.dart';
 import '../providers/portfoy_provider.dart';
 import '../screens/paywall_screen.dart';
+import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
@@ -425,9 +428,21 @@ class OrtakPaylasimSatiri extends ConsumerWidget {
           key: ValueKey('ortak-paylasim-satiri-${ortak.id}'),
           // Değiştirmek Premium (paywall açıkken); görmek serbest — mevcut
           // seçim kilitliyken de sunucuda geçerli.
-          onTap: () => kilitli
-              ? PaywallScreen.show(context, source: 'ortak_paylasim')
-              : showOrtakPaylasimSayfasi(context, ortak: ortak),
+          onTap: () async {
+            if (!kilitli) {
+              unawaited(showOrtakPaylasimSayfasi(context, ortak: ortak));
+              return;
+            }
+            unawaited(AnalyticsService.instance
+                .logPremiumGateShown(feature: 'ortak_portfoy_secimi'));
+            // Satın alan kullanıcı satıra ikinci kez dokunmasın: seçim
+            // sayfası paywall kapanınca kendiliğinden açılır.
+            final aldi =
+                await PaywallScreen.show(context, source: 'ortak_paylasim');
+            if (aldi == true && context.mounted) {
+              await showOrtakPaylasimSayfasi(context, ortak: ortak);
+            }
+          },
           semanticLabel: '${l.ortakGorurSatir}: $deger',
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: SandikTouch.min),

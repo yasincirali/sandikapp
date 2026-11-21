@@ -9,13 +9,12 @@ import '../models/gorunum_kapsami.dart';
 import '../models/portfoy.dart';
 import '../providers/portfoy_provider.dart';
 import '../providers/preferences_provider.dart';
-import '../screens/paywall_screen.dart';
 import '../screens/portfoy_yonetimi_screen.dart';
-import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'sandik_async_button.dart';
+import 'sinir_uyarisi.dart';
 
 /// Portföy seçici şeridi — "Ben" kapsamının ALTINDA (Portföy ve Performans).
 ///
@@ -64,7 +63,11 @@ class PortfoySecici extends ConsumerWidget {
     final cipler = <Widget>[
       PortfoyCipi(
         key: const ValueKey('portfoy-cip-tumu'),
-        etiket: l.portfoyTumu,
+        // Tek portföyde "Tümü" ile "Ana" aynı şeydir; kullanıcıya tek, gerçek
+        // adı gösterilir (seçim değeri yine `tumu`, davranış değişmez).
+        etiket: liste.isEmpty
+            ? (ref.watch(anaPortfoyAdiProvider) ?? l.portfoyAnaUzun)
+            : l.portfoyTumu,
         secili: secim == PortfoySecimi.tumu,
         onTap: () => sec(PortfoySecimi.tumu),
       ),
@@ -151,7 +154,7 @@ class PortfoyCipi extends StatelessWidget {
     final renk = secili ? context.c.amberText : context.c.text90;
     final stil = context.t.titleSmall?.copyWith(
       color: renk,
-      fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
+      fontWeight: secili ? FontWeight.w600 : FontWeight.w500,
     );
     return SandikTappable(
       onTap: onTap,
@@ -198,10 +201,19 @@ Future<Portfoy?> yeniPortfoyAkisi(
 }) async {
   if (DemoModu.yazmaKapisi('portfoy')) return null; // Demo: hesap ister (F1).
   if (ref.read(portfoySiniriDoluProvider)) {
-    unawaited(AnalyticsService.instance
-        .logPremiumGateShown(feature: 'portfoy_limit'));
-    await PaywallScreen.show(context, source: 'portfoy_limit');
-    if (!context.mounted || ref.read(portfoySiniriDoluProvider)) return null;
+    // Paywall kapatılırsa sessiz dönmek "+ Yeni" düğmesini bozuk gösteriyordu;
+    // sinirUyarisi paywall'u açar, vazgeçilirse nedenini söyler (takip/alarm/
+    // ortak ile aynı yol; premium_gate_shown logunu da paywall kendisi atar).
+    final aldi = await sinirUyarisi(
+      context,
+      ref,
+      ucretsizMetin: context.l10n.portfolioLimitFree,
+      urunMetni: context.l10n.portfolioLimitFree,
+      kaynak: 'portfoy_limit',
+    );
+    if (!aldi || !context.mounted || ref.read(portfoySiniriDoluProvider)) {
+      return null;
+    }
   }
   final l = context.l10n;
   final notifier = ref.read(portfoylerProvider.notifier);

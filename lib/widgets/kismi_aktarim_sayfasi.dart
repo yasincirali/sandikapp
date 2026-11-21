@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,6 +7,7 @@ import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../providers/portfoy_provider.dart';
 import '../screens/paywall_screen.dart';
+import '../services/analytics_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'sandik_async_button.dart';
@@ -147,9 +150,20 @@ class _KismiAktarimIcerikState extends ConsumerState<KismiAktarimIcerik> {
               key: const ValueKey('kismi-aktarim-segment'),
               adet: 2,
               secili: _kismi ? 1 : 0,
-              onSec: (i) {
+              onSec: (i) async {
                 if (i == 1 && kilitli) {
-                  PaywallScreen.show(context, source: 'portfoy_kismi_aktar');
+                  unawaited(AnalyticsService.instance
+                      .logPremiumGateShown(feature: 'kismi_aktarim'));
+                  // Satın alan kullanıcı "Bir kısmı"na tekrar basmak zorunda
+                  // kalmasın (#386 ilkesi): dönünce seçim kendiliğinden geçer.
+                  final aldi = await PaywallScreen.show(context,
+                      source: 'portfoy_kismi_aktar');
+                  if (aldi == true && mounted) {
+                    setState(() {
+                      _kismi = true;
+                      _hata = null;
+                    });
+                  }
                   return;
                 }
                 setState(() {

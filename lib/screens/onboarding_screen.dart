@@ -377,9 +377,11 @@ bool get _cokluPortfoyGorunur =>
     RemoteConfigService.instance.cokluPortfoy &&
     RemoteConfigService.instance.premiumOzellikleriGorunur;
 
-const _portfoySeridiCumlesi = ' Üstteki portföy şeridiyle Tümü, Ana ya da '
-    'adlandırdığın bir portföye bakarsın; yenisini şeridin sonundaki '
-    '"Yeni portföy"den açarsın. Toplam görünümün hep "Tümü"dür.';
+// 21 Kas: tek portföyde şerit "Tümü" yerine Ana portföyün adını gösterir
+// (tur 7); yeni kullanıcı turu tek portföyle gördüğü için cümle buna göre.
+const _portfoySeridiCumlesi = ' Üstteki portföy şeridinde portföylerin '
+    'durur; yenisini şeridin sonundaki "Yeni portföy"den açarsın. İkinci '
+    'portföyü açınca toplam görünümün "Tümü" olur.';
 
 // 5 Kas 20:45: seçici liste başlığının yanına taşındı (tur metni
 // arayüzle birlikte değişir).

@@ -11808,4 +11808,8 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get todayGoalDateSaved => 'Hedef günün kayıtlı';
+
+  @override
+  String get portfolioLimitFree =>
+      'Ücretsiz planda tek portföy var. Varlıklarını Ana portföyde tutmaya devam edebilirsin.';
 }

@@ -183,7 +183,8 @@ void main() {
         (t) async {
       final (c, pf, donen) = await ac(t);
       c.read(magazaPremiumProvider.notifier).state = true;
-      t.state<NavigatorState>(find.byType(Navigator).first).pop();
+      // PaywallScreen satın almada true ile kapanır; sinirUyarisi buna bakar.
+      t.state<NavigatorState>(find.byType(Navigator).first).pop(true);
       await t.pumpAndSettle();
       expect(find.byType(PortfoyAdiSayfasi), findsOneWidget,
           reason: '"+ Yeni"ye ikinci kez basmak gerekmez');

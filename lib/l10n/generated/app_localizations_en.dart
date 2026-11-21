@@ -12073,4 +12073,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayGoalDateSaved => 'Your target date is saved';
+
+  @override
+  String get portfolioLimitFree =>
+      'The free plan has one portfolio. You can keep your assets in the Main portfolio.';
 }

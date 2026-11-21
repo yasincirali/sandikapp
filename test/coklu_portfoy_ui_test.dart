@@ -360,6 +360,11 @@ void main() {
       expect(find.text('İçindeki varlıklar · 2'), findsOneWidget);
       expect(find.textContaining('portföyle birlikte silinir'), findsOneWidget);
       expect(find.text('Portföyü ve varlıkları sil'), findsOneWidget);
+      // Tur 17.03: güvenli yol (Aktar ve sil) üstte, yıkıcı olan altta.
+      expect(
+          t.getTopLeft(find.byKey(const ValueKey('portfoy-aktar-sil'))).dy,
+          lessThan(
+              t.getTopLeft(find.byKey(const ValueKey('portfoy-sil-onay'))).dy));
 
       // Aktarma yolu: hedef sorusu Ana ve öbür portföyü sunar, silineni değil.
       await t.tap(find.byKey(const ValueKey('portfoy-aktar-sil')));
