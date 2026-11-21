@@ -13,10 +13,7 @@ import '../providers/auth_provider.dart' show partnersProvider;
 import '../providers/portfolio_provider.dart' show portfolioProvider;
 import '../providers/premium_provider.dart' show satinAlmaServisiProvider;
 import '../providers/preferences_provider.dart'
-    show
-        effectivePremiumProvider,
-        kKarsilastirmaEnFazla,
-        ortakSiniriDoluProvider;
+    show effectivePremiumProvider, kKarsilastirmaEnFazla;
 import '../providers/signal_provider.dart' show activeSignalsProvider;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
@@ -52,16 +49,6 @@ part 'paywall/paywall_deste.dart';
 ///
 /// Kullanım:
 ///   PaywallScreen.show(context, source: 'asset_limit_dialog');
-/// Yeni ortak eklemeden önce çağrılır: ücretsiz sınır doluysa paywall'u
-/// açar ve true döner (çağıran işi bırakır). Üç giriş (kod üret, kod gir,
-/// daveti kabul) aynı kararı buradan alır.
-bool ortakSiniriPaywalliActi(BuildContext context, WidgetRef ref) {
-  if (!ref.read(ortakSiniriDoluProvider)) return false;
-  AnalyticsService.instance.logPremiumGateShown(feature: 'partner_limit');
-  PaywallScreen.show(context, source: 'partner_limit');
-  return true;
-}
-
 class PaywallScreen extends ConsumerStatefulWidget {
   final String source;
 

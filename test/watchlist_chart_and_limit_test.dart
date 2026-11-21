@@ -789,7 +789,7 @@ void main() {
           reason: 'limit hatası ayrı yakalanmalı');
       // Mesaj ve Premium yolu ortak uyarıda (`sinir_uyarisi.dart`); varlık
       // sayfasındaki yıldız da aynısını söyler.
-      expect(ekle.contains('takipSiniriUyarisi('), isTrue,
+      expect(ekle.contains('takipSiniriBekle('), isTrue,
           reason: 'kullanıcıya ne yapabileceği söylenmeli — '
               '"eklenemedi" deyip bırakmak çıkışsız bırakır');
       final uyari = _yorumsuz(

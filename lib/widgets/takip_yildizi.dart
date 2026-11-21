@@ -56,14 +56,21 @@ Future<void> takipDegistir(
 }
 
 Future<void> _takibeAl(BuildContext context, WidgetRef ref,
-    WatchlistNotifier notifier, VarlikKimligi k) async {
+    WatchlistNotifier notifier, VarlikKimligi k,
+    {bool tekrar = false}) async {
   final user = ref.read(authProvider).valueOrNull;
   if (user == null) return;
   try {
     await notifier.add(k.toWatchlistItem(userId: user.id));
   } on WatchlistLimitException catch (e) {
     if (!context.mounted) return;
-    takipSiniriUyarisi(context, ref, e.limit);
+    // Premium alındıysa bir kez yeniden dene (varlık akışının `yenidenDene`
+    // deseni, 2026-11-21): ödeyen kullanıcı varlığı takipte bulur.
+    if (!tekrar &&
+        await takipSiniriBekle(context, ref, e.limit) &&
+        context.mounted) {
+      await _takibeAl(context, ref, notifier, k, tekrar: true);
+    }
   }
 }
 

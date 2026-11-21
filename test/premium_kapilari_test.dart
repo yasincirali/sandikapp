@@ -85,10 +85,10 @@ void main() {
 
     test('üç giriş de kapıdan geçer', () {
       final profil = ekranKaynagiSync('lib/screens/profile_screen.dart');
-      expect('ortakSiniriPaywalliActi('.allMatches(profil).length, 3);
+      expect('ortakEklenebilirMi('.allMatches(profil).length, 3);
       final istek =
           ekranKaynagiSync('lib/screens/partnership_requests_screen.dart');
-      expect(istek.contains('ortakSiniriPaywalliActi('), isTrue);
+      expect(istek.contains('ortakEklenebilirMi('), isTrue);
     });
   });
 

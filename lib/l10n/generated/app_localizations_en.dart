@@ -3712,7 +3712,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String watchlistLimitFree(int n) {
-    return 'On the free plan you can watch up to $n assets.';
+    return 'On the free plan you can watch up to $n assets. Remove one to make room.';
   }
 
   @override
@@ -9633,8 +9633,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String alarmLimitFree(int n) {
-    return 'On the free plan you can have up to $n active alerts.';
+    return 'On the free plan you can have up to $n active alerts. Turn one off to set a new one.';
   }
+
+  @override
+  String partnerLimitFree(int n) {
+    return 'On the free plan you can add up to $n partners. End a current partnership to add a new one.';
+  }
+
+  @override
+  String get watchlistLimitPremiumIpucu => 'Opens Premium';
 
   @override
   String varlikKotasiKalan(int kalan, int sinir) {

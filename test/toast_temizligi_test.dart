@@ -110,7 +110,7 @@ void main() {
 
   test('takip limiti ve çakışma hâlâ söylenir — çıkış yolu gösterilir', () {
     final src = _kod('lib/screens/add_watchlist_screen.dart');
-    expect(src.contains('takipSiniriUyarisi('), isTrue);
+    expect(src.contains('takipSiniriBekle('), isTrue);
     expect(_kod('lib/widgets/sinir_uyarisi.dart').contains('watchlistLimitFree'),
         isTrue,
         reason: 'Limit hatası çıkışsız bırakmamalı: Premium eylemi kalır.');

@@ -29,7 +29,7 @@ import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart'
     show activePartnersProvider, authProvider;
 import '../providers/preferences_provider.dart'
-    show takipSiralamaProvider, watchlistLimitProvider;
+    show paywallVisibleProvider, takipSiralamaProvider, watchlistLimitProvider;
 import '../models/yuzde_alarmi.dart';
 import '../providers/sembol_alarmlari_provider.dart';
 import '../providers/secili_donem_provider.dart';
@@ -1659,7 +1659,7 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
   /// aynı kimlik (`VarlikKimligi`), aynı `watchlistProvider.add` (limit
   /// kapısı orada), aynı hata ayrımı. Başarı toast'ı yok (2026-09-16 kararı):
   /// onay çipin kaybolması ve satırın listeye gelmesi.
-  Future<void> _ekle(VarlikKimligi k) async {
+  Future<void> _ekle(VarlikKimligi k, {bool tekrar = false}) async {
     // Demo (F1): takibe almak bir yazma; Varlık Ekle düğmesiyle aynı kapı.
     if (DemoModu.yazmaKapisi('takip')) return;
     OzellikOlcumu.say(Ozellik.takipOnerisi);
@@ -1672,7 +1672,11 @@ class _EmptyStateState extends ConsumerState<_EmptyState> {
       if (mounted) setState(() => _eklenen.add(k.key));
     } on WatchlistLimitException catch (e) {
       if (!mounted) return;
-      takipSiniriUyarisi(context, ref, e.limit);
+      // Premium alındıysa bir kez yeniden dene (varlık akışının `yenidenDene`
+      // deseni, 2026-11-21): ödeyen kullanıcı varlığı takipte bulur.
+      if (!tekrar && await takipSiniriBekle(context, ref, e.limit) && mounted) {
+        await _ekle(k, tekrar: true);
+      }
     } on DemoYazmaEngeli {
       return; // Mesajı `DemoModu.yazmaEngeli` dinleyicisi gösterdi.
     } catch (_) {
@@ -1933,7 +1937,7 @@ class _AddHeader extends ConsumerWidget {
                               text: '$n',
                               style: context.t.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: dolu ? c.loss : c.text90),
+                                  color: dolu ? c.amberText : c.text90),
                               children: [
                                 if (sinirli)
                                   TextSpan(
@@ -1954,9 +1958,14 @@ class _AddHeader extends ConsumerWidget {
               ),
               const SizedBox(width: SandikSpace.smd),
               SandikTappable(
-                semanticLabel: dolu
-                    ? context.l10n.watchlistLimitReached(limit)
-                    : context.l10n.addToWatchlist,
+                // Dokunuş paywall açıyorsa etiket de bunu söyler (2026-11-21):
+                // eskiden "birini çıkar" okunuyor, Premium açılıyordu.
+                semanticLabel: !dolu
+                    ? context.l10n.addToWatchlist
+                    : ref.watch(paywallVisibleProvider)
+                        ? '${context.l10n.watchlistLimitFree(limit)} '
+                            '${context.l10n.watchlistLimitPremiumIpucu}'
+                        : context.l10n.watchlistLimitReached(limit),
                 onTap: dolu
                     // Dolu kartta da tek kural (`sinir_uyarisi.dart`):
                     // paywall açıksa doğrudan Premium'a götürür (2026-11-12).
@@ -2024,7 +2033,6 @@ class _KapasiteSeridi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final tamamen = dolu >= toplam;
     return SizedBox(
       height: SandikSpace.xs,
       child: Row(
@@ -2042,7 +2050,7 @@ class _KapasiteSeridi extends StatelessWidget {
                   // kayboluyordu (ekran görüntüsü). Zeminden ayrışan ama
                   // amberle yarışmayan ton.
                   color: i < dolu
-                      ? (tamamen && i == toplam - 1 ? c.loss : c.amberFill)
+                      ? c.amberFill
                       : c.text36.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(SandikSpace.xxs),
                 ),

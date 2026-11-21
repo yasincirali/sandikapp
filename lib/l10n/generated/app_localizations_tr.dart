@@ -3654,7 +3654,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String watchlistLimitFree(int n) {
-    return 'Ücretsiz planda en fazla $n varlık takip edebilirsin.';
+    return 'Ücretsiz planda en fazla $n varlık takip edebilirsin. Yer açmak için birini çıkar.';
   }
 
   @override
@@ -9488,8 +9488,16 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String alarmLimitFree(int n) {
-    return 'Ücretsiz planda en fazla $n aktif alarm kurabilirsin.';
+    return 'Ücretsiz planda en fazla $n aktif alarm kurabilirsin. Yeni kurmak için birini kapat.';
   }
+
+  @override
+  String partnerLimitFree(int n) {
+    return 'Ücretsiz planda en fazla $n ortak ekleyebilirsin. Yeni ortak için mevcut ortaklığını bitirebilirsin.';
+  }
+
+  @override
+  String get watchlistLimitPremiumIpucu => 'Premium\'u açar';
 
   @override
   String varlikKotasiKalan(int kalan, int sinir) {

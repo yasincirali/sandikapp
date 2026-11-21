@@ -490,7 +490,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     );
   }
 
-  Future<void> _add(VarlikKimligi c) async {
+  Future<void> _add(VarlikKimligi c, {bool tekrar = false}) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
 
@@ -508,7 +508,11 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
       // limit ürün sınırıdır (2026-09-25, 7 varlık): çıkış "birini çıkar";
       // açıkken Premium. Tek mesaj (`sinir_uyarisi.dart`) — varlık
       // sayfasındaki yıldız da aynısını söyler.
-      takipSiniriUyarisi(context, ref, e.limit);
+      // Premium alındıysa bir kez yeniden dene (varlık akışının `yenidenDene`
+      // deseni, 2026-11-21): ödeyen kullanıcı varlığı takipte bulur.
+      if (!tekrar && await takipSiniriBekle(context, ref, e.limit) && mounted) {
+        await _add(c, tekrar: true);
+      }
     } catch (_) {
       if (!mounted) return;
       // Sunucudaki unique index çakışması da buraya düşer — kullanıcıya
