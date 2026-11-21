@@ -191,7 +191,7 @@ void main() {
   test('kaynak: neden kutusu ve anahtarları kalktı, demo kapısı çipte', () {
     final k = ekranKaynagiSync('lib/screens/watchlist_screen.dart');
     expect(k, isNot(contains('whyWatchlist')));
-    final bas = k.indexOf('Future<void> _ekle(VarlikKimligi k)');
+    final bas = k.indexOf('Future<void> _ekle(VarlikKimligi k');
     expect(bas, greaterThan(0));
     final govde = k.substring(bas, k.indexOf('Widget build', bas));
     expect(govde, contains("DemoModu.yazmaKapisi('takip')"));
