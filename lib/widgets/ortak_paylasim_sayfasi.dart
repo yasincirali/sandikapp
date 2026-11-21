@@ -440,7 +440,7 @@ class OrtakPaylasimSatiri extends ConsumerWidget {
             final aldi =
                 await PaywallScreen.show(context, source: 'ortak_paylasim');
             if (aldi == true && context.mounted) {
-              unawaited(showOrtakPaylasimSayfasi(context, ortak: ortak));
+              await showOrtakPaylasimSayfasi(context, ortak: ortak);
             }
           },
           semanticLabel: '${l.ortakGorurSatir}: $deger',
