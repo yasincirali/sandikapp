@@ -1564,6 +1564,8 @@ void premiumSayfasiniAc(BuildContext context) {
   showSandikSheet<void>(
     context: context,
     baslik: context.l10n.sandikPremium,
+    // Geri yükle/Yönet sonucu sayfa açıkken görünsün (tur 6 #5).
+    seritSayfada: true,
     builder: (_) => Consumer(
       builder: (ctx, ref, _) => Padding(
         padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), 0,

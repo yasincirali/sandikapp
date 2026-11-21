@@ -37,6 +37,7 @@ void main() {
           onPressed: () => showSandikSheet<void>(
             context: ctx,
             baslik: 'Sayfa',
+            seritSayfada: true,
             builder: (sheetCtx) => TextButton(
               onPressed: () => sandikSnack(sheetCtx, 'sonuc-seridi'),
               child: const Text('seritGoster'),

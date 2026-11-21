@@ -72,6 +72,7 @@ Future<T?> showSandikSheet<T>({
   bool isDismissible = true,
   bool enableDrag = true,
   BoxConstraints? constraints,
+  bool seritSayfada = false,
 }) {
   final azalt = MediaQuery.disableAnimationsOf(context);
   final zemin = backgroundColor ?? context.c.surface2;
@@ -83,6 +84,7 @@ Future<T?> showSandikSheet<T>({
       altMetin: altMetin,
       tutamac: tutamacli,
       klavyePayi: isScrollControlled,
+      seritSayfada: seritSayfada,
       builder: builder,
     ),
     backgroundColor: zemin,
@@ -110,6 +112,7 @@ class _SandikSheetKabugu extends StatelessWidget {
     required this.altMetin,
     required this.tutamac,
     required this.klavyePayi,
+    required this.seritSayfada,
     required this.builder,
   });
 
@@ -121,6 +124,13 @@ class _SandikSheetKabugu extends StatelessWidget {
   /// klavye payını taşıyamaz (içerik taşar). Klavyeli her sayfa zaten
   /// kaydırma denetimli açılıyor; sınırlı sayfada davranış eskisi.
   final bool klavyePayi;
+
+  /// Sayfa açıkken sonucu gösterilen şerit (ör. Premium sayfasında "geri
+  /// yüklendi") sayfanın kendi messenger'ına yazılsın mı. Varsayılan kapalı:
+  /// çoğu sayfa şeridi kapandıktan sonra ya da kapanırken verir ("Kaydedildi",
+  /// "Geri al"); sayfa messenger'ı sayfayla birlikte yok olur ve şerit
+  /// kaybolurdu, eylem de dokunulamazdı.
+  final bool seritSayfada;
   final WidgetBuilder builder;
 
   @override
@@ -159,7 +169,7 @@ class _SandikSheetKabugu extends StatelessWidget {
         ],
       );
     }
-    // Sayfa kendi `ScaffoldMessenger`'ını taşır (Ar-Ge 21 Kas tur 6 #5):
+    // [seritSayfada] iken sayfa kendi `ScaffoldMessenger`'ını taşır (Ar-Ge 21 Kas tur 6 #5):
     // `sandikSnack` en yakın messenger'a yazar; kök Scaffold'a yazan şerit
     // modal rotanın ve karartmanın ALTINDA çiziliyordu ("geri yüklendi"
     // sonucu görünmüyordu). Scaffold gövdesiz ve şeffaf, `Stack`'te içeriğin
@@ -167,21 +177,23 @@ class _SandikSheetKabugu extends StatelessWidget {
     // 9/16'ya uzatmaz). `IgnorePointer`: Scaffold'un Material'ı dokunuşu
     // yutar; şeridin kendi eylemi (Geri al) sayfada dokunulamaz, süre dolunca
     // kapanır.
-    icerik = ScaffoldMessenger(
-      child: Stack(
-        children: [
-          icerik,
-          const Positioned.fill(
-            child: IgnorePointer(
-              child: Scaffold(
-                backgroundColor: Colors.transparent,
-                resizeToAvoidBottomInset: false,
+    if (seritSayfada) {
+      icerik = ScaffoldMessenger(
+        child: Stack(
+          children: [
+            icerik,
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: Scaffold(
+                  backgroundColor: Colors.transparent,
+                  resizeToAvoidBottomInset: false,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    }
     return Padding(padding: EdgeInsets.only(bottom: klavye), child: icerik);
   }
 }
