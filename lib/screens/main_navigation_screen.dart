@@ -80,6 +80,11 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   /// içinde okunur, tüketilince `false`.
   static final hedefIstegi = ValueNotifier<bool>(false);
 
+  /// Profil'deki Premium abonelik sayfasını açma isteği (deneme hatırlatma
+  /// bildirimi). Sayfayı Profil'in Premium satırı açar; [sekmeIstegi] ile
+  /// aynı desen, tüketilince `false`.
+  static final premiumSayfasiIstegi = ValueNotifier<bool>(false);
+
   @override
   ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }

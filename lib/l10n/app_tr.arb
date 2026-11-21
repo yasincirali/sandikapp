@@ -5101,6 +5101,9 @@
   "prmYonet": "Yönet",
   "prmGeriYukle": "Satın alımları geri yükle",
   "prmIptalIpucu": "İptal ve plan değişikliği mağazanın abonelik sayfasında yapılır.",
+  "prmIptalIpucuYeniden": "Aboneliği yeniden başlatmak için de mağazanın abonelik sayfasını kullan.",
+  "prmYonetAcilamadiIos": "Mağazanın abonelik sayfası açılamadı. Ayarlar › Apple Kimliği › Abonelikler'den yönetebilirsin.",
+  "prmYonetAcilamadiAndroid": "Mağazanın abonelik sayfası açılamadı. Play Store › Ödemeler ve abonelikler'den yönetebilirsin.",
   "anzNotUpper": "Haftalık not · yapay zekâ",
   "anzMeta": "{sayi} madde · {aralik}",
   "@anzMeta": {
@@ -6668,6 +6671,8 @@
   "@premiumDurumDetay": {"placeholders": {"plan": {"type": "String"}, "detay": {"type": "String"}}},
   "premiumDurumYenilenir": "{tarih} tarihinde yenilenir",
   "@premiumDurumYenilenir": {"placeholders": {"tarih": {"type": "String"}}},
+  "premiumDurumDenemeIlkOdeme": "deneme, ilk ödeme {tarih}",
+  "@premiumDurumDenemeIlkOdeme": {"placeholders": {"tarih": {"type": "String"}}},
   "premiumDurumBiter": "{tarih} tarihinde biter",
   "@premiumDurumBiter": {"placeholders": {"tarih": {"type": "String"}}},
   "premiumDurumHediyeKalan": "{tarih} tarihinde biter, {gun} gün kaldı",

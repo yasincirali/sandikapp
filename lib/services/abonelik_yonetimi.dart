@@ -25,8 +25,9 @@ class AbonelikYonetimi {
 
   static final _webAdresi = {
     TargetPlatform.iOS: 'https://apps.apple.com/account/subscriptions',
+    // `package`: Play doğrudan Sandık aboneliğine iner (applicationId).
     TargetPlatform.android:
-        'https://play.google.com/store/account/subscriptions',
+        'https://play.google.com/store/account/subscriptions?package=com.sandik.app',
   };
 
   /// Web adresini açan kısım testte değiştirilebilir (url_launcher gerçek

@@ -8,6 +8,7 @@ import '../providers/premium_provider.dart';
 import '../screens/paywall_screen.dart';
 import '../services/abonelik_yonetimi.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart' show fmtMagazaTutari;
 import 'sandik_async_button.dart';
 import 'satin_alim_geri_yukleme.dart';
@@ -150,7 +151,17 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
               if (yonet)
                 TextButton(
                   style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
-                  onPressed: AbonelikYonetimi.ac,
+                  onPressed: () async {
+                    if (await AbonelikYonetimi.ac() || !context.mounted) return;
+                    // Ölü uç olmasın (Ar-Ge 21 Kas tur 6 #3): sayfa açılamazsa
+                    // elle gidilecek yol söylenir. Platform tema/hedeften
+                    // okunur, kurulum kaynağından değil.
+                    sandikSnack(
+                        context,
+                        Theme.of(context).platform == TargetPlatform.iOS
+                            ? l10n.prmYonetAcilamadiIos
+                            : l10n.prmYonetAcilamadiAndroid);
+                  },
                   child: Text(l10n.prmYonet),
                 ),
               if (sonGunler)
@@ -164,7 +175,9 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
             ],
           ),
           if (yonet)
-            Text(l10n.prmIptalIpucu,
+            Text(hak != null && hak.iptalEdildi
+                    ? l10n.prmIptalIpucuYeniden
+                    : l10n.prmIptalIpucu,
                 style: t.bodySmall?.copyWith(color: c.text58)),
         ],
       ),
