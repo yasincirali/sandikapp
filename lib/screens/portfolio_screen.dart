@@ -65,10 +65,12 @@ import '../providers/watchlist_provider.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../providers/portfoy_provider.dart';
+import '../providers/sattiklarin_provider.dart';
 import '../services/crash_reporter.dart';
 import '../providers/preferences_provider.dart'
     show
         portfoySiralamaProvider,
+        premiumKilitliProvider,
         seciliPortfoyProvider,
         portfoyBugunModuProvider;
 import '../services/bugun_yukleyici.dart';
@@ -1128,11 +1130,16 @@ class _SayiRozeti extends StatelessWidget {
 
 // ── Empty State ───────────────────────────────────────────────────────────────
 
-class _EmptyState extends StatelessWidget {
+class _EmptyState extends ConsumerWidget {
   const _EmptyState();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Kapanmış pozisyonu olan kullanıcı "Henüz varlık eklenmemiş" görmez
+    // (2026-11-21): her şeyi sattı, varlık eklemişti; Sattıkların satırı altta.
+    final metin = ref.watch(sattiklarinProvider).isNotEmpty
+        ? context.l10n.portfoyAcikPozisyonYok
+        : context.l10n.noAssetsYet;
     // Sabit 300 değil ALT sınır: büyük yazıda (3,1×) ikon + metin 300'ü
     // aşıp 28 px taşıyordu (büyük yazı taraması 2026-10-12).
     //
@@ -1144,7 +1151,7 @@ class _EmptyState extends StatelessWidget {
       return Container(
         constraints: const BoxConstraints(minHeight: 300),
         alignment: Alignment.center,
-        child: SandikBosDurum(metin: context.l10n.noAssetsYet),
+        child: SandikBosDurum(metin: metin),
       );
     }
     return Container(
@@ -1155,7 +1162,7 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(Icons.inbox_rounded, size: 64, color: context.c.text36),
           const SizedBox(height: 16),
-          Text(context.l10n.noAssetsYet,
+          Text(metin,
               style: context.t.bodyMedium?.copyWith(color: context.c.text36)),
         ],
       ),
@@ -3830,6 +3837,24 @@ class _AssetDetailsPanel extends StatelessWidget {
             Consumer(builder: (context, ref, _) {
               final basaBas = basaBasSatiriCizilir(ref, basaBasOrani);
               if (!basaBas && !temettuVar) return const SizedBox.shrink();
+              // Kilitliyken kilit satırı TAM genişlik, temettü altına (2026-11-21):
+              // yarım kolonda uzun kilit cümlesi 3-4 satıra kırılıyordu. Açıkken
+              // iki kolonlu düzen aynı kalır.
+              if (basaBas && ref.watch(premiumKilitliProvider)) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      BasaBasSatiri(oran: basaBasOrani!, kaynak: 'basa_bas'),
+                      if (temettuVar) ...[
+                        const SizedBox(height: SandikSpace.md),
+                        temettuSatiri,
+                      ],
+                    ],
+                  ),
+                );
+              }
               return Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Row(

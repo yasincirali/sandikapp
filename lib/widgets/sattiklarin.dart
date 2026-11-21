@@ -107,20 +107,27 @@ Future<void> showSattiklarinListesi(
   BuildContext context, {
   required bool Function() tutarGizli,
 }) async {
-  final l = context.l10n;
-  final secim = await showSandikSheet<KapanmisPozisyon>(
-    context: context,
-    baslik: l.sattiklarinBaslik,
-    altMetin: l.sattiklarinAltMetin,
-    builder: (_) => const SattiklarinSayfasi(),
-  );
-  if (secim == null || !context.mounted) return;
-  await showKapanisOzeti(
-    context,
-    secim.ozet,
-    tutarGizli: tutarGizli(),
-    degerlendirme: false,
-  );
+  // Döngü (2026-11-21): özet kapanınca liste yeniden açılır (paylaşım
+  // sonrası da). Eskiden sayfa kapanıp kullanıcı Portföy'e düşüyordu; iki
+  // kapanışı arka arkaya gezmek her seferinde satıra dönmeyi gerektiriyordu.
+  // Çıkış: listeyi kapatmak (seçim yok) ya da bağlamın ölmesi.
+  while (true) {
+    final l = context.l10n;
+    final secim = await showSandikSheet<KapanmisPozisyon>(
+      context: context,
+      baslik: l.sattiklarinBaslik,
+      altMetin: l.sattiklarinAltMetin,
+      builder: (_) => const SattiklarinSayfasi(),
+    );
+    if (secim == null || !context.mounted) return;
+    await showKapanisOzeti(
+      context,
+      secim.ozet,
+      tutarGizli: tutarGizli(),
+      degerlendirme: false,
+    );
+    if (!context.mounted) return;
+  }
 }
 
 /// Kapanmış pozisyonların listesi: başta tek özet satırı (gerçekleşen

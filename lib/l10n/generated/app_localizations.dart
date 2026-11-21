@@ -2129,8 +2129,20 @@ abstract class AppLocalizations {
   /// No description provided for @basaBasKilitli.
   ///
   /// In tr, this message translates to:
-  /// **'Bu pozisyonun başa baş için gereken yükselişi Premium\'da'**
+  /// **'Başa baş için gereken yükseliş Premium\'da'**
   String get basaBasKilitli;
+
+  /// Portföy sekmesi boş durumu, ama kullanıcının kapanmış pozisyonu var (hepsini sattı): 'Henüz varlık eklenmemiş' yanlış olurdu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an açık pozisyonun yok'**
+  String get portfoyAcikPozisyonYok;
+
+  /// Premium bitince portföy hedef satırının yerine kilit: kayıtlı hedef silinmez, ilerleme kilitli. Tutar ya da yüzde içermez.
+  ///
+  /// In tr, this message translates to:
+  /// **'{portfoy} hedefin kayıtlı · ilerlemesi Premium\'da'**
+  String portfoyHedefKayitliKilit(String portfoy);
 
   /// No description provided for @kopyalaKod.
   ///

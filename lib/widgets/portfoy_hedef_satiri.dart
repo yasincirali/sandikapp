@@ -19,6 +19,7 @@ import '../services/hedef_ritmi.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'hedef_sheet.dart';
+import 'para_akisi_karti.dart' show KilitSatiri;
 
 /// Hedef satırının tek cümlesi: "Hedefe %42 · ₺290K kaldı · plandasın".
 /// Ritim yoksa (gün yok, defter kısa) son parça düşer; ulaşıldıysa
@@ -78,12 +79,9 @@ class PortfoyHedefSatiri extends ConsumerWidget {
     if (secim == PortfoySecimi.tumu) return const SizedBox.shrink();
     final id = secim == PortfoySecimi.ana ? null : secim;
     final d = ref.watch(portfoyHedefDurumuProvider(id));
-    if (d == null) return const SizedBox.shrink();
     final l = context.l10n;
-    final metin =
-        portfoyHedefMetni(l, d, gizli: ref.watch(balanceHiddenProvider));
     final ad = id == null
-        ? (ref.watch(anaPortfoyAdiProvider) ?? l.portfoyAna)
+        ? (ref.watch(anaPortfoyAdiProvider) ?? l.portfoyAnaUzun)
         : (ref
                 .watch(portfoylerProvider)
                 .valueOrNull
@@ -91,6 +89,27 @@ class PortfoyHedefSatiri extends ConsumerWidget {
                 .firstOrNull
                 ?.ad ??
             '');
+    if (d == null) {
+      // Premium bitince kayıtlı hedef kaybolmaz, sessizce de yok olmaz
+      // (2026-11-21, bugun_karti "Hedef günün kayıtlı" ile aynı gerekçe):
+      // kilit satırı hedefin durduğunu söyler. Hedef hiç yoksa ya da özellik
+      // gizliyse (paywall kapalı) hiçbir şey çizilmez. Tutar/yüzde sızmaz.
+      if (ref.watch(hedefTarihiDurumuProvider) != OzellikDurumu.kilitli ||
+          ref.watch(kapsamHedefiProvider(portfoyHedefKapsami(id))) <= 0) {
+        return const SizedBox.shrink();
+      }
+      return Padding(
+        padding: bosluk,
+        child: KilitSatiri(
+          metin: l.portfoyHedefKayitliKilit(ad),
+          kaynak: 'portfoy_hedef',
+          ozellik: 'hedef_tarihi',
+          kilitEtiketi: l.goalDateLockedLabel,
+        ),
+      );
+    }
+    final metin =
+        portfoyHedefMetni(l, d, gizli: ref.watch(balanceHiddenProvider));
     return Padding(
       padding: bosluk,
       child: SandikTappable(
