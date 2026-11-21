@@ -81,7 +81,7 @@ class PortfoyHedefSatiri extends ConsumerWidget {
     final d = ref.watch(portfoyHedefDurumuProvider(id));
     final l = context.l10n;
     final ad = id == null
-        ? (ref.watch(anaPortfoyAdiProvider) ?? l.portfoyAna)
+        ? (ref.watch(anaPortfoyAdiProvider) ?? l.portfoyAnaUzun)
         : (ref
                 .watch(portfoylerProvider)
                 .valueOrNull
