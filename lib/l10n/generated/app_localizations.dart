@@ -6089,7 +6089,7 @@ abstract class AppLocalizations {
   /// No description provided for @watchlistLimitFree.
   ///
   /// In tr, this message translates to:
-  /// **'Ücretsiz planda en fazla {n} varlık takip edebilirsin.'**
+  /// **'Ücretsiz planda en fazla {n} varlık takip edebilirsin. Yer açmak için birini çıkar.'**
   String watchlistLimitFree(int n);
 
   /// No description provided for @partnershipAcceptedShort.
@@ -15458,8 +15458,20 @@ abstract class AppLocalizations {
   /// No description provided for @alarmLimitFree.
   ///
   /// In tr, this message translates to:
-  /// **'Ücretsiz planda en fazla {n} aktif alarm kurabilirsin.'**
+  /// **'Ücretsiz planda en fazla {n} aktif alarm kurabilirsin. Yeni kurmak için birini kapat.'**
   String alarmLimitFree(int n);
+
+  /// No description provided for @partnerLimitFree.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz planda en fazla {n} ortak ekleyebilirsin. Yeni ortak için mevcut ortaklığını bitirebilirsin.'**
+  String partnerLimitFree(int n);
+
+  /// No description provided for @watchlistLimitPremiumIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'u açar'**
+  String get watchlistLimitPremiumIpucu;
 
   /// No description provided for @varlikKotasiKalan.
   ///

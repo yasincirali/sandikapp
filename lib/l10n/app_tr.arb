@@ -2412,7 +2412,7 @@
   "watchlistAddShort": "Ekle",
   "watchlistLimitReached": "En fazla {n} varlık takip edebilirsin. Yeni eklemek için birini çıkar.",
   "@watchlistLimitReached": {"placeholders": {"n": {"type": "int"}}},
-  "watchlistLimitFree": "Ücretsiz planda en fazla {n} varlık takip edebilirsin.",
+  "watchlistLimitFree": "Ücretsiz planda en fazla {n} varlık takip edebilirsin. Yer açmak için birini çıkar.",
   "@watchlistLimitFree": {
     "placeholders": {
       "n": {
@@ -6105,8 +6105,11 @@
   "pwdOzelPremium": "20 gösterge, her aralıkta",
   "alarmLimitReached": "En fazla {n} aktif alarm kurabilirsin. Yeni kurmak için birini kapat.",
   "@alarmLimitReached": {"placeholders": {"n": {"type": "int"}}},
-  "alarmLimitFree": "Ücretsiz planda en fazla {n} aktif alarm kurabilirsin.",
+  "alarmLimitFree": "Ücretsiz planda en fazla {n} aktif alarm kurabilirsin. Yeni kurmak için birini kapat.",
   "@alarmLimitFree": {"placeholders": {"n": {"type": "int"}}},
+  "partnerLimitFree": "Ücretsiz planda en fazla {n} ortak ekleyebilirsin. Yeni ortak için mevcut ortaklığını bitirebilirsin.",
+  "@partnerLimitFree": {"placeholders": {"n": {"type": "int"}}},
+  "watchlistLimitPremiumIpucu": "Premium'u açar",
   "varlikKotasiKalan": "Ücretsiz planda {kalan} yeni varlık hakkın kaldı ({sinir} varlık).",
   "@varlikKotasiKalan": {"placeholders": {"kalan": {"type": "int"}, "sinir": {"type": "int"}}},
   "varlikKotasiDolu": "Ücretsiz plandaki {sinir} varlık doldu. Var olan varlığına alım ekleyebilirsin; yeni varlık Premium'da.",

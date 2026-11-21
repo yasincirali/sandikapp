@@ -1457,8 +1457,9 @@ Future<bool> alarmSiniriDoluysaUyar(
     BuildContext context, WidgetRef ref) async {
   final limit = ref.read(priceAlertLimitProvider);
   if (!await alarmSiniriDoluMu(ref)) return false;
-  if (context.mounted) alarmSiniriUyarisi(context, ref, limit);
-  return true;
+  if (!context.mounted) return true;
+  // Premium alındıysa tavan kalktı: alarm akışı sürer (2026-11-21).
+  return !await alarmSiniriBekle(context, ref, limit);
 }
 
 /// Tavan dolu mu (uyarısız). Bütün giriş yolları (sayfa, sayfanın kendi
