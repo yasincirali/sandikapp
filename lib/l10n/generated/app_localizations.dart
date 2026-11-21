@@ -12167,6 +12167,24 @@ abstract class AppLocalizations {
   /// **'İptal ve plan değişikliği mağazanın abonelik sayfasında yapılır.'**
   String get prmIptalIpucu;
 
+  /// No description provided for @prmIptalIpucuYeniden.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aboneliği yeniden başlatmak için de mağazanın abonelik sayfasını kullan.'**
+  String get prmIptalIpucuYeniden;
+
+  /// No description provided for @prmYonetAcilamadiIos.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mağazanın abonelik sayfası açılamadı. Ayarlar › Apple Kimliği › Abonelikler\'den yönetebilirsin.'**
+  String get prmYonetAcilamadiIos;
+
+  /// No description provided for @prmYonetAcilamadiAndroid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mağazanın abonelik sayfası açılamadı. Play Store › Ödemeler ve abonelikler\'den yönetebilirsin.'**
+  String get prmYonetAcilamadiAndroid;
+
   /// No description provided for @anzNotUpper.
   ///
   /// In tr, this message translates to:
@@ -17886,6 +17904,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{tarih} tarihinde yenilenir'**
   String premiumDurumYenilenir(String tarih);
+
+  /// No description provided for @premiumDurumDenemeIlkOdeme.
+  ///
+  /// In tr, this message translates to:
+  /// **'deneme, ilk ödeme {tarih}'**
+  String premiumDurumDenemeIlkOdeme(String tarih);
 
   /// No description provided for @premiumDurumBiter.
   ///

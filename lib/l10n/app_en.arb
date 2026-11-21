@@ -4617,6 +4617,9 @@
   "prmYonet": "Manage",
   "prmGeriYukle": "Restore purchases",
   "prmIptalIpucu": "Cancel or change your plan on the store's subscription page.",
+  "prmIptalIpucuYeniden": "Use the store's subscription page to restart your subscription too.",
+  "prmYonetAcilamadiIos": "Couldn't open the store's subscription page. You can manage it in Settings › Apple ID › Subscriptions.",
+  "prmYonetAcilamadiAndroid": "Couldn't open the store's subscription page. You can manage it in Play Store › Payments & subscriptions.",
   "anzNotUpper": "Weekly note · AI",
   "anzMeta": "{sayi} points · {aralik}",
   "@anzMeta": {
@@ -5851,6 +5854,8 @@
   "@premiumDurumDetay": {"placeholders": {"plan": {"type": "String"}, "detay": {"type": "String"}}},
   "premiumDurumYenilenir": "renews on {tarih}",
   "@premiumDurumYenilenir": {"placeholders": {"tarih": {"type": "String"}}},
+  "premiumDurumDenemeIlkOdeme": "trial, first payment {tarih}",
+  "@premiumDurumDenemeIlkOdeme": {"placeholders": {"tarih": {"type": "String"}}},
   "premiumDurumBiter": "ends on {tarih}",
   "@premiumDurumBiter": {"placeholders": {"tarih": {"type": "String"}}},
   "premiumDurumHediyeKalan": "ends on {tarih}, {gun} days left",

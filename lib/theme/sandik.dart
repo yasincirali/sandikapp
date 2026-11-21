@@ -159,6 +159,29 @@ class _SandikSheetKabugu extends StatelessWidget {
         ],
       );
     }
+    // Sayfa kendi `ScaffoldMessenger`'ını taşır (Ar-Ge 21 Kas tur 6 #5):
+    // `sandikSnack` en yakın messenger'a yazar; kök Scaffold'a yazan şerit
+    // modal rotanın ve karartmanın ALTINDA çiziliyordu ("geri yüklendi"
+    // sonucu görünmüyordu). Scaffold gövdesiz ve şeffaf, `Stack`'te içeriğin
+    // üstüne biner: sayfa yüksekliğini içerik belirler (Scaffold doldurup
+    // 9/16'ya uzatmaz). `IgnorePointer`: Scaffold'un Material'ı dokunuşu
+    // yutar; şeridin kendi eylemi (Geri al) sayfada dokunulamaz, süre dolunca
+    // kapanır.
+    icerik = ScaffoldMessenger(
+      child: Stack(
+        children: [
+          icerik,
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                resizeToAvoidBottomInset: false,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
     return Padding(padding: EdgeInsets.only(bottom: klavye), child: icerik);
   }
 }

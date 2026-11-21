@@ -7444,6 +7444,18 @@ class AppLocalizationsTr extends AppLocalizations {
       'İptal ve plan değişikliği mağazanın abonelik sayfasında yapılır.';
 
   @override
+  String get prmIptalIpucuYeniden =>
+      'Aboneliği yeniden başlatmak için de mağazanın abonelik sayfasını kullan.';
+
+  @override
+  String get prmYonetAcilamadiIos =>
+      'Mağazanın abonelik sayfası açılamadı. Ayarlar › Apple Kimliği › Abonelikler\'den yönetebilirsin.';
+
+  @override
+  String get prmYonetAcilamadiAndroid =>
+      'Mağazanın abonelik sayfası açılamadı. Play Store › Ödemeler ve abonelikler\'den yönetebilirsin.';
+
+  @override
   String get anzNotUpper => 'Haftalık not · yapay zekâ';
 
   @override
@@ -11079,6 +11091,11 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String premiumDurumYenilenir(String tarih) {
     return '$tarih tarihinde yenilenir';
+  }
+
+  @override
+  String premiumDurumDenemeIlkOdeme(String tarih) {
+    return 'deneme, ilk ödeme $tarih';
   }
 
   @override

@@ -7551,6 +7551,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Cancel or change your plan on the store\'s subscription page.';
 
   @override
+  String get prmIptalIpucuYeniden =>
+      'Use the store\'s subscription page to restart your subscription too.';
+
+  @override
+  String get prmYonetAcilamadiIos =>
+      'Couldn\'t open the store\'s subscription page. You can manage it in Settings › Apple ID › Subscriptions.';
+
+  @override
+  String get prmYonetAcilamadiAndroid =>
+      'Couldn\'t open the store\'s subscription page. You can manage it in Play Store › Payments & subscriptions.';
+
+  @override
   String get anzNotUpper => 'Weekly note · AI';
 
   @override
@@ -11276,6 +11288,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String premiumDurumYenilenir(String tarih) {
     return 'renews on $tarih';
+  }
+
+  @override
+  String premiumDurumDenemeIlkOdeme(String tarih) {
+    return 'trial, first payment $tarih';
   }
 
   @override

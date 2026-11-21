@@ -18,6 +18,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/premium_provider.dart';
+import 'main_navigation_screen.dart';
 import '../widgets/premium_abonelik_satiri.dart';
 import '../widgets/sinir_uyarisi.dart' show ortakEklenebilirMi;
 import 'paywall_screen.dart';
@@ -1396,11 +1397,45 @@ class _ActionIcon extends StatelessWidget {
 /// - **Ücretsiz:** "Premium'a geç ›" (paywall); kapılar birebir eski:
 ///   paywall anahtarı kapalıyken ya da kilitler askıdayken satır yok,
 ///   hediyesi bitmişin analitik kaynağı ayrı.
-class _PremiumDurumSatiri extends ConsumerWidget {
+class _PremiumDurumSatiri extends ConsumerStatefulWidget {
   const _PremiumDurumSatiri();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PremiumDurumSatiri> createState() =>
+      _PremiumDurumSatiriState();
+}
+
+class _PremiumDurumSatiriState extends ConsumerState<_PremiumDurumSatiri> {
+  @override
+  void initState() {
+    super.initState();
+    // Deneme hatırlatma bildirimi (Ar-Ge 21 Kas tur 6 #1): Profil'e geçip
+    // Premium sayfasını doğrudan açar. `sekmeIstegi` deseni: soğuk açılışta
+    // satır kurulmadan yazılan istek ilk karede okunur; tüketilince false.
+    MainNavigationScreen.premiumSayfasiIstegi.addListener(_istekGeldi);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _istekGeldi());
+  }
+
+  @override
+  void dispose() {
+    MainNavigationScreen.premiumSayfasiIstegi.removeListener(_istekGeldi);
+    super.dispose();
+  }
+
+  void _istekGeldi() {
+    if (!mounted || !MainNavigationScreen.premiumSayfasiIstegi.value) return;
+    // Satır premium dışı durumda "Premium'a geç" olur; sayfa yalnız hakkı
+    // olana açılır, istek tüketilmeden kalır (ilk geçerli satırda açılır).
+    if (!ref.read(paywallVisibleProvider) ||
+        !ref.read(effectivePremiumProvider)) {
+      return;
+    }
+    MainNavigationScreen.premiumSayfasiIstegi.value = false;
+    premiumSayfasiniAc(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Paywall master switch kapalıysa satır hiç gösterilmez.
     if (!ref.watch(paywallVisibleProvider)) return const SizedBox.shrink();
     final l10n = context.l10n;
@@ -1415,7 +1450,10 @@ class _PremiumDurumSatiri extends ConsumerWidget {
       // oradadır; önceden bu durumda satır dokunulmazdı ve iptalin
       // uygulamadaki yolu yoktu.
       final hak = ref.watch(gecerliPremiumHakkiProvider);
-      final metin = premiumDurumMetni(context, hak, DateTime.now());
+      final deneme = ref.watch(abonelikDonemiProvider).valueOrNull?.deneme ==
+          true;
+      final metin =
+          premiumDurumMetni(context, hak, DateTime.now(), deneme: deneme);
       // Metin "Premium · yıllık, ..." biçiminde; baştaki "Premium" amber,
       // geri kalanı soluk yazılır. Çeviride önek yoksa metin bütün soluk.
       final onek = l10n.premiumDurum;
@@ -1424,15 +1462,7 @@ class _PremiumDurumSatiri extends ConsumerWidget {
       return _satir(
         context,
         etiket: l10n.premiumDurumAyrintiEtiket(metin),
-        onTap: () => showSandikSheet<void>(
-          context: context,
-          baslik: l10n.sandikPremium,
-          builder: (_) => Padding(
-            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
-                SandikSpace.screenH(context), SandikSpace.lg),
-            child: PremiumAbonelikSatiri(hak: hak),
-          ),
-        ),
+        onTap: () => premiumSayfasiniAc(context),
         child: Row(
           children: [
             Icon(Icons.workspace_premium_rounded,
@@ -1526,11 +1556,31 @@ class _PremiumDurumSatiri extends ConsumerWidget {
   }
 }
 
+/// Premium abonelik sayfası. `hak` açılış anında değil sayfanın içinde
+/// izlenir: geri yükleme ya da mağazadan dönüşte hak yenilenince açık sayfa
+/// bayat tarih/plan göstermesin (Ar-Ge 21 Kas tur 6 #4).
+@visibleForTesting
+void premiumSayfasiniAc(BuildContext context) {
+  showSandikSheet<void>(
+    context: context,
+    baslik: context.l10n.sandikPremium,
+    builder: (_) => Consumer(
+      builder: (ctx, ref, _) => Padding(
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), 0,
+            SandikSpace.screenH(ctx), SandikSpace.lg),
+        child: PremiumAbonelikSatiri(
+            hak: ref.watch(gecerliPremiumHakkiProvider)),
+      ),
+    ),
+  );
+}
+
 /// Premium satırının metni (saf; test doğrudan çağırır). Hak yoksa
 /// "Premium"; varsa tür ve tarih: mağaza aboneliği "yenilenir", hediye
-/// "biter, n gün kaldı", diğerleri "biter".
+/// "biter, n gün kaldı", diğerleri "biter"; [deneme] ise "ilk ödeme".
 @visibleForTesting
-String premiumDurumMetni(BuildContext context, PremiumHakki? hak, DateTime simdi) {
+String premiumDurumMetni(BuildContext context, PremiumHakki? hak, DateTime simdi,
+    {bool deneme = false}) {
   final l10n = context.l10n;
   if (hak == null) return l10n.premiumDurum;
   final plan = hak.hediye
@@ -1543,8 +1593,12 @@ String premiumDurumMetni(BuildContext context, PremiumHakki? hak, DateTime simdi
   final tarih = DateFormat('d MMMM y', Localizations.localeOf(context).toString())
       .format(b.toLocal());
   final kalan = hak.hediye ? hak.kalanGun(simdi) : null;
+  // Denemede "yenilenir" ilk ödemeyi saklıyordu; sayfa "ilk ödeme" der, satır
+  // da aynı şeyi söyler (Ar-Ge 21 Kas tur 6 #2).
   final detay = hak.kaynak == 'revenuecat' && !hak.iptalEdildi
-      ? l10n.premiumDurumYenilenir(tarih)
+      ? (deneme
+          ? l10n.premiumDurumDenemeIlkOdeme(tarih)
+          : l10n.premiumDurumYenilenir(tarih))
       : kalan != null
           ? l10n.premiumDurumHediyeKalan(tarih, kalan)
           : l10n.premiumDurumBiter(tarih);

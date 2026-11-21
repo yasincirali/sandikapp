@@ -888,9 +888,11 @@ class NotificationService {
       return;
     }
 
-    // Deneme hatırlatması → Profil (abonelik satırı ve iptal yolu orada).
+    // Deneme hatırlatması → Profil'de Premium sayfası (ilk ödeme günü ve
+    // iptal yolu orada; satırı aratmadan doğrudan açılır).
     if (payload == denemeHatirlatmaPayload) {
       AnalyticsService.instance.logPushOpened(type: denemeHatirlatmaPayload);
+      MainNavigationScreen.premiumSayfasiIstegi.value = true;
       MainNavigationScreen.sekmeIstegi.value =
           MainNavigationScreen.profilSekmesi;
       return;
