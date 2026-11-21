@@ -18843,6 +18843,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hedef günün kayıtlı'**
   String get todayGoalDateSaved;
+
+  /// No description provided for @portfolioLimitFree.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz planda tek portföy var. Varlıklarını Ana portföyde tutmaya devam edebilirsin.'**
+  String get portfolioLimitFree;
 }
 
 class _AppLocalizationsDelegate

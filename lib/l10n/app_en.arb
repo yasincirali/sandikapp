@@ -6093,5 +6093,6 @@
   "kilitDenemeSatiri": "Try free for {gun} days",
   "xrKilitFonKisisel": "This fund is {pay} of your portfolio.",
   "ziKilitKisisel": "{pay} of this portfolio is in funds and pension funds.",
-  "todayGoalDateSaved": "Your target date is saved"
+  "todayGoalDateSaved": "Your target date is saved",
+  "portfolioLimitFree": "The free plan has one portfolio. You can keep your assets in the Main portfolio."
 }

@@ -238,7 +238,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                                     Text(GorunumCipi.ilkAd(o.displayName),
                                         style: context.t.titleSmall?.copyWith(
                                             color: context.c.text90,
-                                            fontWeight: FontWeight.w700)),
+                                            fontWeight: FontWeight.w600)),
                                     OrtakPaylasimSatiri(
                                         ortak: o, ustBosluk: false),
                                   ],
@@ -318,7 +318,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
               Text(
                 l.portfoySilBaslik(p.ad),
                 style: ctx.t.titleLarge?.copyWith(
-                    color: ctx.c.text90, fontWeight: FontWeight.w700),
+                    color: ctx.c.text90, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: SandikSpace.sm),
               Text(
@@ -357,12 +357,33 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: SandikSpace.lg),
+              // HIG: yıkıcı eylem varsayılan olmaz. Varlık varken birincil
+              // düğme "Aktar ve sil" (geçmiş korunur), "Varlıklarla sil"
+              // altta çerçeveli kırmızı metin; birikimci geçmişini yanlışlıkla
+              // silmesin. İkisi de tek dokunuş (onay sayfası zaten bu).
+              if (pozisyonlar.isNotEmpty) ...[
+                FilledButton(
+                  key: const ValueKey('portfoy-aktar-sil'),
+                  onPressed: () => Navigator.pop(ctx, _SilmeSecimi.aktar),
+                  child: Text(l.portfoyAktarVeSil,
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                const SizedBox(height: SandikSpace.sm),
+              ],
               SandikAsyncButton.kompakt(
                 key: const ValueKey('portfoy-sil-onay'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: ctx.c.danger,
-                  foregroundColor: ctx.c.onStatus,
-                ),
+                tur: pozisyonlar.isNotEmpty
+                    ? SandikAsyncTur.cerceve
+                    : SandikAsyncTur.dolu,
+                style: pozisyonlar.isNotEmpty
+                    ? OutlinedButton.styleFrom(
+                        foregroundColor: ctx.c.danger,
+                        side: BorderSide(color: ctx.c.danger),
+                      )
+                    : FilledButton.styleFrom(
+                        backgroundColor: ctx.c.danger,
+                        foregroundColor: ctx.c.onStatus,
+                      ),
                 onPressed: () async {
                   try {
                     await ref.read(portfoylerProvider.notifier).sil(p.id);
@@ -379,19 +400,8 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                     pozisyonlar.isNotEmpty
                         ? l.portfoyVarliklarlaSil
                         : l.portfoySil,
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
-              // Silmek yerine aktarmak isteyen için ikinci yol (yasin
-              // 2026-10-10). Hedef bu sayfa kapandıktan sonra sorulur: iki
-              // sayfa üst üste binmesin.
-              if (pozisyonlar.isNotEmpty) ...[
-                const SizedBox(height: SandikSpace.sm),
-                OutlinedButton(
-                  key: const ValueKey('portfoy-aktar-sil'),
-                  onPressed: () => Navigator.pop(ctx, _SilmeSecimi.aktar),
-                  child: Text(l.portfoyAktarVeSil),
-                ),
-              ],
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: Text(l.cancel),
@@ -549,7 +559,7 @@ class _Satir extends StatelessWidget {
                 Text(
                   ad,
                   style: context.t.titleSmall?.copyWith(
-                      color: context.c.text90, fontWeight: FontWeight.w700),
+                      color: context.c.text90, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: SandikSpace.xxs),
                 Text(

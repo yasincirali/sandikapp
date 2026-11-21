@@ -6938,5 +6938,6 @@
   "@xrKilitFonKisisel": {"placeholders": {"pay": {"type": "String"}, "ek": {"type": "String"}}},
   "ziKilitKisisel": "Bu portföyün {pay}'{ek} fon ve BES'te.",
   "@ziKilitKisisel": {"placeholders": {"pay": {"type": "String"}, "ek": {"type": "String"}}},
-  "todayGoalDateSaved": "Hedef günün kayıtlı"
+  "todayGoalDateSaved": "Hedef günün kayıtlı",
+  "portfolioLimitFree": "Ücretsiz planda tek portföy var. Varlıklarını Ana portföyde tutmaya devam edebilirsin."
 }
