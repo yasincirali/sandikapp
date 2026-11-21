@@ -27,6 +27,7 @@ import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'quick_adjust_dialog.dart';
 import 'sandik_async_button.dart';
+import '../services/ozellik_olcumu.dart';
 import 'transaction_row.dart' show hareketTurEtiketi;
 
 /// Not sayfasını açar; kullanıcı kaydederse notu yazar.
@@ -41,6 +42,7 @@ Future<void> showIslemNotuSheet(
   required String? not,
 }) async {
   if (DemoModu.yazmaKapisi('not')) return; // Demo: not kaydı hesap ister (F1).
+  OzellikOlcumu.say(Ozellik.islemNotu);
   final benimId = ref.read(authProvider).valueOrNull?.id;
   final duzenlenebilir = islemNotuDuzenlenebilir(asset, benimId: benimId);
   // "Bunu tekrar al" (Ar-Ge 8 Kas #1): yalnız kendi, silinmemiş ALIŞ

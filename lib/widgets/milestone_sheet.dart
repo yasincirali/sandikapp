@@ -9,6 +9,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'sandik_cizimi.dart';
 import 'share_card.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Kilometre taşı kutlaması.
 ///
@@ -32,6 +33,7 @@ class MilestoneSheet extends StatelessWidget {
       AnalyticsService.instance
           .logMilestoneReached(kind: m.kind, value: m.value);
     }
+    OzellikOlcumu.say(Ozellik.kilometreTasi);
     return showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,

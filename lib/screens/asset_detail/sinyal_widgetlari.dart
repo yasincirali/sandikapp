@@ -556,6 +556,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
     // Kullanıcı tercihleri değiştikçe otomatik yeniden hesapla
     final prefs = ref.watch(indicatorPrefsProvider);
     final izinli = ref.watch(izinliGostergelerProvider);
+    if (!ref.watch(premiumKilitliProvider)) OzellikOlcumu.say(Ozellik.sinyalGosterge);
     final parametreler = ref.watch(etkinGostergeParametreleriProvider(widget.type));
     final enabledIds = prefs[widget.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.type);

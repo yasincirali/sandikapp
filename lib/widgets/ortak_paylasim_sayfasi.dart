@@ -18,6 +18,7 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import 'gorunum_cipi.dart';
 import 'sandik_async_button.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// "Ortağın neyi görsün?" — sahibin bir ortağa hangi portföylerini
 /// gösterdiğini seçtiği alt sayfa (0135).
@@ -39,6 +40,7 @@ Future<void> showOrtakPaylasimSayfasi(
   BuildContext context, {
   required AppUser ortak,
 }) {
+  OzellikOlcumu.say(Ozellik.ortakPaylasim);
   return showSandikSheet<void>(
     context: context,
     isScrollControlled: true,

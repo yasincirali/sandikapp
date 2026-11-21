@@ -9,6 +9,7 @@ import '../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../services/ozellik_olcumu.dart';
 import 'para_akisi_karti.dart' show KilitSatiri;
 
 /// "2 yıl 3 aydır tutuyorsun · yıllık ortalama +%31,2" (Ar-Ge 7 Kas 20:30
@@ -62,6 +63,7 @@ class EldeTutmaSatiri extends ConsumerWidget {
     }
     final l = context.l10n;
     final Widget icerik;
+    if (!ref.watch(premiumKilitliProvider)) OzellikOlcumu.say(Ozellik.yillikGetiri);
     if (ref.watch(premiumKilitliProvider)) {
       icerik = KilitSatiri(
         metin: l.eldeTutmaKilitli(sure(l, ozet)),

@@ -19,6 +19,7 @@ import '../utils/tr_format.dart';
 import 'dividend_dialog.dart';
 import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_skeleton.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Hisse varlık ekranında "Son 12 ay temettü" kartı (plan §F5, 1. aşama).
 ///
@@ -211,6 +212,7 @@ class _TemettuGecmisiKartiState extends ConsumerState<TemettuGecmisiKarti> {
   /// maskeli): oran tek başına portföy büyüklüğünü ele vermez.
   Widget _verimSatiri(double verim, {required bool kilitli}) {
     final l = context.l10n;
+    if (!kilitli) OzellikOlcumu.say(Ozellik.temettuVerimi);
     if (kilitli) {
       return KilitSatiri(
         metin: l.dividendYieldOnCostLocked,

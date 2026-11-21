@@ -19,6 +19,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'radar_ortak.dart';
 import 'sandik_skeleton.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Para akışı kartı (Balina B1 2026-10-04; özet kart 2026-10-05, S1-B).
 ///
@@ -85,6 +86,7 @@ class ParaAkisiKarti extends ConsumerWidget {
     final ozet = ref.watch(fonAkisiProvider(kod)).valueOrNull;
     if (ozet == null) return const SizedBox.shrink();
     final kilitli = ref.watch(radarKilitliProvider);
+    if (!kilitli) OzellikOlcumu.say(Ozellik.paraAkisi);
 
     final l10n = context.l10n;
     final c = context.c;

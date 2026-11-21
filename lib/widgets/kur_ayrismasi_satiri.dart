@@ -8,6 +8,7 @@ import '../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../theme/sandik.dart';
 import '../utils/money_format.dart';
+import '../services/ozellik_olcumu.dart';
 import '../utils/tr_format.dart'
     show fiyatBicimi, fmtPctIsaretli, fmtTRYFiyat, tryFormatter;
 import 'para_akisi_karti.dart' show KilitSatiri;
@@ -46,6 +47,7 @@ class KurAyrismasiSatiri extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final l = context.l10n;
+    if (!ref.watch(premiumKilitliProvider)) OzellikOlcumu.say(Ozellik.kurAyrismasi);
     if (ref.watch(premiumKilitliProvider)) {
       return Padding(
         padding: const EdgeInsets.only(top: SandikSpace.xs),

@@ -28,7 +28,61 @@ void main() {
         'gosterge_alarm',
         'cizim_alarm',
         'yatay_cizgi_alarm',
+        'aylik_getiri',
+        'basa_bas',
+        'varlik_basa_bas',
+        'en_iyi_gun',
+        'fon_xray',
+        'gecmis_fiyatlar',
+        'hacim_radari',
+        'kripto_baski',
+        'para_akisi_karti',
+        'kur_ayrismasi',
+        'masraf_dokumu',
+        'sattiklarin',
+        'temettu_verimi',
+        'yillik_getiri',
+        'zirve_xray',
+        'portfoy_yorumu',
+        'varlik_yorumu',
+        'sinyal_gosterge',
+        'hedef_tarihi',
+        'ekstre_ai',
+        'zekat',
+        'hedef',
+        'bedelli',
+        'kilometre_tasi',
+        'ortak_paylasim',
+        'kismi_aktarim',
+        'islem_notu',
+        'kapanis_ozeti',
+        'paylasim_karti',
+        'hizli_al_sat',
       ]);
+    });
+
+    test('her özelliğin raporda Türkçe adı var, kod paywall kaynağıyla aynı', () {
+      for (final o in Ozellik.values) {
+        expect(o.ad.trim(), isNotEmpty, reason: o.kod);
+      }
+      // Premium yüzeyin kodu kilit kartının `kaynak`ıyla aynı: haftalık
+      // rapor ile paywall hunisi aynı adla yan yana okunur.
+      final kaynaklar = <String>{};
+      final desen = RegExp(r"kaynak: *'([a-z_]+)'");
+      for (final f in Directory('lib')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart'))) {
+        kaynaklar.addAll(
+            desen.allMatches(f.readAsStringSync()).map((m) => m.group(1)!));
+      }
+      for (final o in Ozellik.values.where((o) => o.premium)) {
+        if (const {'gosterge_alarm', 'cizim_alarm', 'yatay_cizgi_alarm', 'hedef_tarihi'}
+            .contains(o.kod)) {
+          continue; // alarm kapıları ve hedef tarihi ayrı kaynak adı taşır
+        }
+        expect(kaynaklar, contains(o.kod), reason: o.kod);
+      }
     });
 
     test('olay adı ve kodlar Firebase sınırında (≤40, küçük harf + _)', () {
@@ -113,7 +167,7 @@ void main() {
           kullanilan.add(arg);
         }
       }
-      // Her özellik (dokuz) gerçekten bir çağrı noktasında sayılıyor.
+      // Her özellik gerçekten bir çağrı noktasında sayılıyor.
       for (final o in Ozellik.values) {
         expect(kullanilan, contains('Ozellik.${o.name}'), reason: o.name);
       }

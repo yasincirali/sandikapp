@@ -74,5 +74,30 @@ class Ga4EkranRaporuTest(unittest.TestCase):
             os.environ.update({k: v for k, v in eski.items() if v})
 
 
+    def test_ozellik_adlari_dart_enumundan_eksiksiz_okunur(self):
+        import re
+        metin = g.OZELLIK_DOSYASI.read_text(encoding="utf-8")
+        govde = metin[metin.index("enum Ozellik {"):metin.index("const Ozellik(")]
+        sayi = len(re.findall(r"^\s*[a-z]\w*\(\s*'", govde, re.M))
+        adlar = g.dart_ozellikleri(metin)
+        self.assertEqual(len(adlar), sayi)
+        self.assertEqual(adlar["varlik_widget"], ("Tek varlık widget'ı", False))
+        self.assertTrue(adlar["portfoy_yorumu"][1])
+
+    def test_hic_gorulmeyen_kod_sifirla_eklenir_ve_adlandirilir(self):
+        adlar = {"zekat": ("Zekât hesabı", False), "fon_xray": ("Fon dağılımı", True)}
+        liste = g.tamamla(g.birlestir(_yanit(("zekat", 3, 2, 10)),
+                                      _yanit(("zekat", 2)), 100), adlar)
+        self.assertEqual([s["ad"] for s in liste], ["zekat", "fon_xray"])
+        metin = g.tablo("Özellik", "olay", liste, 100, adlar)
+        self.assertIn("| Zekât hesabı `zekat` | 3 |", metin)
+        self.assertIn("| Fon dağılımı ★ `fon_xray` | 0 | 0 |", metin)
+
+    def test_adsiz_ve_bilinmeyen_kod_acikca_yazilir(self):
+        self.assertEqual(g._goster("(not set)", {}), g.ADSIZ)
+        self.assertEqual(g._goster("yeni_kod", {}), "yeni_kod (adsız kod)")
+        self.assertEqual(g._goster("login", None), "login")
+
+
 if __name__ == "__main__":
     unittest.main()

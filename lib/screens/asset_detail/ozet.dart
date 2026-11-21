@@ -1050,6 +1050,7 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// tahmini kalemleri bilinmeyen kurla tutar üretmez, bilgiye iner.
   Widget _masrafKarti(PortfolioState pState) {
     final canli = _canli;
+    if (!ref.watch(premiumKilitliProvider)) OzellikOlcumu.say(Ozellik.masrafDokumu);
     return MasrafKarti(
       ozet: varlikMasraflari(
         varlik: canli.asset,

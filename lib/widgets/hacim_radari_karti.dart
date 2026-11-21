@@ -17,6 +17,7 @@ import '../utils/tr_format.dart';
 import 'para_akisi_karti.dart' show HaftaCubuklari, KilitSatiri;
 import 'radar_ortak.dart';
 import 'sandik_skeleton.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Hacim radarı kartı (Balina B2 2026-10-04; özet kart 2026-10-05, S4-B) —
 /// BIST hissesinin para hacmi.
@@ -60,6 +61,7 @@ class HacimRadariKarti extends ConsumerWidget {
     final ozet = ref.watch(hisseHacmiProvider(sembol)).valueOrNull;
     if (ozet == null) return const SizedBox.shrink();
     final kilitli = ref.watch(radarKilitliProvider);
+    if (!kilitli) OzellikOlcumu.say(Ozellik.hacimRadari);
 
     final l10n = context.l10n;
     final c = context.c;
@@ -365,6 +367,7 @@ class KriptoBaskiKarti extends ConsumerWidget {
     final okunus = ozet == null ? null : kriptoOkunusu(ozet);
     if (ozet == null || okunus == null) return const SizedBox.shrink();
     final kilitli = ref.watch(radarKilitliProvider);
+    if (!kilitli) OzellikOlcumu.say(Ozellik.kriptoBaski);
     final saatlik =
         kilitli ? null : ref.watch(kriptoSaatlikProvider(anahtar)).valueOrNull;
 

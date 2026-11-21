@@ -12,6 +12,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'sandik_async_button.dart';
 import 'sandik_segment.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// "Ne kadarı aktarılsın?" — pozisyon taşımanın miktar adımı (0136).
 ///
@@ -35,8 +36,9 @@ Future<void> showKismiAktarimSayfasi(
   required String kaynakAdi,
   required String hedefAdi,
   required Future<bool> Function(double miktar) aktar,
-}) =>
-    showSandikSheet<void>(
+}) {
+  OzellikOlcumu.say(Ozellik.kismiAktarim);
+  return showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -51,6 +53,7 @@ Future<void> showKismiAktarimSayfasi(
         aktar: aktar,
       ),
     );
+}
 
 /// Sayfanın gövdesi — açık sınıf: görsel önizleme testi sayfasız çizer.
 class KismiAktarimIcerik extends ConsumerStatefulWidget {

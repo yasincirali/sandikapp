@@ -14,6 +14,7 @@ import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
 import 'review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Paylaşım kartının içeriği — TUTAR YOK.
 ///
@@ -792,6 +793,7 @@ Future<void> showShareSheet(
   // sheet kapandıktan sonra sorar. Sheet'in üstüne açmak iki katman
   // modal olurdu; kullanıcı kartı kapatınca, ekranına dönmüşken sorulur.
   var paylasildi = false;
+  OzellikOlcumu.say(Ozellik.paylasimKarti);
   await showSandikSheet<void>(
     context: context,
     backgroundColor: context.c.surface1,

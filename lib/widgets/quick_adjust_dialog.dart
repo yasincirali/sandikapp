@@ -30,6 +30,7 @@ import 'sandik_segment.dart';
 import 'tarih_cipleri.dart';
 import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
 import '../l10n/l10n.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Bir varlığa hızlıca miktar EKLE veya ÇIKAR — form açmadan.
 ///
@@ -261,6 +262,7 @@ Future<void> showQuickAdjustDialog(
   double? baslangicMiktar,
 }) async {
   if (DemoModu.yazmaKapisi('miktar')) return; // Demo: kaydetmek hesap ister (F1).
+  OzellikOlcumu.say(Ozellik.hizliAlSat);
   // Çoklu portföy (0133): lotları birden çok portföyde olan pozisyonda önce
   // hangi portföyün pozisyonu olduğu sorulur; miktar sınırı ve maliyet o
   // pozisyondan. Karışık değilse (bayrak kapalıyken hep) [asset] aynen.

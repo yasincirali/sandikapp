@@ -22,6 +22,7 @@ import '../utils/tr_format.dart';
 import 'sandik_async_button.dart';
 import 'sandik_baglam_menusu.dart';
 import 'sozlesme_formu_ortak.dart';
+import '../services/ozellik_olcumu.dart';
 
 /// Varlık ekranının "⋯" menüsü. Bugün tek satır (bedelli artırım);
 /// bedelsiz/bölünme düzeltmesi geldiğinde aynı menüye satır olarak girer
@@ -68,6 +69,7 @@ Future<void> showBedelliArtirimSheet(
   final l10n = context.l10n;
   // Notifier ŞİMDİ alınır: kayıt sürerken ekran kapanabilir.
   final notifier = ref.read(portfolioProvider.notifier);
+  OzellikOlcumu.say(Ozellik.bedelli);
   final eklenen = await showSandikSheet<int>(
     context: context,
     isScrollControlled: true,

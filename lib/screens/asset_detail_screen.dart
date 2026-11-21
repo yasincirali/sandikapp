@@ -137,6 +137,7 @@ import 'tam_ekran_grafik_screen.dart';
 import '../services/mum_verisi.dart';
 import '../services/mum_yukleyici.dart';
 import '../utils/maliyet_kesisimi.dart';
+import '../services/ozellik_olcumu.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
