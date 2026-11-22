@@ -11981,6 +11981,30 @@ abstract class AppLocalizations {
   /// **'Notun tamamı Premium\'da'**
   String get prmKilitNot;
 
+  /// No description provided for @prmKilitHacim.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} günlük hacim grafiği ve {n} olağan dışı gün Premium\'da'**
+  String prmKilitHacim(int gun, int n);
+
+  /// No description provided for @prmKilitHacimSayisiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} günlük hacim grafiği Premium\'da'**
+  String prmKilitHacimSayisiz(int gun);
+
+  /// No description provided for @prmKilitKriptoBaski.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saat saat alıcı baskısı Premium\'da'**
+  String get prmKilitKriptoBaski;
+
+  /// No description provided for @anzKilitMaddeli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} maddelik notun tamamı Premium\'da'**
+  String anzKilitMaddeli(int n);
+
   /// No description provided for @prmKilitEkstreAi.
   ///
   /// In tr, this message translates to:

@@ -14,7 +14,7 @@ import '../services/hisse_hacmi.dart';
 import '../services/radar_okuma.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
-import 'para_akisi_karti.dart' show HaftaCubuklari, KilitSatiri;
+import 'para_akisi_karti.dart' show HaftaCubuklari, KilitSatiri, KilitliBirlesik;
 import 'radar_ortak.dart';
 import 'sandik_skeleton.dart';
 import '../services/ozellik_olcumu.dart';
@@ -86,8 +86,13 @@ class HacimRadariKarti extends ConsumerWidget {
         children: [
           SandikSectionHeader(title: l10n.volTitleUpper),
           const SizedBox(height: SandikSpace.sm),
-          SandikCard(
-            onTap: kilitli ? null : ayrintiyaGit,
+          KilitliBirlesik(
+            kilitli: kilitli,
+            child: SandikCard(
+            onTap: kilitli
+                ? () => KilitSatiri.ac(context,
+                    kaynak: 'hacim_radari', ozellik: 'hacim_radari')
+                : ayrintiyaGit,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -116,7 +121,9 @@ class HacimRadariKarti extends ConsumerWidget {
                 const SizedBox(height: SandikSpace.md),
                 if (kilitli)
                   KilitSatiri(
-                      metin: l10n.prmKilitAyrinti, kaynak: 'hacim_radari')
+                      metin: hacimKilitMetni(l10n, ozet),
+                      kaynak: 'hacim_radari',
+                      ozellik: 'hacim_radari')
                 else ...[
                   Semantics(
                     label: l10n.volChartSemantics(tutar),
@@ -146,6 +153,7 @@ class HacimRadariKarti extends ConsumerWidget {
                 RadarKaynakSatiri(kaynak: 'Yahoo Finance', tarih: tarih),
               ],
             ),
+          ),
           ),
         ],
       ),
@@ -392,8 +400,13 @@ class KriptoBaskiKarti extends ConsumerWidget {
         children: [
           SandikSectionHeader(title: l10n.cryTitleUpper),
           const SizedBox(height: SandikSpace.sm),
-          SandikCard(
-            onTap: kilitli ? null : ayrintiyaGit,
+          KilitliBirlesik(
+            kilitli: kilitli,
+            child: SandikCard(
+            onTap: kilitli
+                ? () => KilitSatiri.ac(context,
+                    kaynak: 'kripto_baski', ozellik: 'kripto_baski')
+                : ayrintiyaGit,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -417,7 +430,9 @@ class KriptoBaskiKarti extends ConsumerWidget {
                 const SizedBox(height: SandikSpace.md),
                 if (kilitli)
                   KilitSatiri(
-                      metin: l10n.prmKilitAyrinti, kaynak: 'kripto_baski')
+                      metin: l10n.prmKilitKriptoBaski,
+                      kaynak: 'kripto_baski',
+                      ozellik: 'kripto_baski')
                 else ...[
                   if (saatlik != null) ...[
                     Text(l10n.rdrSaatlikUpper,
@@ -443,6 +458,7 @@ class KriptoBaskiKarti extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
           ),
         ],
       ),
@@ -604,4 +620,13 @@ class HaftaOlayiSatiri extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Kilitli hacim kartının somut kilit metni: elde olan sayıdan (gün ve olay
+/// sayısı), uydurma yok; seri boşsa genel metne düşer.
+String hacimKilitMetni(AppLocalizations l, HacimOzeti ozet) {
+  final gun = ozet.gunler.length;
+  if (gun == 0) return l.prmKilitAyrinti;
+  final n = ozet.olaylar.length;
+  return n == 0 ? l.prmKilitHacimSayisiz(gun) : l.prmKilitHacim(gun, n);
 }

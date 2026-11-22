@@ -233,7 +233,7 @@ void main() {
     await _kur(t, kilitli: true);
     expect(find.text('₺320,00M'), findsOneWidget);
     expect(find.byType(GunCubuklari), findsNothing);
-    expect(find.text("Ayrıntılar Premium'da"), findsOneWidget);
+    expect(find.textContaining('günlük hacim grafiği'), findsOneWidget);
   });
 
   testWidgets('bayrak kapalıyken çizilmez ve sorgu başlamaz', (t) async {
@@ -441,7 +441,7 @@ void main() {
           ozet: kriptoOzet(), akis: saatlik(), kilitli: true);
       expect(find.text('Alıcı %52,0'), findsOneWidget);
       expect(find.byType(SaatlikCubuklar), findsNothing);
-      expect(find.text("Ayrıntılar Premium'da"), findsOneWidget);
+      expect(find.text("Saat saat alıcı baskısı Premium'da"), findsOneWidget);
     });
 
     testWidgets('ayrıntı: saate dokunma, dolar olaylar, taşma yok', (t) async {

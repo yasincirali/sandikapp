@@ -136,6 +136,14 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
           yanlisSayi: true,
           yanlisSayiAciklamasi: aciklama.isEmpty ? null : aciklama);
 
+  /// Kilitli gövdede not verisi yok: haftalıkta dönemin 7 günü, aylıkta ay adı.
+  String _kilitliAralik(BuildContext context) => widget.tur == 'aylik'
+      ? DateFormat('MMMM y', Localizations.localeOf(context).toString())
+          .format(widget.donem)
+      : fmtTarihAraligi(
+          widget.donem, widget.donem.add(const Duration(days: 6)),
+          dil: context.tarihDili);
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -163,12 +171,21 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
         padding:
             EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.xl),
         children: [
+          // Kilitli gövdenin tek bağlamı: kapsanan günler (kullanıcı kuralı:
+          // her özet tarih aralığı yazar), açık gövdedeki satırla aynı stil.
+          Text(_kilitliAralik(context),
+              style: t.bodySmall?.copyWith(
+                  color: c.text58, fontWeight: FontWeight.w600)),
+          const SizedBox(height: SandikSpace.sm),
           if (widget.baslik != null)
             Text(widget.baslik!,
                 style: t.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
           const SizedBox(height: SandikSpace.md),
-          KilitSatiri(metin: l10n.prmKilitNot, kaynak: 'analiz_notu'),
+          KilitSatiri(
+              metin: l10n.prmKilitNot,
+              kaynak: 'analiz_notu',
+              ozellik: 'analiz_notu'),
         ],
       );
     } else {
@@ -188,7 +205,14 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
               (widget.ticker, widget.tur, widget.donem))),
         ),
         data: (n) => n == null
-            ? _Bos(metin: l10n.anzOkunamadi)
+            ? _Bos(
+                metin: l10n.anzOkunamadi,
+                // Başlık listeden gelmediyse (bildirim/derin bağlantı)
+                // çıkış yoktu; listeden gelende sunucuKilitledi yolu işler.
+                onRetry: widget.baslik == null
+                    ? () => ref.invalidate(varlikNotuProvider(
+                        (widget.ticker, widget.tur, widget.donem)))
+                    : null)
             : _Not(
                 not: n,
                 oy: _oy,
@@ -208,13 +232,30 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
 }
 
 class _Bos extends StatelessWidget {
-  const _Bos({required this.metin});
+  const _Bos({required this.metin, this.onRetry});
   final String metin;
+  final VoidCallback? onRetry;
 
   // Bayrak `goz_alici`: ortak boş durum (kapalı sandık); kapalıyken eski
   // düz metin birebir.
   @override
-  Widget build(BuildContext context) => RemoteConfigService.instance.gozAlici
+  Widget build(BuildContext context) {
+    final govde = _govde(context);
+    if (onRetry == null) return govde;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        govde,
+        TextButton(
+          style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
+          onPressed: onRetry,
+          child: Text(context.l10n.retry),
+        ),
+      ],
+    );
+  }
+
+  Widget _govde(BuildContext context) => RemoteConfigService.instance.gozAlici
       ? SandikBosDurum(metin: metin)
       : Center(
           child: Padding(

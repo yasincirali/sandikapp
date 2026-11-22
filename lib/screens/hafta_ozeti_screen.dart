@@ -6,6 +6,7 @@ import '../l10n/l10n.dart';
 import '../providers/analiz_provider.dart';
 import '../providers/hafta_ozeti_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/premium_provider.dart';
 import '../services/fon_akisi.dart' show fonHaftaOrani;
 import '../services/varlik_analizi.dart';
 import '../widgets/sandik_bos_durum.dart';
@@ -13,7 +14,7 @@ import '../widgets/sandik_error_view.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
-import '../widgets/para_akisi_karti.dart' show isaretliTutar;
+import '../widgets/para_akisi_karti.dart' show KilitSatiri, isaretliTutar;
 import '../widgets/radar_ortak.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_skeleton.dart';
@@ -234,17 +235,18 @@ class _AylikRaporSatiri extends StatelessWidget {
   }
 }
 
-class _Satir extends StatelessWidget {
+class _Satir extends ConsumerWidget {
   const _Satir({required this.satir, required this.not});
 
   final HaftaSatiri satir;
   final AnalizOzeti? not;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final c = context.c;
     final t = context.t;
+    final notKilitli = ref.watch(radarKilitliProvider);
     final varlik = satir.pozisyon.representative;
     // Kripto sembolü `KRIPTO:BTC` biçiminde saklanır; `displayTicker` öneki
     // atmaz. Notla aynı kısa adı kullan.
@@ -304,19 +306,25 @@ class _Satir extends StatelessWidget {
                   TextButton(
                     style:
                         TextButton.styleFrom(minimumSize: SandikTouch.minSize),
-                    onPressed: () => pushGuarded(
-                      context,
-                      adaptiveRoute<void>(
-                        settings: const RouteSettings(name: 'analiz_notu'),
-                        builder: (_) => AnalizNotuScreen(
-                          ticker: not.ticker,
-                          tur: 'haftalik',
-                          donem: not.donem,
-                          kod: kod,
-                          baslik: not.baslik,
-                        ),
-                      ),
-                    ),
+                    // Kilitliyken not ekranı yalnız kilit gösterirdi (Ar-Ge 22 Kas
+                    // 0703 #3): doğrudan paywall, bir boş ekran eksik.
+                    onPressed: notKilitli
+                        ? () => KilitSatiri.ac(context,
+                            kaynak: 'analiz_notu', ozellik: 'analiz_notu')
+                        : () => pushGuarded(
+                              context,
+                              adaptiveRoute<void>(
+                                settings:
+                                    const RouteSettings(name: 'analiz_notu'),
+                                builder: (_) => AnalizNotuScreen(
+                                  ticker: not.ticker,
+                                  tur: 'haftalik',
+                                  donem: not.donem,
+                                  kod: kod,
+                                  baslik: not.baslik,
+                                ),
+                              ),
+                            ),
                     child: Text(l10n.rdrOku),
                   ),
                 ],

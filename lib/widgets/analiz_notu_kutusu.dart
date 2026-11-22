@@ -6,8 +6,10 @@ import '../l10n/l10n.dart';
 import '../models/asset_type.dart';
 import '../providers/analiz_provider.dart';
 import '../providers/fon_akisi_provider.dart';
+import '../providers/premium_provider.dart';
 import '../screens/analiz_notu_screen.dart';
 import '../theme/sandik.dart';
+import 'para_akisi_karti.dart' show KilitSatiri, KilitliBirlesik;
 import 'sandik_skeleton.dart';
 
 /// Varlık sayfasında haftalık not kutusu (S15-B, 2026-10-05): notun başlık
@@ -52,6 +54,7 @@ class AnalizNotuKutusu extends ConsumerWidget {
     final bas = not.veriBaslangic ?? not.donem;
     final bitis = not.veriBitis ?? not.donem.add(const Duration(days: 6));
     final kod = notKodu(anahtar);
+    final kilitli = ref.watch(radarKilitliProvider);
     void ac() => pushGuarded(
           context,
           adaptiveRoute<void>(
@@ -73,8 +76,15 @@ class AnalizNotuKutusu extends ConsumerWidget {
         children: [
           SandikSectionHeader(title: l10n.anzNotUpper),
           const SizedBox(height: SandikSpace.sm),
-          SandikCard(
-            onTap: ac,
+          // Kilitliyken kart ve kilit satırı tek düğme okunur; dokunuş
+          // doğrudan paywall (Ar-Ge 22 Kas 0703 #3).
+          KilitliBirlesik(
+            kilitli: kilitli,
+            child: SandikCard(
+            onTap: kilitli
+                ? () => KilitSatiri.ac(context,
+                    kaynak: 'analiz_notu', ozellik: 'analiz_notu')
+                : ac,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -82,6 +92,19 @@ class AnalizNotuKutusu extends ConsumerWidget {
                     style: t.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600, color: c.text90)),
                 const SizedBox(height: SandikSpace.xs),
+                if (kilitli) ...[
+                  Text(
+                      l10n.flowRange(
+                          gunAy.format(bas), gunAy.format(bitis)),
+                      style: t.bodySmall?.copyWith(color: c.text58)),
+                  KilitSatiri(
+                    metin: not.maddeSayisi > 0
+                        ? l10n.anzKilitMaddeli(not.maddeSayisi)
+                        : l10n.prmKilitNot,
+                    kaynak: 'analiz_notu',
+                    ozellik: 'analiz_notu',
+                  ),
+                ] else
                 Row(
                   children: [
                     Expanded(
@@ -103,6 +126,7 @@ class AnalizNotuKutusu extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
           ),
         ],
       ),
