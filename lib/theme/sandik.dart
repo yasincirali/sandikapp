@@ -2056,6 +2056,35 @@ class SandikTutamac extends StatelessWidget {
   }
 }
 
+/// Liste satırının 36 pt ikon kutusu: Ayarlar karoları ve Profil'in tek
+/// satırları (Zekât, ortak portföy, hedef, halka arz) aynı kutuyu kullanır.
+///
+/// Neden ortak: aynı sayfada iki satır dili vardı (çıplak 22 pt amber ikon
+/// ile 36 pt kutu); satırlar birbirinden kopuk okunuyordu (Ar-Ge 23 Kas
+/// 0203 #5, unslop "same icon box width in every row"). Zemin ikon renginin
+/// %10'u: `overlay` açık temada görünmüyordu (beyaz kutu), bu yüzden renk
+/// metin renginden türer. [renk] verilmezse `text90`; yıkıcı karo `loss`.
+class SandikIkonKutusu extends StatelessWidget {
+  const SandikIkonKutusu(this.icon, {super.key, this.renk});
+
+  final IconData icon;
+  final Color? renk;
+
+  @override
+  Widget build(BuildContext context) {
+    final r = renk ?? context.c.text90;
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: r.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+      ),
+      child: Icon(icon, color: r, size: SandikSpace.lgs),
+    );
+  }
+}
+
 /// Bölüm başlığı + isteğe bağlı sayaç rozeti.
 ///
 /// **Neden gerekli:** bu desen elle yazıldığında taşıyor. Aynı hata iki

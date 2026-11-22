@@ -41,13 +41,17 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
     final tarihBicimi =
         DateFormat('d MMMM y', Localizations.localeOf(context).toString());
     final hak = this.hak;
-    final baslik = hak == null
-        ? l10n.premiumDurum
+    // Başlık yalnız plan (Ar-Ge 23 Kas 0203 #3): sayfa başlığı zaten
+    // "Sandık Premium"; altında yine "Premium · yıllık" aynı sözcüğü iki kez
+    // okutuyordu. Hak bilinmiyorsa (webhook öncesi, yönetici) plan da
+    // bilinmez: başlık yok, "Premium" tekrarı yerine doğrudan eylemler.
+    final String? baslik = hak == null
+        ? null
         : hak.hediye
-            ? l10n.prmAbonelikHediye
+            ? l10n.prmPlanHediye
             : hak.yillik
-                ? l10n.prmAbonelikYillik
-                : l10n.prmAbonelikAylik;
+                ? l10n.prmPlanYillik
+                : l10n.prmPlanAylik;
     final bitis =
         hak?.bitis == null ? null : tarihBicimi.format(hak!.bitis!.toLocal());
     final magaza = switch (hak?.magaza) {
@@ -100,87 +104,73 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
     final tasarruf =
         aylikAbone ? ref.watch(yillikTasarrufProvider).valueOrNull : null;
 
-    return SandikCard(
-      // `min`: kart alt sayfada açılır (Profil › Premium satırı). Varsayılan
-      // `max` sütun, sayfanın 9/16 sınırına kadar uzayıp altında boş bir
-      // kutu bırakıyordu (yasin 10 Kas ekran görüntüsü: "Premium'u olan
-      // kullanıcıda bu şekilde gözüküyor").
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.workspace_premium_rounded, color: c.amberText),
-              const SizedBox(width: SandikSpace.smd),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(baslik,
-                        style: t.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600, color: c.text90)),
-                    if (alt != null)
-                      Text(alt, style: t.bodySmall?.copyWith(color: c.text58)),
-                    if (kullanim != null)
-                      Text(kullanim,
-                          style: t.bodySmall?.copyWith(color: c.text58)),
-                  ],
-                ),
-              ),
-            ],
+    // Kart çerçevesi ve ikon yok (#3): içerik zaten alt sayfanın kendi
+    // yüzeyinde; kart içinde kart ve sayfa başlığını tekrarlayan ikon
+    // kalabalıktı. `min`: sayfa içerik kadar (yasin 10 Kas ekran görüntüsü:
+    // "Premium'u olan kullanıcıda bu şekilde gözüküyor"; varsayılan `max`
+    // sütun sayfanın 9/16 sınırına kadar uzayıp altında boş kutu bırakıyordu).
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (baslik != null)
+          Text(baslik,
+              style: t.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
+        if (alt != null)
+          Text(alt, style: t.bodySmall?.copyWith(color: c.text58)),
+        if (kullanim != null)
+          Text(kullanim, style: t.bodySmall?.copyWith(color: c.text58)),
+        if (tasarruf != null)
+          _YillikTasarrufSatiri(
+            metin: l10n.prmYillikGecTasarruf(fmtMagazaTutari(
+                tasarruf.tutar, tasarruf.paraBirimi,
+                dil: context.tarihDili)),
           ),
-          if (tasarruf != null)
-            _YillikTasarrufSatiri(
-              metin: l10n.prmYillikGecTasarruf(fmtMagazaTutari(
-                  tasarruf.tutar, tasarruf.paraBirimi,
-                  dil: context.tarihDili)),
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: SandikSpace.xs,
+          children: [
+            SandikAsyncButton.kompakt(
+              tur: SandikAsyncTur.metin,
+              style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
+              onPressed: () async {
+                await satinAlimlariGeriYukle(context, ref);
+              },
+              child: Text(l10n.prmGeriYukle),
             ),
-          Wrap(
-            alignment: WrapAlignment.end,
-            spacing: SandikSpace.xs,
-            children: [
-              SandikAsyncButton.kompakt(
-                tur: SandikAsyncTur.metin,
+            if (yonet)
+              TextButton(
                 style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
                 onPressed: () async {
-                  await satinAlimlariGeriYukle(context, ref);
+                  if (await AbonelikYonetimi.ac() || !context.mounted) return;
+                  // Ölü uç olmasın (Ar-Ge 21 Kas tur 6 #3): sayfa açılamazsa
+                  // elle gidilecek yol söylenir. Platform tema/hedeften
+                  // okunur, kurulum kaynağından değil.
+                  sandikSnack(
+                      context,
+                      Theme.of(context).platform == TargetPlatform.iOS
+                          ? l10n.prmYonetAcilamadiIos
+                          : l10n.prmYonetAcilamadiAndroid);
                 },
-                child: Text(l10n.prmGeriYukle),
+                child: Text(l10n.prmYonet),
               ),
-              if (yonet)
-                TextButton(
-                  style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
-                  onPressed: () async {
-                    if (await AbonelikYonetimi.ac() || !context.mounted) return;
-                    // Ölü uç olmasın (Ar-Ge 21 Kas tur 6 #3): sayfa açılamazsa
-                    // elle gidilecek yol söylenir. Platform tema/hedeften
-                    // okunur, kurulum kaynağından değil.
-                    sandikSnack(
-                        context,
-                        Theme.of(context).platform == TargetPlatform.iOS
-                            ? l10n.prmYonetAcilamadiIos
-                            : l10n.prmYonetAcilamadiAndroid);
-                  },
-                  child: Text(l10n.prmYonet),
-                ),
-              if (sonGunler)
-                FilledButton.tonal(
-                  style:
-                      FilledButton.styleFrom(minimumSize: SandikTouch.minSize),
-                  onPressed: () =>
-                      PaywallScreen.show(context, source: 'hediye_bitiyor'),
-                  child: Text(l10n.prmHediyeDevam),
-                ),
-            ],
-          ),
-          if (yonet)
-            Text(hak != null && hak.iptalEdildi
-                    ? l10n.prmIptalIpucuYeniden
-                    : l10n.prmIptalIpucu,
-                style: t.bodySmall?.copyWith(color: c.text58)),
-        ],
-      ),
+            if (sonGunler)
+              FilledButton.tonal(
+                style:
+                    FilledButton.styleFrom(minimumSize: SandikTouch.minSize),
+                onPressed: () =>
+                    PaywallScreen.show(context, source: 'hediye_bitiyor'),
+                child: Text(l10n.prmHediyeDevam),
+              ),
+          ],
+        ),
+        if (yonet)
+          Text(hak != null && hak.iptalEdildi
+                  ? l10n.prmIptalIpucuYeniden
+                  : l10n.prmIptalIpucu,
+              style: t.bodySmall?.copyWith(color: c.text58)),
+      ],
     );
   }
 }

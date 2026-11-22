@@ -18,6 +18,8 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/premium_provider.dart';
+import '../providers/premium_kullanim_provider.dart'
+    show SinirKalemi, premiumSinirSayaciProvider;
 import 'main_navigation_screen.dart';
 import '../widgets/premium_abonelik_satiri.dart';
 import '../widgets/sinir_uyarisi.dart' show ortakEklenebilirMi;
@@ -980,9 +982,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           button: true,
           child: Row(
             children: [
-              ExcludeSemantics(
-                child: Icon(Icons.people_outline_rounded,
-                    size: 22, color: c.amberText),
+              // Ayarlar'ın ikon kutusu ve ok rengi (Ar-Ge 23 Kas 0203 #5).
+              const ExcludeSemantics(
+                child: SandikIkonKutusu(Icons.people_outline_rounded),
               ),
               const SizedBox(width: SandikSpace.smd),
               Expanded(
@@ -1001,7 +1003,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: c.text58),
+              Icon(Icons.chevron_right_rounded,
+                  color: c.text58, size: SandikSpace.lgs),
             ],
           ),
         ),
@@ -1396,7 +1399,10 @@ class _ActionIcon extends StatelessWidget {
 ///   (iptali zorlaştırmak; Apple 3.1.2). Görünüşte düğme yok, yalnız soluk ok.
 /// - **Ücretsiz:** "Premium'a geç ›" (paywall); kapılar birebir eski:
 ///   paywall anahtarı kapalıyken ya da kilitler askıdayken satır yok,
-///   hediyesi bitmişin analitik kaynağı ayrı.
+///   hediyesi bitmişin analitik kaynağı ayrı. Sınırın %80'ine gelen kalem
+///   satıra soluk eklenir ("Premium'a geç · 9/10 varlık"); Premium'u
+///   bitmiş kullanıcıda metin "Premium'u yeniden başlat" (Ar-Ge 23 Kas
+///   0203 #1-2).
 class _PremiumDurumSatiri extends ConsumerStatefulWidget {
   const _PremiumDurumSatiri();
 
@@ -1499,12 +1505,38 @@ class _PremiumDurumSatiriState extends ConsumerState<_PremiumDurumSatiri> {
     // bitiş sonrası dönüşüm görünsün; hediye kaynağı 2026-10-20'den beri
     // `hediye_bitti`, deneme/abonelik bitişi `premium_bitti` (Ar-Ge 14 Kas).
     final bitis = ref.watch(premiumBitmisProvider);
+    // Sınırın %80'ine gelen kalem (Ar-Ge 23 Kas 0203 #1); seçim
+    // sağlayıcıda. Sayaçlı satırın kaynağı ayrı (`profile_banner_sinir`) ki
+    // sayacın dönüşüme etkisi görünsün. Bitmiş Premium'da bitiş kaynağı
+    // kazanır: huni "bitişten dönüş"ü ölçüyor, sayaç orada yalnız metin.
+    final sayac = ref.watch(premiumSinirSayaciProvider);
     final kaynak = bitis == null
-        ? 'profile_banner'
+        ? sayac == null
+            ? 'profile_banner'
+            : 'profile_banner_sinir'
         : bitis.hediye
             ? 'hediye_bitti'
             : 'premium_bitti';
-    final metin = l10n.premiumDurumGec;
+    // Premium'u yaşamış kullanıcıya "geç" ilk kez gelenin dili (#2):
+    // "yeniden başlat". Sayaç ikisine de aynı biçimde eklenir.
+    final durum =
+        bitis == null ? l10n.premiumDurumGec : l10n.premiumDurumYeniden;
+    final sayacMetni = sayac == null
+        ? null
+        : switch (sayac.kalem) {
+            SinirKalemi.varlik =>
+              l10n.premiumSayacVarlik(sayac.sayi, sayac.sinir),
+            SinirKalemi.takip =>
+              l10n.premiumSayacTakip(sayac.sayi, sayac.sinir),
+            SinirKalemi.alarm =>
+              l10n.premiumSayacAlarm(sayac.sayi, sayac.sinir),
+          };
+    final metin = sayacMetni == null
+        ? durum
+        : l10n.premiumDurumGecSayac(durum, sayacMetni);
+    // Premium satırıyla aynı bölme: baştaki durum amber, sayaç soluk;
+    // çeviride önek yoksa metin bütün amber kalır (eski görünüş).
+    final ek = metin.startsWith(durum) ? metin.substring(durum.length) : '';
     return _satir(
       context,
       etiket: metin,
@@ -1518,9 +1550,20 @@ class _PremiumDurumSatiriState extends ConsumerState<_PremiumDurumSatiri> {
               size: SandikSpace.md, color: c.amberText),
           const SizedBox(width: SandikSpace.xs),
           Flexible(
-            child: Text(metin,
-                style: context.t.labelLarge?.copyWith(
-                    color: c.amberText, fontWeight: FontWeight.w600)),
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(
+                  text: ek.isEmpty ? metin : durum,
+                  style: context.t.labelLarge?.copyWith(
+                      color: c.amberText, fontWeight: FontWeight.w600),
+                ),
+                if (ek.isNotEmpty)
+                  TextSpan(
+                    text: ek,
+                    style: context.t.bodySmall?.copyWith(color: c.text58),
+                  ),
+              ]),
+            ),
           ),
           Icon(Icons.chevron_right_rounded,
               size: SandikSpace.md2, color: c.amberText),

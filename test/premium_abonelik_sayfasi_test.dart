@@ -12,7 +12,7 @@ import 'helpers/kaynak.dart';
 /// görüntüsü): kart içeriği kadar olmalı, sayfanın 9/16 sınırına kadar
 /// uzayıp altında boş kutu bırakmamalı.
 void main() {
-  testWidgets('Premium alt sayfasındaki kart içeriği kadar uzun', (t) async {
+  testWidgets('Premium alt sayfası içeriği kadar uzun, kartsız', (t) async {
     t.view.physicalSize = const Size(390 * 3, 844 * 3);
     t.view.devicePixelRatio = 3;
     addTearDown(t.view.reset);
@@ -40,10 +40,16 @@ void main() {
     ));
     await t.tap(find.text('aç'));
     await t.pumpAndSettle();
-    final kart = t.getSize(find.byType(SandikCard));
-    // İçerik: başlık satırı + 44 pt düğme satırı + bir satır ipucu.
-    expect(kart.height, lessThan(260),
-        reason: 'kart sayfa boyunca uzamamalı (boş kutu)');
+    // Ar-Ge 23 Kas 0203 #3: sayfada kart çerçevesi ve ikon yok; içerik
+    // yine kendi boyu kadar (9/16'ya uzayan boş kutu geri gelmesin).
+    expect(find.byType(SandikCard), findsNothing);
+    expect(find.byIcon(Icons.workspace_premium_rounded), findsNothing);
+    // Hak bilinmiyor: plan başlığı yok, "Premium" tekrarı da yok.
+    expect(find.text('Premium'), findsNothing);
+    final icerik = t.getSize(find.byType(PremiumAbonelikSatiri));
+    // İçerik: 44 pt düğme satırı + bir satır ipucu.
+    expect(icerik.height, lessThan(260),
+        reason: 'içerik sayfa boyunca uzamamalı (boş kutu)');
   });
 
   test('Raporlar düğmesi aylık rapor dönemini önceden dinler', () {

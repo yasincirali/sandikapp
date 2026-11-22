@@ -27,8 +27,11 @@ class ZekatProfilSatiri extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final c = context.c;
+    // Alt boşluk 8 pt (Ar-Ge 23 Kas 0203 #4): Ayarlar karolarıyla aynı
+    // ritim; 24 pt satırları birbirinden kopuk "afiş" gibi okutuyordu.
+    // Grubun sonundaki 32 pt Profil'de (`SandikSpace.xl`).
     return Padding(
-      padding: const EdgeInsets.only(bottom: SandikSpace.lg),
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
       child: SandikCard(
         padding: const EdgeInsets.symmetric(
             horizontal: SandikSpace.md, vertical: SandikSpace.smd),
@@ -37,8 +40,8 @@ class ZekatProfilSatiri extends StatelessWidget {
           button: true,
           child: Row(
             children: [
-              Icon(Icons.volunteer_activism_rounded,
-                  size: SandikSpace.lgs, color: c.amberText),
+              // Ayarlar'ın ikon kutusu ve ok rengi (Ar-Ge 23 Kas 0203 #5).
+              const SandikIkonKutusu(Icons.volunteer_activism_rounded),
               const SizedBox(width: SandikSpace.smd),
               Expanded(
                 child: Column(
@@ -60,7 +63,8 @@ class ZekatProfilSatiri extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: c.text36),
+              Icon(Icons.chevron_right_rounded,
+                  color: c.text58, size: SandikSpace.lgs),
             ],
           ),
         ),

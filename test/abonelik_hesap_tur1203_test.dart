@@ -144,7 +144,7 @@ void main() {
 
     testWidgets('4: açık sayfa hak değişince güncellenir', (t) async {
       await sayfaAc(t, ilk: hak());
-      expect(find.text('Premium · aylık'), findsOneWidget);
+      expect(find.text('Aylık plan'), findsOneWidget);
       final container =
           ProviderScope.containerOf(t.element(find.byType(PremiumAbonelikSatiri)));
       container.read(hakProvider.notifier).state = PremiumHakki(
@@ -153,8 +153,8 @@ void main() {
           urun: 'yillik',
           magaza: 'play_store');
       await t.pumpAndSettle();
-      expect(find.text('Premium · yıllık'), findsOneWidget);
-      expect(find.text('Premium · aylık'), findsNothing);
+      expect(find.text('Yıllık plan'), findsOneWidget);
+      expect(find.text('Aylık plan'), findsNothing);
     });
 
     testWidgets('6: iptal edilmiş abonede yeniden başlatma ipucu', (t) async {

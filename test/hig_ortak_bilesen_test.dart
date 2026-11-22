@@ -434,6 +434,9 @@ void main() {
                 SayiKlavyesiCubugu(onSonraki: () {}, onBitti: () {}),
                 const SizedBox(height: SandikSpace.md),
                 SandikSectionHeader(title: 'Bölüm'),
+                // Liste satırı ikon kutusu (Ar-Ge 23 Kas 0203 #5): sabit
+                // 36 pt, dokunma hedefi değil; ikon rengi metinden türer.
+                const SandikIkonKutusu(Icons.volunteer_activism_rounded),
                 // Tek çekip yenile sarmalayıcısı (2026-11-11): içindeki
                 // metin ×2'de taşmaz, kontrast temadan; dokunma hedefi yok.
                 SizedBox(

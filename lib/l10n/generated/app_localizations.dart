@@ -17977,6 +17977,54 @@ abstract class AppLocalizations {
   /// **'{durum}. Aboneliği yönetmek için dokun'**
   String premiumDurumAyrintiEtiket(String durum);
 
+  /// Ücretsiz Premium satırı, sınırın %80'ine gelen sayaçla: Premium'a geç · 9/10 varlık
+  ///
+  /// In tr, this message translates to:
+  /// **'{durum} · {sayac}'**
+  String premiumDurumGecSayac(String durum, String sayac);
+
+  /// Premium satırı sayacı, varlık
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi}/{sinir} varlık'**
+  String premiumSayacVarlik(int sayi, int sinir);
+
+  /// Premium satırı sayacı, takip listesi
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi}/{sinir} takip'**
+  String premiumSayacTakip(int sayi, int sinir);
+
+  /// Premium satırı sayacı, etkin alarm
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi}/{sinir} alarm'**
+  String premiumSayacAlarm(int sayi, int sinir);
+
+  /// No description provided for @premiumDurumYeniden.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'u yeniden başlat'**
+  String get premiumDurumYeniden;
+
+  /// No description provided for @prmPlanYillik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık plan'**
+  String get prmPlanYillik;
+
+  /// No description provided for @prmPlanAylik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık plan'**
+  String get prmPlanAylik;
+
+  /// No description provided for @prmPlanHediye.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hediye'**
+  String get prmPlanHediye;
+
   /// No description provided for @hesapEkleSatiri.
   ///
   /// In tr, this message translates to:
