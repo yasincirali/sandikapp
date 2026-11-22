@@ -2032,15 +2032,9 @@ class _SettingsTileState extends State<_SettingsTile> {
         onPressed: onTap,
         child: Row(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
+            // Kutu ortak bileşende: Profil'in tek satırları da aynısını
+            // kullanır (Ar-Ge 23 Kas 0203 #5).
+            SandikIkonKutusu(icon, renk: color),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -2068,7 +2062,10 @@ class _SettingsTileState extends State<_SettingsTile> {
               ),
             ),
             trailing ??
-                Icon(Icons.chevron_right_rounded, color: context.c.text36, size: 20),
+                // Ok `text58` (Ar-Ge 23 Kas 0203 #5): Profil'in tek
+                // satırlarıyla aynı; `text36` koyu zeminde zor seçiliyordu.
+                Icon(Icons.chevron_right_rounded,
+                    color: context.c.text58, size: SandikSpace.lgs),
           ],
         ),
       ),
@@ -2755,17 +2752,9 @@ class _SwitchTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            // `_SettingsTile` ile aynı ikon kutusu: `overlay` açık temada
-            // görünmüyordu (beyaz kutu), komşu satırlar gri.
-            decoration: BoxDecoration(
-              color: context.c.text90.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-            ),
-            child: Icon(icon, color: context.c.text90, size: 20),
-          ),
+          // `_SettingsTile` ile aynı ikon kutusu: `overlay` açık temada
+          // görünmüyordu (beyaz kutu), komşu satırlar gri.
+          SandikIkonKutusu(icon),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

@@ -11147,6 +11147,38 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String premiumDurumGecSayac(String durum, String sayac) {
+    return '$durum · $sayac';
+  }
+
+  @override
+  String premiumSayacVarlik(int sayi, int sinir) {
+    return '$sayi/$sinir varlık';
+  }
+
+  @override
+  String premiumSayacTakip(int sayi, int sinir) {
+    return '$sayi/$sinir takip';
+  }
+
+  @override
+  String premiumSayacAlarm(int sayi, int sinir) {
+    return '$sayi/$sinir alarm';
+  }
+
+  @override
+  String get premiumDurumYeniden => 'Premium\'u yeniden başlat';
+
+  @override
+  String get prmPlanYillik => 'Yıllık plan';
+
+  @override
+  String get prmPlanAylik => 'Aylık plan';
+
+  @override
+  String get prmPlanHediye => 'Hediye';
+
+  @override
   String get hesapEkleSatiri => 'Hesap ekle';
 
   @override

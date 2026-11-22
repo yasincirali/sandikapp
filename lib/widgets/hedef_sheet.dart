@@ -596,8 +596,11 @@ class HedefProfilSatiri extends ConsumerWidget {
     }
     final l = context.l10n;
     final gizli = ref.watch(balanceHiddenProvider);
+    // Alt boşluk 8 pt (Ar-Ge 23 Kas 0203 #4): Ayarlar karolarıyla aynı
+    // ritim; 24 pt satırları birbirinden kopuk "afiş" gibi okutuyordu.
+    // Grubun sonundaki 32 pt Profil'de (`SandikSpace.xl`).
     return Padding(
-      padding: const EdgeInsets.only(bottom: SandikSpace.lg),
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
       child: SandikCard(
         padding: const EdgeInsets.symmetric(
             horizontal: SandikSpace.md, vertical: SandikSpace.smd),
@@ -606,7 +609,8 @@ class HedefProfilSatiri extends ConsumerWidget {
           button: true,
           child: Row(
             children: [
-              Icon(Icons.flag_outlined, size: 22, color: context.c.amberText),
+              // Ayarlar'ın ikon kutusu ve ok rengi (Ar-Ge 23 Kas 0203 #5).
+              const SandikIkonKutusu(Icons.flag_outlined),
               const SizedBox(width: SandikSpace.smd),
               Expanded(
                 child: Column(
@@ -631,7 +635,8 @@ class HedefProfilSatiri extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: context.c.text58),
+              Icon(Icons.chevron_right_rounded,
+                  color: context.c.text58, size: SandikSpace.lgs),
             ],
           ),
         ),

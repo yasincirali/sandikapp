@@ -94,3 +94,67 @@ final premiumKullanimProvider = Provider<List<PremiumKullanim>>((ref) {
     portfoy: portfoy,
   );
 });
+
+/// Profil'deki "Premium'a geç" satırının sayacı (Ar-Ge 23 Kas 0203 #1).
+///
+/// Neden: ücretsiz kullanıcı sınırı ancak duvara çarpınca öğreniyordu;
+/// Profil satırı sınıra ne kadar yakın olduğunu hiç söylemiyordu. Cevap
+/// yine kullanıcının KENDİ sayısıdır ("9/10 varlık"); uydurma yok, geri
+/// sayım ya da uyarı rengi yok (nazik sayaç kuralı).
+enum SinirKalemi { varlik, takip, alarm }
+
+typedef SinirSayaci = ({SinirKalemi kalem, int sayi, int sinir});
+
+/// Saf seçim: sınırının %80'ine ulaşmış kalemlerden ORANI en yüksek olan;
+/// hiçbiri eşikte değilse null (satır bugünkü gibi kalır). Eşitlikte
+/// verilen sıra kazanır (varlık, takip, alarm: satın alınan asıl şey).
+/// Sınırı aşmış sayı da yazılır (Premium'u bitmiş biri "12/10" görür,
+/// gerçek durum budur). Sınırı 0 ya da negatif kalem (RC ile kapatılmış)
+/// düşünülmez. Oran bölme yerine çapraz çarpımla kıyaslanır: 4/5 ile
+/// 8/10 kayan nokta yüzünden ayrışmasın.
+SinirSayaci? enYakinSinir(List<SinirSayaci> kalemler) {
+  SinirSayaci? enIyi;
+  for (final k in kalemler) {
+    if (k.sinir <= 0 || k.sayi * 5 < k.sinir * 4) continue;
+    if (enIyi == null || k.sayi * enIyi.sinir > enIyi.sayi * k.sinir) {
+      enIyi = k;
+    }
+  }
+  return enIyi;
+}
+
+/// Sayım burada, `build()` içinde değil. Kapılar satırın kapılarıyla aynı:
+/// paywall görünür, Premium erişimi yok, kilit gerçekten var (askıdaysa
+/// satır zaten çizilmez). Sınırlar ücretsiz planınkiler, kapıların
+/// kullandığı anahtarlar: varlık `free_asset_limit` (`assetLimitProvider`),
+/// takip paywall açıkken `paywall_watchlist_limit` (`watchlistLimitProvider`),
+/// alarm dört türün TOPLAMINA `free_price_alert_limit` (`etkinAlarmlariSay`,
+/// sunucuda 0181). Sayımlar [premiumKullanimProvider] ile aynı tanım;
+/// yüklenmemiş liste 0 sayılır (bilinmeyen sayı satıra girmez).
+final premiumSinirSayaciProvider = Provider<SinirSayaci?>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return null;
+  if (ref.watch(effectivePremiumProvider)) return null;
+  if (!ref.watch(premiumKilitliProvider)) return null;
+  final rc = RemoteConfigService.instance;
+  int etkin<T>(List<T>? l, bool Function(T) aktif) =>
+      (l ?? const []).where(aktif).length;
+  final alarm = etkin(ref.watch(priceAlertsProvider).valueOrNull,
+          (a) => a.isActive) +
+      etkin(ref.watch(yuzdeAlarmlariProvider).valueOrNull, (a) => a.isActive) +
+      etkin(ref.watch(gostergeAlarmlariProvider).valueOrNull,
+          (a) => a.isActive) +
+      etkin(ref.watch(cizimAlarmlariProvider).valueOrNull, (a) => a.isActive);
+  return enYakinSinir([
+    (
+      kalem: SinirKalemi.varlik,
+      sayi: ref.watch(kotaAnahtarlariProvider)?.length ?? 0,
+      sinir: rc.freeAssetLimit,
+    ),
+    (
+      kalem: SinirKalemi.takip,
+      sayi: ref.watch(watchlistProvider).valueOrNull?.length ?? 0,
+      sinir: rc.paywallWatchlistLimit,
+    ),
+    (kalem: SinirKalemi.alarm, sayi: alarm, sinir: rc.freePriceAlertLimit),
+  ]);
+});

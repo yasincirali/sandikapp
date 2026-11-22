@@ -68,7 +68,10 @@ PaywallKarti? kaynaktanKart(String source) {
       source == 'alarm_limit' ||
       // Alarmlar ekranındaki "3/5 alarm" sayacı (Ar-Ge 22 Kas 2203 #1):
       // alarm_limit ile aynı kapı, sınıra dokunmadan önce görünen hâli.
-      source == 'alarm_sayaci') {
+      source == 'alarm_sayaci' ||
+      // Profil'deki sayaçlı "Premium'a geç · 9/10 varlık" satırı (Ar-Ge 23
+      // Kas 0203 #1): kalem varlık, takip ya da alarm; üçü de bu kartta.
+      source == 'profile_banner_sinir') {
     return PaywallKarti.varlik;
   }
   // Sinyal: ayarlardaki kilitli gösterge (`signal_settings_<id>`), kilitli
