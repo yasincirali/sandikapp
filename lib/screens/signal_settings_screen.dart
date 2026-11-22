@@ -1311,7 +1311,14 @@ class _OnAyarKarti extends ConsumerWidget {
               }
               sinyalOnAyariUygula(ref, a);
             },
-            oge: (context, i, _) => Text(etiketler[i]),
+            oge: (context, i, _) => sandikKilitliSegmentEtiketi(
+              context,
+              etiketler[i],
+              kilitli: sinyalOnAyarTanimi(SinyalOnAyar.values[i], AssetType.hisse)
+                      .siklik
+                      .gunlukEnFazla >
+                  slot,
+            ),
           ),
           const SizedBox(height: SandikSpace.sm),
           Text(

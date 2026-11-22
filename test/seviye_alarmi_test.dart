@@ -213,7 +213,7 @@ void main() {
       AlarmAdayi aday, {
       bool gorunur = false,
       bool kilitli = false,
-      void Function(BuildContext)? onKilitli,
+      Future<bool> Function(BuildContext)? onKilitli,
     }) async {
       t.view.physicalSize = const Size(375 * 3, 900 * 3);
       t.view.devicePixelRatio = 3.0;
@@ -271,7 +271,10 @@ void main() {
 
     testWidgets('kilitli: dokunmak paywall\'ı açar, kip değişmez', (t) async {
       var acildi = 0;
-      await ac(t, thy, gorunur: true, kilitli: true, onKilitli: (_) => acildi++);
+      await ac(t, thy, gorunur: true, kilitli: true, onKilitli: (_) async {
+        acildi++;
+        return false;
+      });
       expect(find.byType(SandikSegment), findsOneWidget);
       final kilit = t.widget<Icon>(find.byIcon(Icons.lock_outline_rounded));
       expect(kilit.semanticLabel, 'Premium gerekir',

@@ -163,7 +163,7 @@ void main() {
     expect(liste.kilitli, isTrue);
     expect(
         ekranKaynagiSync('lib/screens/ozel_gosterge_screen.dart').contains(
-            "PaywallScreen.show(context, source: 'grafik_ozel_gosterge')"),
+            "source: 'grafik_ozel_gosterge'"),
         isTrue);
     await bitir(tester);
   });

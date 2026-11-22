@@ -319,8 +319,15 @@ Future<PriceAlert?> alarmKurAkisi(
       // kapı; kilitliyken sekmeye dokunmak paywall'u açar.
       gostergeGorunur: ref.read(premiumOzellikleriGorunurProvider),
       gostergeKilitli: ref.read(premiumKilitliProvider),
-      onGostergeKilitli: (ctx) =>
-          PaywallScreen.show(ctx, source: 'gosterge_alarmi'),
+      // Satın alındı mı döner; sayfa kilidi açıp aynı işe devam eder
+      // (Ar-Ge 22 Kas 12:03 #4). Sağlayıcı akıştan geç güncellenebilir:
+      // `aldi` doğrudan sinyal, sağlayıcı ikincil (`sinirUyarisi` kuralı).
+      onGostergeKilitli: (ctx) async {
+        final aldi =
+            await PaywallScreen.show(ctx, source: 'gosterge_alarmi');
+        return aldi == true ||
+            (ctx.mounted && !ref.read(premiumKilitliProvider));
+      },
       // Üç yazma da [alarmYazimiTavanli] içinden: sayfa açıkken başka
       // yüzeyden kurulan alarm tavanı doldurmuş olabilir; açılıştaki tek
       // kontrol yetmez (2026-11-12).
@@ -634,7 +641,8 @@ class AlarmKurSheet extends StatefulWidget {
   /// Görünür ama kilitli (paywall açık, Premium değil): sekme kilit
   /// simgesiyle durur, dokunuş [onGostergeKilitli]'yı çağırır.
   final bool gostergeKilitli;
-  final void Function(BuildContext context)? onGostergeKilitli;
+  /// Paywall'u açar; kullanıcı Premium aldıysa `true` döner.
+  final Future<bool> Function(BuildContext context)? onGostergeKilitli;
 
   /// "Gösterge" kipinin yazması ([kur] ile aynı sözleşme).
   final Future<void> Function(GostergeAlarmKurulumu kurulum)? kurGosterge;
@@ -672,6 +680,19 @@ class AlarmKurSheet extends StatefulWidget {
 }
 
 class _AlarmKurSheetState extends State<AlarmKurSheet> {
+  /// Canlı kilit: açılışta [AlarmKurSheet.gostergeKilitli]'dir, paywall'da
+  /// satın alınca düşer (sayfa kapanıp seçimler baştan yapılmaz).
+  late bool _gostergeKilitli;
+
+  /// Gösterge kipi kilitliyse paywall'u açıp bekler; kilit kalktıysa `true`.
+  Future<bool> _gostergeKilidiniAc() async {
+    if (!_gostergeKilitli) return true;
+    final aldi = await widget.onGostergeKilitli?.call(context) ?? false;
+    if (!mounted) return false;
+    if (aldi) setState(() => _gostergeKilitli = false);
+    return !_gostergeKilitli;
+  }
+
   /// Kaydet düğmesinin ✓ anı (Ar-Ge 11 Kas 19:04 #3); yalnız yazma
   /// sayfanın içinde koştuğunda ([AlarmKurSheet.kur] verildiyse).
   final _basari = SandikBasariSinyali();
@@ -721,6 +742,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   @override
   void initState() {
     super.initState();
+    _gostergeKilitli = widget.gostergeKilitli;
     final h = widget.baslangicHedef;
     if (h != null && h > 0) {
       _controller.text = h >= 1 ? fmtNum(h, digits: 2) : fmtInputTr(h);
@@ -914,10 +936,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   }
 
   Future<void> _kaydetGosterge() async {
-    if (widget.gostergeKilitli) {
-      widget.onGostergeKilitli?.call(context);
-      return;
-    }
+    if (!await _gostergeKilidiniAc() || !mounted) return;
     final kurulum = GostergeAlarmKurulumu(_secili, _gosterge, _gostergeYon);
     final kur = widget.kurGosterge;
     if (kur != null) {
@@ -1088,7 +1107,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
-    if (k != _AlarmKipi.gosterge || !widget.gostergeKilitli) return metin;
+    if (k != _AlarmKipi.gosterge || !_gostergeKilitli) return metin;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1310,8 +1329,18 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                     secili: _kipler.indexOf(_etkinKip),
                     onSec: (i) {
                       final k = _kipler[i];
-                      if (k == _AlarmKipi.gosterge && widget.gostergeKilitli) {
-                        widget.onGostergeKilitli?.call(context);
+                      if (k == _AlarmKipi.gosterge && _gostergeKilitli) {
+                        CrashReporter.arkaPlan(
+                          _gostergeKilidiniAc().then<void>((acildi) {
+                            if (!acildi || !context.mounted) return;
+                            FocusScope.of(context).unfocus();
+                            setState(() {
+                              _kip = k;
+                              _hata = null;
+                            });
+                          }),
+                          reason: 'alarm_gosterge_kilit',
+                        );
                         return;
                       }
                       // Çipli kiplerde klavye açık kalırsa çipleri örter.

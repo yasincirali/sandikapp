@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/l10n.dart';
 import '../models/ozel_gosterge.dart';
 import '../providers/ozel_gosterge_provider.dart';
+import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../services/gosterge_betigi/betik.dart';
 import '../services/gosterge_betigi/katalog.dart';
 import '../services/ozel_gosterge_calistirici.dart';
+import '../services/ozellik_olcumu.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
@@ -89,6 +91,9 @@ class OzelGostergeListesi extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
+    // Açılıştaki kilit ipucu CANLI kilitle birleşir: sayfada paywall'dan
+    // satın alan kişi için liste ve düzenleyici hemen açılır.
+    final kilitli = this.kilitli && ref.watch(premiumKilitliProvider);
     // Kilitliyken sağlayıcı izlenmez: kayıtlı göstergeler okunmaz, liste
     // bölümü hiç çizilmez (tadımlık yalnız şablon + önizleme).
     final durum = kilitli
@@ -119,7 +124,7 @@ class OzelGostergeListesi extends ConsumerWidget {
             children: [
               Text(l.ozgBaslik,
                   style: context.t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700, color: context.c.text90)),
+                      fontWeight: FontWeight.w600, color: context.c.text90)),
               const SizedBox(height: SandikSpace.xs),
               Text(l.ozgAciklama,
                   style: context.t.bodySmall
@@ -408,11 +413,16 @@ class _OzelGostergeEditorScreenState
   }
 
   Future<void> _kaydet() async {
-    if (widget.kilitli) {
+    if (widget.kilitli && ref.read(premiumKilitliProvider)) {
       // Kaydetmek ücretli (yasin 2026-10-10); ad/kod denetiminden ÖNCE:
       // ücretsiz kullanıcıya "ad yaz" deyip sonra paywall açmak boşa iş.
-      await PaywallScreen.show(context, source: 'grafik_ozel_gosterge');
-      return;
+      // Satın alındıysa yazılan kod KAYBOLMAZ, kayıt aynı dokunuşla sürer
+      // (Ar-Ge 22 Kas 12:03 #3). `aldi` doğrudan sinyal: sağlayıcı akıştan
+      // geç güncellenebilir (`sinirUyarisi` ile aynı kural).
+      final aldi = await PaywallScreen.show(context,
+          source: 'grafik_ozel_gosterge');
+      if (!mounted) return;
+      if (aldi != true && ref.read(premiumKilitliProvider)) return;
     }
     if (!OzelGosterge.adGecerli(_ad.text)) {
       setState(() => _adHatasi = true);
@@ -428,6 +438,7 @@ class _OzelGostergeEditorScreenState
       } else {
         await n.kaydet(g.kopya(ad: _ad.text.trim(), kod: _kod.text));
       }
+      OzellikOlcumu.say(Ozellik.ozelGosterge);
       if (!mounted) return;
       // "Gösterge kaydedildi" snack'ı kalktı (Ar-Ge 11 Kas 19:04 #6): editör
       // kapanınca gösterge alttaki listede görünür. Onay düğmede ✓.
@@ -478,6 +489,7 @@ class _OzelGostergeEditorScreenState
     final l = context.l10n;
     final en = context.l10n.localeName.startsWith('en');
     final hata = _hata;
+    final kilitli = widget.kilitli && ref.watch(premiumKilitliProvider);
     final sonuc = _sonuc;
     final derli = _derli;
     final kenar = SandikSpace.screenH(context);
@@ -670,7 +682,7 @@ class _OzelGostergeEditorScreenState
                   onPressed: hata == null ? _kaydet : null,
                   // Kilit ikonu + metin: neyin ücretli olduğu düğmede
                   // söylenir, basınca sürpriz paywall değil.
-                  child: widget.kilitli
+                  child: kilitli
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

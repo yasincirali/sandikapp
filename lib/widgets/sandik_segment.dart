@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart' show CupertinoButton;
 
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 
 /// Segment kontrolü — kayan seçim zeminli, uygulamanın ortak parçası.
@@ -247,4 +248,25 @@ class _Segment extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// Segment etiketi; [kilitli] ise yanına Premium kilidi çizer (alarm kipi
+/// sekmesindeki kalıp: görünür, okuyucu "Premium gerekir" der). Etiket
+/// `Flexible`: ×2 metinde simge etiketin yerini yemez.
+Widget sandikKilitliSegmentEtiketi(
+  BuildContext context,
+  String etiket, {
+  required bool kilitli,
+}) {
+  final metin = Text(etiket, maxLines: 1, overflow: TextOverflow.ellipsis);
+  if (!kilitli) return metin;
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.lock_outline_rounded,
+          size: SandikSpace.md, semanticLabel: context.l10n.alarmPremiumGerekli),
+      const SizedBox(width: SandikSpace.xs),
+      Flexible(child: metin),
+    ],
+  );
 }

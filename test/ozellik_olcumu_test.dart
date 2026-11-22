@@ -46,6 +46,7 @@ void main() {
         'portfoy_yorumu',
         'varlik_yorumu',
         'sinyal_gosterge',
+        'grafik_ozel_gosterge',
         'hedef_tarihi',
         'ekstre_ai',
         'zekat',
@@ -77,9 +78,9 @@ void main() {
             desen.allMatches(f.readAsStringSync()).map((m) => m.group(1)!));
       }
       for (final o in Ozellik.values.where((o) => o.premium)) {
-        if (const {'gosterge_alarm', 'cizim_alarm', 'yatay_cizgi_alarm', 'hedef_tarihi'}
+        if (const {'gosterge_alarm', 'cizim_alarm', 'yatay_cizgi_alarm', 'hedef_tarihi', 'grafik_ozel_gosterge'}
             .contains(o.kod)) {
-          continue; // alarm kapıları ve hedef tarihi ayrı kaynak adı taşır
+          continue; // alarm kapıları, hedef tarihi ve özel gösterge `source:` adı taşır
         }
         expect(kaynaklar, contains(o.kod), reason: o.kod);
       }
