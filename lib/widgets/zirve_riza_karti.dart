@@ -117,7 +117,7 @@ class ZirveRizaKarti extends StatelessWidget {
             Text(
               b,
               style: context.t.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: c.amberText,
               ),
             ),
