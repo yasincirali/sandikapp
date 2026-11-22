@@ -202,7 +202,7 @@ void main() {
       expect(
           kilit,
           contains(
-              'AnalyticsService.instance.logPremiumGateShown(feature: ozellik!)'));
+              'AnalyticsService.instance.logPremiumGateShown(feature: ozellik)'));
       expect(kilit, contains('PaywallScreen.show(context, source: kaynak)'));
     });
 
