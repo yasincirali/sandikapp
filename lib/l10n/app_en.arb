@@ -6106,5 +6106,8 @@
   "xrKilitFonKisisel": "This fund is {pay} of your portfolio.",
   "ziKilitKisisel": "{pay} of this portfolio is in funds and pension funds.",
   "todayGoalDateSaved": "Your target date is saved",
-  "portfolioLimitFree": "The free plan has one portfolio. You can keep your assets in the Main portfolio."
+  "portfolioLimitFree": "The free plan has one portfolio. You can keep your assets in the Main portfolio.",
+  "zirveKatilimPremiumNotu": "Joining Zirve takes Premium. Once you read and accept the text, the Premium page opens.",
+  "ziOkunamadi": "The funds' holdings can't be read right now",
+  "ziYayimlanmadi": "These funds haven't published their breakdown yet"
 }

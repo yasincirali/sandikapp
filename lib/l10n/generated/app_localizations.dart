@@ -18891,6 +18891,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ücretsiz planda tek portföy var. Varlıklarını Ana portföyde tutmaya devam edebilirsin.'**
   String get portfolioLimitFree;
+
+  /// No description provided for @zirveKatilimPremiumNotu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zirve\'ye katılım Premium ile. Metni okuyup onayladığında Premium sayfası açılır.'**
+  String get zirveKatilimPremiumNotu;
+
+  /// No description provided for @ziOkunamadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonların içi şu an okunamadı'**
+  String get ziOkunamadi;
+
+  /// No description provided for @ziYayimlanmadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu fonların dağılımı henüz yayımlanmadı'**
+  String get ziYayimlanmadi;
 }
 
 class _AppLocalizationsDelegate

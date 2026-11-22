@@ -117,12 +117,18 @@ class SandikErrorView extends StatefulWidget {
   /// dene" metin düğmesidir; "bize yaz" bağlantısı ve giriş animasyonu yok.
   final bool kompakt;
 
+  /// Hatadan türeyen metin yerine yüzeyin kendi cümlesi (Ar-Ge 22 Kas 2203
+  /// #3): kart içi bölümde "Fonların içi şu an okunamadı" genel "bir şeyler
+  /// ters gitti"den çok daha fazlasını söyler. Verilmezse [friendlyError].
+  final String? mesaj;
+
   const SandikErrorView({
     super.key,
     required this.error,
     this.onRetry,
     this.ekranAdi,
     this.kompakt = false,
+    this.mesaj,
   });
 
   @override
@@ -258,7 +264,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            friendlyError(widget.error, l10n: context.l10n),
+            widget.mesaj ?? friendlyError(widget.error, l10n: context.l10n),
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
           if (widget.onRetry != null)
@@ -280,7 +286,7 @@ class _SandikErrorViewState extends State<SandikErrorView> {
             Icon(Icons.error_outline_rounded, color: context.c.loss, size: 40),
             const SizedBox(height: 16),
             Text(
-              friendlyError(widget.error, l10n: context.l10n),
+              widget.mesaj ?? friendlyError(widget.error, l10n: context.l10n),
               textAlign: TextAlign.center,
               style: context.t.titleMedium?.copyWith(color: context.c.text58),
             ),

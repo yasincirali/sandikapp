@@ -13,6 +13,7 @@ import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart' show trSayiIyelikEki;
 import 'fon_dagilimi_karti.dart';
 import 'premium_kilit_karti.dart';
+import 'sandik_error_view.dart';
 import 'sandik_skeleton.dart';
 import '../services/ozellik_olcumu.dart';
 
@@ -81,8 +82,25 @@ class ZirveIcerikKarti extends ConsumerWidget {
       );
     }
     final kodlar = zirveFonKodlari(fonDetay, varlikDetay).join(',');
-    final dagilimlar =
-        ref.watch(zirveFonDagilimlariProvider(kodlar)).valueOrNull;
+    // Fon kodu yoksa (eski sunucu yanıtı fon ayrıntısı taşımıyor) okunacak
+    // bir şey yok; "yayımlanmadı" demek yanlış olurdu.
+    if (kodlar.isEmpty) return const SizedBox.shrink();
+    final okuma = ref.watch(zirveFonDagilimlariProvider(kodlar));
+    // Hata (Ar-Ge 22 Kas 2203 #3): kart eskiden sessizce kayboluyordu;
+    // Premium alan kullanıcı neyin gittiğini göremiyordu. Kartın yerinde
+    // tek satır + yeniden dene.
+    if (okuma.hasError && !okuma.isLoading) {
+      return Padding(
+        padding: dis,
+        child: SandikErrorView(
+          error: okuma.error!,
+          mesaj: l.ziOkunamadi,
+          kompakt: true,
+          onRetry: () => ref.invalidate(zirveFonDagilimlariProvider(kodlar)),
+        ),
+      );
+    }
+    final dagilimlar = okuma.valueOrNull;
     // Yüklenirken yer kaplamaz; gelince akarak belirir (SandikBelirme).
     if (dagilimlar == null) return const SizedBox.shrink();
     final x = zirveIcerigi(
@@ -91,8 +109,18 @@ class ZirveIcerikKarti extends ConsumerWidget {
       varlikDetay: varlikDetay,
       dagilimlar: dagilimlar,
     );
-    // Hiçbir fon açılamadıysa söylenecek bir şey yok: hepsi "bilinmeyen".
-    if (!x.acildi) return const SizedBox.shrink();
+    // Hiçbir fon açılamadıysa hepsi "bilinmeyen": kart çizilmez, ama
+    // Premium kullanıcı kartın neden yok olduğunu bilsin diye gerçek durum
+    // tek satırda (Ar-Ge 22 Kas 2203 #3; uydurma sayı yok).
+    if (!x.acildi) {
+      return Padding(
+        padding: dis,
+        child: Text(
+          l.ziYayimlanmadi,
+          style: context.t.bodySmall?.copyWith(color: context.c.text58),
+        ),
+      );
+    }
 
     final c = context.c;
     final dil = Localizations.localeOf(context).toString();

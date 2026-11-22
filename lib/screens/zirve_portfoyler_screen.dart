@@ -436,6 +436,10 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       if (once == true && !simdi) _kilitKalkti();
     });
     final hp = SandikSpace.screenH(context);
+    // `_katil`'in paywall koşuluyla aynı (ilk üye muaf); yeniden onayda
+    // gösterilmez, o kullanıcı zaten katılımcı (Ar-Ge 22 Kas 2203 #2).
+    final katilimPremiumla = ref.watch(premiumKilitliProvider) &&
+        !(_erisim?.ilkUye ?? false);
     return FutureBuilder<bool?>(
       future: _riza,
       builder: (context, rizaSnap) {
@@ -457,6 +461,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
             hp: hp,
             onKatil: _katil,
             onSimdiDegil: () => Navigator.of(context).maybePop(),
+            premiumNotu: katilimPremiumla,
           );
         }
         // Yeniden onay: aynı zorunlu okuma, "Şimdi değil" listeye döner.
@@ -878,8 +883,9 @@ class _SeciliPortfoy extends StatelessWidget {
   final double? benzerlik;
   final VoidCallback onAyrinti;
 
-  /// Kilitli varlık satırına dokunuş → paywall (0158).
-  final VoidCallback onKilitli;
+  /// Kilitli varlık satırına dokunuş → paywall (0158). Future: dokunan
+  /// düğme paywall kapanana kadar bekler (Ar-Ge 22 Kas 2203 #4).
+  final Future<void> Function() onKilitli;
 
   Widget _kaydir(BuildContext context, String parca, Widget child) {
     return AnimatedSwitcher(
@@ -972,7 +978,7 @@ class _SeciliPortfoy extends StatelessWidget {
               Text(
                 'En büyük varlıkları',
                 style: context.t.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: context.c.text58,
                 ),
               ),
@@ -1005,7 +1011,7 @@ class _SeciliPortfoy extends StatelessWidget {
                         ? 'Tüm varlıklar ve seninle ortakları'
                         : 'Tür tür dağılım',
                     style: context.t.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: context.c.amberText,
                     ),
                   ),
@@ -1374,7 +1380,8 @@ class _PortfoyAyrintisi extends StatelessWidget {
   final double? senRoi;
 
   /// Kilitli satıra ya da ortak varlıklara dokunuş → paywall (0158).
-  final VoidCallback onKilitli;
+  /// Future: bkz. [_OrtakVarliklar.onKilitli] gerekçesi.
+  final Future<void> Function() onKilitli;
 
   /// Kullanıcının portföyü havuzda mı (sunucu `zirve_benim`)?
   final bool senHavuzda;
@@ -1426,7 +1433,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
                     Text(
                       altBaslik,
                       style: context.t.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: roi == null
                             ? context.c.text58
                             : roi < 0
@@ -1579,7 +1586,12 @@ class _OrtakVarliklar extends StatelessWidget {
   final List<({String tur, String kod, double sen, double zirve})> ortak;
   final List<({String tur, String kod, double pay})> ondaOlmayan;
   final ({String tur, String kod, double sen, double zirve})? vitrinOrtagi;
-  final VoidCallback onKilitli;
+
+  /// Doğrudan [SandikAsyncButton]'a verilir: düğme paywall kapanana kadar
+  /// meşgul kalır. Eskiden `() async => onKilitli()` Future'ı düşürüyordu,
+  /// hızlı ikinci dokunuş ikinci paywall'u üst üste açıyordu (Ar-Ge 22 Kas
+  /// 2203 #4).
+  final Future<void> Function() onKilitli;
 
   Widget _satir(BuildContext context,
           {required String ad, required String sayi}) =>
@@ -1595,7 +1607,7 @@ class _OrtakVarliklar extends StatelessWidget {
             Text(
               ad,
               style: context.t.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 color: context.c.text90,
               ),
             ),
@@ -1668,7 +1680,7 @@ class _OrtakVarliklar extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           SandikAsyncButton(
             tur: SandikAsyncTur.cerceve,
-            onPressed: () async => onKilitli(),
+            onPressed: onKilitli,
             child: const Text("Ortak varlıkları gör · Premium"),
           ),
         ],
@@ -1752,11 +1764,18 @@ class ZirveRizaOkumaGovdesi extends StatefulWidget {
     required this.hp,
     required this.onKatil,
     required this.onSimdiDegil,
+    this.premiumNotu = false,
   });
 
   final double hp;
   final Future<void> Function() onKatil;
   final VoidCallback onSimdiDegil;
+
+  /// Katılım Premium'la açılıyorsa kartın ÜSTÜNDE tek bilgi satırı (Ar-Ge
+  /// 22 Kas 2203 #2): metni sonuna kadar okuyup "Katılıyorum"a basan
+  /// kullanıcı paywall'a habersiz çarpıyordu. Kartın dışında durur; kart
+  /// yasal metnin kendisi, ona yazılmaz (sürüm/migration gerekmez).
+  final bool premiumNotu;
 
   @override
   State<ZirveRizaOkumaGovdesi> createState() => _ZirveRizaOkumaGovdesiState();
@@ -1781,6 +1800,14 @@ class _ZirveRizaOkumaGovdesiState extends State<ZirveRizaOkumaGovdesi> {
               padding: EdgeInsets.fromLTRB(
                   widget.hp, SandikSpace.sm, widget.hp, SandikSpace.lg),
               children: [
+                if (widget.premiumNotu) ...[
+                  Text(
+                    context.l10n.zirveKatilimPremiumNotu,
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58, height: 1.4),
+                  ),
+                  const SizedBox(height: SandikSpace.sm),
+                ],
                 ZirveRizaKarti(
                   onKatil: widget.onKatil,
                   onSimdiDegil: widget.onSimdiDegil,

@@ -65,7 +65,10 @@ PaywallKarti? kaynaktanKart(String source) {
   if (source.startsWith('asset_limit') ||
       source == 'bulk_add_asset_limit' ||
       source == 'watchlist_limit' ||
-      source == 'alarm_limit') {
+      source == 'alarm_limit' ||
+      // Alarmlar ekranındaki "3/5 alarm" sayacı (Ar-Ge 22 Kas 2203 #1):
+      // alarm_limit ile aynı kapı, sınıra dokunmadan önce görünen hâli.
+      source == 'alarm_sayaci') {
     return PaywallKarti.varlik;
   }
   // Sinyal: ayarlardaki kilitli gösterge (`signal_settings_<id>`), kilitli
@@ -75,7 +78,13 @@ PaywallKarti? kaynaktanKart(String source) {
       source == 'signal_frequency' ||
       source == 'signal_on_ayar' ||
       source == 'sinyal_gosterge' ||
-      source == 'gosterge_parametre') {
+      source == 'gosterge_parametre' ||
+      // Göstergeye ve çizime alarm kurmak ve gösterge alarmını düzenlemek
+      // (Ar-Ge 22 Kas 2203 #1): aynı teknik analiz işi, eskiden eşlemede
+      // yoktu ve deste persona sırasıyla açılıyordu.
+      source == 'gosterge_alarmi' ||
+      source == 'cizim_alarmi' ||
+      source == 'alarm_gosterge_duzenle') {
     return PaywallKarti.sinyal;
   }
   return switch (source) {
@@ -89,7 +98,10 @@ PaywallKarti? kaynaktanKart(String source) {
     'gecmis_fiyatlar' ||
     // Portföy › Sattıkların (2026-11-12): kapanmış pozisyonun gerçekleşen
     // kârı yıllık raporun "bu yıl ne gerçekleşti" sorusunun satır satır hâli.
-    'sattiklarin' =>
+    'sattiklarin' ||
+    // Kapanış özetindeki "Bu satışın yıllık raporu Premium'da" bağlantısı
+    // (Ar-Ge 22 Kas 2203 #1 taramasında eşlemesiz bulundu).
+    'kapanis_rapor' =>
       PaywallKarti.rapor,
     // Temettü kartındaki "maliyetine göre verim" kilidi (2026-11-07).
     'temettu_tahmini' || 'temettu_verimi' => PaywallKarti.temettu,
@@ -116,12 +128,21 @@ PaywallKarti? kaynaktanKart(String source) {
     'anaparam' ||
     // Performans'ta aylık getiri tablosu (2026-11-11): aynı analiz sorusu,
     // "param hangi ay ne yaptı".
-    'aylik_getiri' =>
+    'aylik_getiri' ||
+    // AI portföy ve varlık yorumu (Ar-Ge 22 Kas 2203 #1): aynı "param ne
+    // yapıyor" sorusunun yazılı cevabı.
+    'portfoy_yorumu' ||
+    'varlik_yorumu' =>
       PaywallKarti.xray,
     'grafik_ozel_gosterge' => PaywallKarti.ozelGosterge,
     'compare_series' => PaywallKarti.karsilastir,
     'partner_limit' => PaywallKarti.ortak,
-    'zirve' => PaywallKarti.zirve,
+    // Zirve'deki "Fonların içi" kilidi de Zirve'nin Premium yarısı (Ar-Ge
+    // 22 Kas 2203 #1: dokunan kullanıcı paywall'u temettü kartıyla görüyordu).
+    'zirve' || 'zirve_xray' => PaywallKarti.zirve,
+    // `portfoy_hedef` / `hedef_tarihi` BİLEREK eşlemesiz (Ar-Ge 22 Kas 2203
+    // #1): destede hedef işini anlatan kart yok; en yakın kart bile başka bir
+    // vaadi öne alırdı. Persona sırası daha dürüst. Hedef kartı gelirse buraya.
     // Kısmi aktarım ve ortağın göreceği portföyü seçmek de çoklu portföyün
     // Premium yarısı (#148); kart aynı.
     'portfoy_limit' ||

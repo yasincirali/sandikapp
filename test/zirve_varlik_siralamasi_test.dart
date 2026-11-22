@@ -113,7 +113,7 @@ void main() {
           varlikDetay: const {
             'hisse': {'THYAO.IS': 21.0, '?2': 14.0},
           },
-          onKilitli: () => acildi++,
+          onKilitli: () async => acildi++,
           adBul: adYok,
         ));
     expect(find.text(ZirveKiyas.kilitliYer), findsOneWidget);

@@ -6952,5 +6952,8 @@
   "ziKilitKisisel": "Bu portföyün {pay}'{ek} fon ve BES'te.",
   "@ziKilitKisisel": {"placeholders": {"pay": {"type": "String"}, "ek": {"type": "String"}}},
   "todayGoalDateSaved": "Hedef günün kayıtlı",
-  "portfolioLimitFree": "Ücretsiz planda tek portföy var. Varlıklarını Ana portföyde tutmaya devam edebilirsin."
+  "portfolioLimitFree": "Ücretsiz planda tek portföy var. Varlıklarını Ana portföyde tutmaya devam edebilirsin.",
+  "zirveKatilimPremiumNotu": "Zirve'ye katılım Premium ile. Metni okuyup onayladığında Premium sayfası açılır.",
+  "ziOkunamadi": "Fonların içi şu an okunamadı",
+  "ziYayimlanmadi": "Bu fonların dağılımı henüz yayımlanmadı"
 }

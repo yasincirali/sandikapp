@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/tefas_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
 import 'zirve_dagilim_seridi.dart';
@@ -67,7 +68,10 @@ class ZirveVarlikSiralamasi extends StatefulWidget {
 
   /// Sıralı biçimde en fazla kaç kalem; null → hepsi.
   final int? enFazla;
-  final VoidCallback? onKilitli;
+
+  /// Future (Ar-Ge 22 Kas 2203 #4): ekrandaki "Ortak varlıkları gör"
+  /// düğmesiyle aynı tip; satır dokunuşu arka planda raporlanarak çağırır.
+  final Future<void> Function()? onKilitli;
   final ZirveFonAdiBulucu? adBul;
 
   /// Gösterilecek bir kalem var mı (kart "En büyük varlıkları"nı buna
@@ -84,6 +88,9 @@ class _ZirveVarlikSiralamasiState extends State<ZirveVarlikSiralamasi> {
   // Fon adı Future'ları kod başına bir kez; her build'de yeni istek yok.
   final Map<String, Future<String?>> _adlar = {};
 
+  /// Bu build'de kilitli alt satırı yazıldı mı (bkz. `build`).
+  bool _altYazildi = false;
+
   Future<String?> _ad(String kod) => _adlar.putIfAbsent(
       kod, () => (widget.adBul ?? _tefasAdi)(kod).catchError((_) => null));
 
@@ -92,6 +99,12 @@ class _ZirveVarlikSiralamasiState extends State<ZirveVarlikSiralamasi> {
     final kalemler =
         ZirveKiyas.tumKalemler(widget.fonDetay, widget.varlikDetay);
     final enBuyuk = kalemler.isEmpty ? 0.0 : kalemler.first.pay;
+    // "Premium'da görünür" yalnız İLK kilitli satırda (Ar-Ge 22 Kas 2203
+    // #5): ayrıntı sayfasında 10+ satır aynı çağrıyı tekrarlıyordu, altında
+    // kilit kartı ve "Ortak varlıkları gör · Premium" da var. Diğerlerinde
+    // "••••" anlamı taşır; dokunuş ve ekran okuyucu etiketi her satırda aynı.
+    // Build başına sıfırlanır; satırlar yukarıdan aşağı sırayla kurulur.
+    _altYazildi = false;
     if (!widget.gruplu) {
       final gorunen = widget.enFazla == null
           ? kalemler
@@ -155,7 +168,10 @@ class _ZirveVarlikSiralamasiState extends State<ZirveVarlikSiralamasi> {
     // biçimde türü. Gruplu biçimde tür zaten başlıkta.
     Widget? alt;
     if (kilitli) {
-      alt = _altMetin(context, "Premium'da görünür", context.c.amberText);
+      if (!_altYazildi) {
+        _altYazildi = true;
+        alt = _altMetin(context, "Premium'da görünür", context.c.amberText);
+      }
     } else if (diger) {
       alt = _altMetin(
           context, 'her biri %1 altı ya da sembolsüz', context.c.text58);
@@ -205,7 +221,7 @@ class _ZirveVarlikSiralamasiState extends State<ZirveVarlikSiralamasi> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: context.t.bodyMedium?.copyWith(
-                          fontWeight: diger ? FontWeight.w500 : FontWeight.w700,
+                          fontWeight: diger ? FontWeight.w500 : FontWeight.w600,
                           letterSpacing: kilitli ? 1.5 : 0,
                           color: diger ? context.c.text58 : context.c.text90,
                         ),
@@ -255,7 +271,10 @@ class _ZirveVarlikSiralamasiState extends State<ZirveVarlikSiralamasi> {
       label: "Kilitli varlık $yuzde. Premium'da görünür.",
       excludeSemantics: true,
       child: SandikTappable(
-        onTap: widget.onKilitli,
+        onTap: widget.onKilitli == null
+            ? null
+            : () => CrashReporter.arkaPlan(widget.onKilitli!(),
+                reason: 'ZirveVarlikSiralamasi.onKilitli'),
         child: govde,
       ),
     );

@@ -12107,4 +12107,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get portfolioLimitFree =>
       'The free plan has one portfolio. You can keep your assets in the Main portfolio.';
+
+  @override
+  String get zirveKatilimPremiumNotu =>
+      'Joining Zirve takes Premium. Once you read and accept the text, the Premium page opens.';
+
+  @override
+  String get ziOkunamadi => 'The funds\' holdings can\'t be read right now';
+
+  @override
+  String get ziYayimlanmadi =>
+      'These funds haven\'t published their breakdown yet';
 }

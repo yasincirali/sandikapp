@@ -11842,4 +11842,14 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get portfolioLimitFree =>
       'Ücretsiz planda tek portföy var. Varlıklarını Ana portföyde tutmaya devam edebilirsin.';
+
+  @override
+  String get zirveKatilimPremiumNotu =>
+      'Zirve\'ye katılım Premium ile. Metni okuyup onayladığında Premium sayfası açılır.';
+
+  @override
+  String get ziOkunamadi => 'Fonların içi şu an okunamadı';
+
+  @override
+  String get ziYayimlanmadi => 'Bu fonların dağılımı henüz yayımlanmadı';
 }
