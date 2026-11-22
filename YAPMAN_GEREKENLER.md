@@ -278,6 +278,14 @@ aşağıdakiler yalnız senin hesabınla yapılabiliyor. Önem sırasıyla:
       hiç çıkmıyoruz, metinle çözülmüyor. Exact match `sandık`, `sandık
       uygulama`, `sandık portföy`; günlük tavan 50–100 ₺, 2 hafta sonra
       kurulum başına maliyete bak.
+  - 2026-11-23: hesap açma adımları (Advanced, Türkiye, kart, App Store
+    Connect bağlantısı, iletişim support@murphysoft.app) ve ölçüm kararı
+    Claude Doc "Sandık için Apple Ads: hesap açma ve ilk kampanya"
+    (https://claude.ai/artifact/M1Ta47XhekjjarNQrVBhrc). Kelime ve bütçe
+    listesi `store_listing/reklam/KAMPANYA_KURULUMU_2026_11.md`.
+    Sıra: hesabı aç → A/B/C kampanyalarını duraklatılmış kur → önce A'yı
+    aç, 3–5 gün sonra B ve C. Para birimi seçimi sonradan değişmez; TRY
+    varsa onu seç. Kod değişikliği yok (1. faz yalnız yükleme ölçer).
 - [ ] **Aboneliği öne çıkar** (App Store Promotion) ve **3 özel ürün
       sayfası** (altın, temettü, enflasyon): değerler aynı dosyada.
 - [ ] Mağazadaki her yoruma cevap ver (puan sayısı 11; rakip 203).
