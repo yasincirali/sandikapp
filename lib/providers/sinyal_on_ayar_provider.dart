@@ -81,17 +81,22 @@ SinyalOnAyarTanimi sinyalOnAyarTanimi(SinyalOnAyar a, AssetType tur) =>
 ///
 /// Eksik tür değeri notifier'ların kendi varsayılanıyla okunur (ekranla
 /// aynı `?? kSignalThresholdDefault` / `?? kDefaultSchedule` /
-/// `?? defaultEnabledFor`). Premium göstergeler karşılaştırmaya girmez.
+/// `?? defaultEnabledFor`); [slot] verilirse zamanlama `slotaSigdir` ile
+/// kısılmış hâlden okunur (varsayılan sınırsız: eski davranış). Premium göstergeler karşılaştırmaya girmez.
 SinyalOnAyar? sinyalOnAyarEslesen({
   required Map<AssetType, int> esikler,
   required Map<AssetType, SignalSchedule> zamanlamalar,
   required Map<AssetType, Set<String>> gostergeler,
+  int slot = 1 << 30,
 }) {
   bool uyar(SinyalOnAyar a) {
     for (final t in sinyalOnAyarTurleri) {
       final tanim = sinyalOnAyarTanimi(a, t);
       if ((esikler[t] ?? kSignalThresholdDefault) != tanim.esik) return false;
-      final z = zamanlamalar[t] ?? kDefaultSchedule;
+      // Ekranın UYGULADIĞI zamanlama: ücretsizde slota sığdırılmış hâl
+      // (`slotaSigdir`). Kayıtlı varsayılan "günde 2" ücretsizde günde 1
+      // uygulanır; Dengeli seçili çizmek yanlış bilgi olurdu.
+      final z = slotaSigdir(zamanlamalar[t] ?? kDefaultSchedule, slot);
       if (z.frequency != tanim.siklik) return false;
       final saatler = tanim.saatler;
       if (saatler != null &&
@@ -116,6 +121,7 @@ final sinyalOnAyarProvider = Provider<SinyalOnAyar?>((ref) {
     esikler: ref.watch(signalThresholdProvider),
     zamanlamalar: ref.watch(signalScheduleProvider),
     gostergeler: ref.watch(indicatorPrefsProvider),
+    slot: ref.watch(sinyalSlotSiniriProvider),
   );
 });
 

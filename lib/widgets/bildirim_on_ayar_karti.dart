@@ -67,6 +67,7 @@ class _BildirimOnAyarKartiState extends ConsumerState<BildirimOnAyarKarti> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final durum = ref.watch(bildirimOnAyarProvider);
+    final slot = ref.watch(sinyalSlotSiniriProvider);
     final yuklendi = durum.hasValue;
     final secili = _hedef ?? durum.valueOrNull;
     final etiketler = [l10n.s5OnAyarAz, l10n.s5OnAyarDengeli, l10n.s5OnAyarCok];
@@ -120,7 +121,12 @@ class _BildirimOnAyarKartiState extends ConsumerState<BildirimOnAyarKarti> {
               if (!yuklendi) return;
               _sec(BildirimOnAyar.values[i]);
             },
-            oge: (context, i, _) => Text(etiketler[i]),
+            oge: (context, i, _) => sandikKilitliSegmentEtiketi(
+              context,
+              etiketler[i],
+              kilitli: bildirimOnAyariPremiumIster(
+                  BildirimOnAyar.values[i], slot),
+            ),
           ),
           const SizedBox(height: SandikSpace.sm),
           Text(

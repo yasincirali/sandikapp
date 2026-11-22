@@ -129,6 +129,11 @@ enum Ozellik {
   /// Sinyal kartının Premium göstergelerle açık hâli.
   sinyalGosterge('sinyal_gosterge', 'Teknik sinyaller', premium: true),
 
+  /// Özel gösterge (betik) KAYDEDİLDİ (Ar-Ge 22 Kas 12:03). Soru: betikle
+  /// gösterge yazma kullanılıyor mu, yoksa tadımlık mı kalıyor (kullanılmıyorsa
+  /// kaldırma kararı sayıyla konuşulur).
+  ozelGosterge('grafik_ozel_gosterge', 'Özel gösterge kaydı', premium: true),
+
   /// Hedef sayfasında tahmini tarih satırı açık.
   hedefTarihi('hedef_tarihi', 'Hedefe ulaşma tarihi', premium: true),
 

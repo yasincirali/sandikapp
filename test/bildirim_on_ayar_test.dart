@@ -217,7 +217,9 @@ void main() {
       await tester.tap(find.text('Çok'));
       await tester.pumpAndSettle();
       expect(paywall, 1);
-      expect(c.read(bildirimOnAyarProvider).value, BildirimOnAyar.dengeli);
+      // Ücretsizde (slot 1) varsayılan kayıt günde 1 uygulanır: Dengeli
+      // seçili çizilmez (Ar-Ge 22 Kas 12:03 #1).
+      expect(c.read(bildirimOnAyarProvider).value, isNull);
     });
 
     for (final (w, olcek) in const [(320.0, 1.0), (320.0, 2.0), (430.0, 3.1)]) {

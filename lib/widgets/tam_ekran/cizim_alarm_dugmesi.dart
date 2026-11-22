@@ -216,8 +216,12 @@ class CizimAlarmDugmesi extends ConsumerWidget {
         return;
       }
       if (ref.read(premiumKilitliProvider)) {
-        await PaywallScreen.show(context, source: 'cizim_alarmi');
-        return;
+        // Satın alındıysa kurulum aynı dokunuşla sürer (Ar-Ge 22 Kas
+        // 12:03 #4); `aldi` doğrudan sinyal, sağlayıcı akıştan geç
+        // güncellenebilir (`sinirUyarisi` kuralı).
+        final aldi = await PaywallScreen.show(context, source: 'cizim_alarmi');
+        if (!context.mounted) return;
+        if (aldi != true && ref.read(premiumKilitliProvider)) return;
       }
       if (await alarmSiniriDoluysaUyar(context, ref)) return;
       if (!context.mounted) return;
