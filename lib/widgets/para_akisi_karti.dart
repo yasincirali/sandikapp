@@ -111,8 +111,14 @@ class ParaAkisiKarti extends ConsumerWidget {
         children: [
           SandikSectionHeader(title: l10n.flowTitleUpper),
           const SizedBox(height: SandikSpace.sm),
-          SandikCard(
-            onTap: kilitli ? null : ayrintiyaGit,
+          // Kilitliyken kart + kilit satırı tek düğme okunur (iki odak yok).
+          KilitliBirlesik(
+            kilitli: kilitli,
+            child: SandikCard(
+            onTap: kilitli
+                ? () => KilitSatiri.ac(context,
+                    kaynak: 'para_akisi_karti', ozellik: 'para_akisi')
+                : ayrintiyaGit,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -156,6 +162,7 @@ class ParaAkisiKarti extends ConsumerWidget {
                   KilitSatiri(
                     metin: l10n.prmKilitAkis('$olaySayisi'),
                     kaynak: 'para_akisi_karti',
+                    ozellik: 'para_akisi',
                   )
                 else ...[
                   Semantics(
@@ -201,6 +208,7 @@ class ParaAkisiKarti extends ConsumerWidget {
               ],
             ),
           ),
+          ),
         ],
       ),
     );
@@ -227,6 +235,16 @@ Color yonRengi(SandikPalette c, double v) => v > 0
         ? c.loss
         : c.text90;
 
+/// Kilitliyken alt ağacın semantics'ini tek düğmeye birleştirir.
+class KilitliBirlesik extends StatelessWidget {
+  const KilitliBirlesik({super.key, required this.kilitli, required this.child});
+  final bool kilitli;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) =>
+      kilitli ? MergeSemantics(child: child) : child;
+}
+
 /// Kilitli içerik satırı (S12-B) — radar kartları ve not kutusu ortak
 /// kullanır: ne kilitli olduğunu somut söyler, satın alma ekranını açar.
 class KilitSatiri extends ConsumerWidget {
@@ -251,6 +269,16 @@ class KilitSatiri extends ConsumerWidget {
   /// (Ar-Ge 20 Kas tur 2 #6): 21 çağrının hiçbiri vermiyordu, ikon sessizdi.
   final String? kilitEtiketi;
 
+  /// Kilit dokunuşunun tek yolu: satır da, kilitli kartın gövdesi de buradan
+  /// açar (Ar-Ge 22 Kas 0703 #1: kart gövdesine dokunuş ölüydü).
+  static void ac(BuildContext context,
+      {required String kaynak, String? ozellik}) {
+    if (ozellik != null) {
+      AnalyticsService.instance.logPremiumGateShown(feature: ozellik);
+    }
+    PaywallScreen.show(context, source: kaynak);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.c;
@@ -262,12 +290,7 @@ class KilitSatiri extends ConsumerWidget {
       child: Semantics(
         button: true,
         child: SandikTappable(
-          onTap: () {
-            if (ozellik != null) {
-              AnalyticsService.instance.logPremiumGateShown(feature: ozellik!);
-            }
-            PaywallScreen.show(context, source: kaynak);
-          },
+          onTap: () => ac(context, kaynak: kaynak, ozellik: ozellik),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: SandikTouch.min),
             child: Row(

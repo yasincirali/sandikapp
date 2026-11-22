@@ -57,5 +57,7 @@ void main() {
         AppLocalizations.of(tester.element(find.byType(AnalizNotuScreen)))!;
     expect(find.text(l10n.anzOkunamadi), findsOneWidget);
     expect(find.text(l10n.prmKilitNot), findsNothing);
+    // Çıkışsız cümle değil: başlıksız (bildirim) yolda yeniden dene var.
+    expect(find.text(l10n.retry), findsOneWidget);
   });
 }

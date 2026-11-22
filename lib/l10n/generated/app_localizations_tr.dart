@@ -7285,6 +7285,24 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmKilitNot => 'Notun tamamı Premium\'da';
 
   @override
+  String prmKilitHacim(int gun, int n) {
+    return '$gun günlük hacim grafiği ve $n olağan dışı gün Premium\'da';
+  }
+
+  @override
+  String prmKilitHacimSayisiz(int gun) {
+    return '$gun günlük hacim grafiği Premium\'da';
+  }
+
+  @override
+  String get prmKilitKriptoBaski => 'Saat saat alıcı baskısı Premium\'da';
+
+  @override
+  String anzKilitMaddeli(int n) {
+    return '$n maddelik notun tamamı Premium\'da';
+  }
+
+  @override
   String get prmKilitEkstreAi => 'Yapay zekâyla eşleme Premium\'da';
 
   @override

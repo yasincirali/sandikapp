@@ -7386,6 +7386,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmKilitNot => 'Full note in Premium';
 
   @override
+  String prmKilitHacim(int gun, int n) {
+    return '$gun-day volume chart and $n unusual days are in Premium';
+  }
+
+  @override
+  String prmKilitHacimSayisiz(int gun) {
+    return '$gun-day volume chart is in Premium';
+  }
+
+  @override
+  String get prmKilitKriptoBaski => 'Hour-by-hour buyer pressure is in Premium';
+
+  @override
+  String anzKilitMaddeli(int n) {
+    return 'The full $n-point note is in Premium';
+  }
+
+  @override
   String get prmKilitEkstreAi => 'AI mapping is in Premium';
 
   @override
