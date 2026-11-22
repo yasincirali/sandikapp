@@ -292,8 +292,16 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   Future<void> _ekranGoruntusuSec() async {
     final l = context.l10n;
     if (ref.read(radarKilitliProvider)) {
-      await PaywallScreen.show(context, source: 'ekran_goruntusu');
-      return;
+      // 21-22 Kas müşteri turu: Varlık Ekle'deki tekli ekran görüntüsü
+      // ücretsiz; ekstre ekranındaki toplu maliyet doldurma Premium kalır
+      // (Premium/ücret kararı yasin'de; ayrımın gerekçesi: toplu işlem).
+      // Satın alma dönüşü okunur (Ar-Ge 22 Kas 1703 #2): alan kullanıcı
+      // seçiciyi yeniden aramaz.
+      if (await PaywallScreen.show(context, source: 'ekran_goruntusu') !=
+              true ||
+          !mounted) {
+        return;
+      }
     }
     final List<XFile> gorseller;
     try {
@@ -373,7 +381,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   /// numaraları döner; değerler yine belgeden okunur. Kullanıcı düğmeye
   /// basmadan hiçbir şey gönderilmez. Metin yolunda (`ekstre_metin_yolu`)
   /// kelimeler de gider, rakamlar yine gitmez (`ekstreMetni`).
-  Future<void> _aiIleEsle() async {
+  Future<void> _aiIleEsle({bool yenidenDeneme = false}) async {
     final e = _ekstre;
     // Çift dokunuş koruması ve gösterge düğmede (SandikAsyncButton,
     // 2026-10-08 tek yükleniyor davranışı); eski `_aiEsleniyor` bayrağı
@@ -411,7 +419,17 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     } on EkstreAiHatasi catch (h) {
       if (!mounted) return;
       if (h.premium) {
-        await PaywallScreen.show(context, source: 'ekstre_ai');
+        // Sunucu kilidi (Ar-Ge 22 Kas 1703 #4): satın alındıysa eşleme bir
+        // kez yeniden denenir (rıza zaten alınmış; sonsuz döngü yok),
+        // alınmadıysa kart susmaz.
+        final aldi =
+            await PaywallScreen.show(context, source: 'ekstre_ai') == true;
+        if (!mounted) return;
+        if (aldi && !yenidenDeneme) {
+          await _aiIleEsle(yenidenDeneme: true);
+        } else {
+          setState(() => _kartMesaji = l.prmKilitEkstreAi);
+        }
       } else if (h.riza) {
         // Rıza başka cihazda geri çekilmiş: bir sonraki dokunuşta sorulur.
         setState(() {
@@ -541,7 +559,12 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
               const SizedBox(height: SandikSpace.sm),
               SandikAsyncButton(
                 tur: SandikAsyncTur.cerceve,
-                icon: const Icon(Icons.add_photo_alternate_outlined),
+                // Kilitliyken simge + okuyucu etiketi (yalnız renkle değil):
+                // paywall sürpriz olmasın (Ar-Ge 22 Kas 1703 #3).
+                icon: ref.watch(radarKilitliProvider)
+                    ? Icon(Icons.lock_outline_rounded,
+                        semanticLabel: context.l10n.alarmPremiumGerekli)
+                    : const Icon(Icons.add_photo_alternate_outlined),
                 onPressed: _okunuyor ? null : _ekranGoruntusuSec,
                 child: Text(_ctrl.text.trim().isEmpty
                     ? context.l10n.importScreenshotAdd
@@ -749,7 +772,7 @@ class _EslemeKarti extends StatelessWidget {
           Text(
             context.l10n.importMappingTitle,
             style: context.t.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w700, color: c.text90),
+                ?.copyWith(fontWeight: FontWeight.w600, color: c.text90),
           ),
           const SizedBox(height: SandikSpace.sm),
           if (a != null)

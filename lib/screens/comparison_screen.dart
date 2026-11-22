@@ -284,14 +284,20 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   @visibleForTesting
   Future<void> addForTest(SymbolHit hit) => _add(hit);
 
-  Future<void> _add(SymbolHit hit) async {
+  Future<void> _add(SymbolHit hit, {bool satinAlindi = false}) async {
     if (_selected.any((s) => s.ticker == hit.ticker)) return;
     // Beşten fazla seri grafiği okunamaz hale getirir; renk paleti de
     // beş renkte bitiyor. Ücretsizde sınır daha düşük olabilir
     // (`karsilastirmaSeriSiniriProvider`, yalnız paywall açıkken); o zaman
     // dolu grafiğe ekleme isteği paywall'u açar.
-    if (_selected.length >= ref.read(karsilastirmaSeriSiniriProvider)) {
-      if (_premiumSiniri) _paywallAc();
+    if (!satinAlindi &&
+        _selected.length >= ref.read(karsilastirmaSeriSiniriProvider)) {
+      if (!_premiumSiniri) return;
+      // Satın alma dönüşü okunur (Ar-Ge 22 Kas 1703 #1): kullanıcı seriyi
+      // seçip Premium aldıysa aynı seri eklenir, aramayı baştan yapmaz.
+      // Sağlayıcı geç güncellenebilir; bu yüzden sınırı yeniden okumak yerine
+      // satın alma sonucuna güvenilir, tavan yine `kKarsilastirmaEnFazla`.
+      await _satinAlinca(hit);
       return;
     }
 
@@ -337,7 +343,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// sayı yerine kilit. Sonraki dokunuşlar doğrudan paywall.
   Future<void> _kilitliCipeDokun(SymbolHit hit) async {
     if (_kilitliOnizlemeGosterildi) {
-      _paywallAc();
+      await _satinAlinca(hit);
       return;
     }
     _kilitliOnizlemeGosterildi = true;
@@ -353,15 +359,30 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     if (!mounted) return;
     final pct = norm?.totalReturnPct;
     if (pct == null || !pct.isFinite || days != _periods[_periodIdx].days) {
-      _paywallAc();
+      await _satinAlinca(hit);
       return;
     }
     setState(() => _kilitliOnizleme = (ad: hit.name, pct: pct));
   }
 
-  void _paywallAc() {
-    AnalyticsService.instance.logPremiumGateShown(feature: 'compare_series');
-    PaywallScreen.show(context, source: 'compare_series');
+  /// Paywall'u açar; `true` yalnız satın alma tamamlandıysa (bulk_add
+  /// örneğiyle aynı: `aldi == true` ana sinyal).
+  Future<bool> _paywallAc() async {
+    CrashReporter.arkaPlan(
+        AnalyticsService.instance.logPremiumGateShown(feature: 'compare_series'),
+        reason: 'comparison_screen.kapiOlayi');
+    final aldi = await PaywallScreen.show(context, source: 'compare_series');
+    return aldi == true;
+  }
+
+  /// Kilitli çip paywall'u: satın alındıysa önizleme satırı temizlenir ve
+  /// dokunulan seri eklenir (sınır sağlayıcıda geç güncellense de `_add`
+  /// satın alma sonucuna güvenir).
+  Future<void> _satinAlinca(SymbolHit hit) async {
+    if (!await _paywallAc() || !mounted) return;
+    setState(() => _kilitliOnizleme = null);
+    if (_selected.length >= kKarsilastirmaEnFazla) return;
+    await _add(hit, satinAlindi: true);
   }
 
   Future<void> _load(String ticker) async {
@@ -1481,7 +1502,10 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: kilitli ? _paywallAc : (full ? null : _openSearch),
+        onPressed: kilitli
+            ? () => CrashReporter.arkaPlan(_paywallAc(),
+                reason: 'comparison_screen.paywall')
+            : (full ? null : _openSearch),
         icon: Icon(kilitli ? Icons.lock_outline_rounded : Icons.add_rounded,
             size: 18),
         label: Text(kilitli
