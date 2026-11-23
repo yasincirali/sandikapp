@@ -119,16 +119,20 @@ void main() {
       await tester.pump(const Duration(seconds: 10));
     });
 
-    testWidgets('$duzen düzen, ücretsiz: iki kilit satırı, sayı yok',
+    // 2026-11-23 #3: kur ve başa baş ikisi birden kilitliyken iki amber
+    // satır yerine tek birleşik kilit (aynı paywall kartı, kaynak
+    // `varlik_basa_bas`).
+    testWidgets('$duzen düzen, ücretsiz: tek birleşik kilit, sayı yok',
         (tester) async {
       await _ac(tester, katmanli: katmanli, kilitli: true);
       final kilitler = find.descendant(
           of: find.byType(PozisyonEkSatirlari),
           matching: find.byType(KilitSatiri));
-      expect(kilitler, findsNWidgets(2));
+      expect(kilitler, findsOneWidget);
+      expect(tester.widget<KilitSatiri>(kilitler).kaynak, 'varlik_basa_bas');
       expect(
-          tester.widgetList<KilitSatiri>(kilitler).map((k) => k.kaynak).toSet(),
-          {'kur_ayrismasi', 'varlik_basa_bas'});
+          find.text("Kurun payı ve başa baş için gereken yükseliş Premium'da"),
+          findsOneWidget);
       expect(find.text('%19 yükselmeli'), findsNothing);
       expect(find.textContaining('Fiyattan', findRichText: true), findsNothing);
       expect(tester.takeException(), isNull);

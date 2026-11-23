@@ -1103,7 +1103,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get fxSplitMissingRate =>
-      'Alış kuru kayıtlı değil; işlemi düzenleyip ekleyebilirsin';
+      'Alış günündeki kur henüz bulunamadı; her gün yeniden denenir';
 
   @override
   String get fxSplitSheetTitle => 'Kâr nereden geldi';
@@ -1136,6 +1136,25 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get fxSplitSheetTotal => 'İkisinin toplamı: TL kâr';
+
+  @override
+  String get fxSplitLockedLoss =>
+      'Zararının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da';
+
+  @override
+  String fxSplitA11yLoss(String price, String fx) {
+    return 'Zararının fiyattan gelen kısmı $price, kurdan gelen kısmı $fx.';
+  }
+
+  @override
+  String get fxSplitSheetTitleLoss => 'Zarar nereden geldi';
+
+  @override
+  String get fxSplitSheetTotalLoss => 'İkisinin toplamı: TL zarar';
+
+  @override
+  String get kurVeBasaBasKilitli =>
+      'Kurun payı ve başa baş için gereken yükseliş Premium\'da';
 
   @override
   String get fxSplitOpenHint => 'Hesabın ayrıntısını açar';
@@ -11625,8 +11644,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get aylikGetiriHata =>
-      'Tablo hesaplanamadı, yenileyince tekrar denenir.';
+  String get aylikGetiriHata => 'Tablo hesaplanamadı.';
 
   @override
   String aylikGetiriYuzde(String deger) {

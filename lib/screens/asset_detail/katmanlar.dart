@@ -462,6 +462,16 @@ class PozisyonEkSatirlari extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final basaBas = basaBasSatiriCizilir(ref, basaBasOrani);
+    // İkisi birden kilitliyse tek kilit (Ar-Ge 2026-11-23 #3): ücretsiz
+    // kullanıcı zarardaki döviz pozisyonunda aynı paywall kartına (X-Ray)
+    // giden iki amber satırı art arda görüyordu. Aynı çağrı sayfada bir
+    // kez (Zirve #5, 2026-11-22 ile aynı ilke). Kaynak `varlik_basa_bas`:
+    // birleşik satır grubun sonundaki satırın yerini alır, analitikte o
+    // yüzey okunur. Tek kilitliyse, açıkken ve elde tutma satırında
+    // değişen yok. `basaBas` zaten `premiumOzellikleriGorunur` içerir.
+    final tekKilit = kurAyrismasi != null &&
+        basaBas &&
+        ref.watch(premiumKilitliProvider);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -478,8 +488,18 @@ class PozisyonEkSatirlari extends ConsumerWidget {
                   : _EnflasyonSatiri(sonuc: s.data!),
             ),
           ),
+        if (tekKilit)
+          Padding(
+            padding: const EdgeInsets.only(top: SandikSpace.sm),
+            child: KilitSatiri(
+              metin: context.l10n.kurVeBasaBasKilitli,
+              kaynak: 'varlik_basa_bas',
+              ozellik: 'basa_bas',
+              kilitEtiketi: context.l10n.goalDateLockedLabel,
+            ),
+          )
         // Enflasyonun hemen altı: ikisi de "kâr gerçekte nereden" sorusu.
-        if (kurAyrismasi case final ka?)
+        else if (kurAyrismasi case final ka?)
           KurAyrismasiSatiri(ayrisma: ka, baz: baz)
         else if (kurAlisKuruEksik)
           const KurAyrismasiEksikSatiri(),
@@ -487,7 +507,7 @@ class PozisyonEkSatirlari extends ConsumerWidget {
         // zarardaki hâli. Kilit kaynağı ayrı (`varlik_basa_bas`), paywall
         // kartı aynı (X-Ray). Ekran okuyucu cümlesi satırın kendisinde
         // (`basaBasCumle`).
-        if (basaBas)
+        if (basaBas && !tekKilit)
           Padding(
             padding: const EdgeInsets.only(top: SandikSpace.sm),
             child:

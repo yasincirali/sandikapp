@@ -17,6 +17,7 @@ import 'package:portfoy_takip/services/inflation_service.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/aylik_getiri_karti.dart';
+import 'package:portfoy_takip/widgets/sandik_skeleton.dart' show SandikSkeleton;
 import 'package:portfoy_takip/utils/tr_format.dart' show ayBulunmaParcasi;
 import 'package:portfoy_takip/utils/tr_iyelik.dart';
 import 'package:portfoy_takip/widgets/para_akisi_karti.dart' show KilitSatiri;
@@ -335,8 +336,9 @@ void main() {
       await pump(tester,
           saglayici: () => Future.error(StateError('ag koptu xyz')));
       expect(find.text('Aylık getiri'), findsOneWidget);
-      expect(find.text('Tablo hesaplanamadı, yenileyince tekrar denenir.'),
-          findsOneWidget);
+      // 2026-11-23 #5: metin kısaldı, altında "Tekrar dene" düğmesi (`retry`).
+      expect(find.text('Tablo hesaplanamadı.'), findsOneWidget);
+      expect(find.text('Tekrar dene'), findsOneWidget);
       expect(find.textContaining('xyz'), findsNothing);
     });
 
@@ -499,14 +501,19 @@ void main() {
         await pump(tester,
             saglayici: () => tamam.future, hareketiAzalt: azalt, yerles: false);
         await tester.pump();
-        expect(find.text('Aylık getiri'), findsNothing);
+        // 2026-11-23 #4: yüklenirken başlık + iskelet (eskiden kart yoktu).
+        expect(find.text('Aylık getiri'), findsOneWidget);
+        expect(find.byType(SandikSkeleton), findsNWidgets(2));
         tamam.complete(tablo());
         await tester.pump();
         await tester.pump();
-        expect(find.text('Aylık getiri'), findsOneWidget);
+        // Geçişte eski (iskeletli) ve yeni kabuk üst üste solabilir.
+        expect(find.text('Aylık getiri'), findsWidgets);
         expect(
             find.byType(AnimatedSize), azalt ? findsNothing : findsOneWidget);
         await tester.pumpAndSettle();
+        expect(find.text('Aylık getiri'), findsOneWidget);
+        expect(find.byType(SandikSkeleton), findsNothing);
         await tester.pumpWidget(const SizedBox());
       }
     });
