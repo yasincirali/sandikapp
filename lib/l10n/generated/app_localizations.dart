@@ -1937,7 +1937,7 @@ abstract class AppLocalizations {
   /// No description provided for @fxSplitMissingRate.
   ///
   /// In tr, this message translates to:
-  /// **'Alış kuru kayıtlı değil; işlemi düzenleyip ekleyebilirsin'**
+  /// **'Alış günündeki kur henüz bulunamadı; her gün yeniden denenir'**
   String get fxSplitMissingRate;
 
   /// No description provided for @fxSplitSheetTitle.
@@ -1987,6 +1987,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İkisinin toplamı: TL kâr'**
   String get fxSplitSheetTotal;
+
+  /// Kur ayrışması kilidi, pozisyon zarardayken (fiyat + kur etkisi < 0)
+  ///
+  /// In tr, this message translates to:
+  /// **'Zararının ne kadarı fiyattan, ne kadarı kurdan: Premium\'da'**
+  String get fxSplitLockedLoss;
+
+  /// No description provided for @fxSplitA11yLoss.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zararının fiyattan gelen kısmı {price}, kurdan gelen kısmı {fx}.'**
+  String fxSplitA11yLoss(String price, String fx);
+
+  /// No description provided for @fxSplitSheetTitleLoss.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zarar nereden geldi'**
+  String get fxSplitSheetTitleLoss;
+
+  /// No description provided for @fxSplitSheetTotalLoss.
+  ///
+  /// In tr, this message translates to:
+  /// **'İkisinin toplamı: TL zarar'**
+  String get fxSplitSheetTotalLoss;
+
+  /// Varlık detayı: kur ayrışması ve başa baş ikisi birden kilitliyken tek kilit satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurun payı ve başa baş için gereken yükseliş Premium\'da'**
+  String get kurVeBasaBasKilitli;
 
   /// No description provided for @fxSplitOpenHint.
   ///
@@ -18494,6 +18524,18 @@ abstract class AppLocalizations {
   /// **'En az düşen günün {tarih} · ne kadar olduğu Premium\'da'**
   String leastDownDayLocked(String tarih);
 
+  /// Kilitli en iyi/en zor gün kartı, dönemde iki gün de ölçüldüyse: başlık iki gün vaat ediyor, iki tarih de açık; yüzdeler kilitli (Ar-Ge 23 Kas 17:05 #4).
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi gün {enIyi} · en zor gün {enZor} · ne kadar olduğu Premium\'da'**
+  String bestToughestDayLocked(String enIyi, String enZor);
+
+  /// bestToughestDayLocked'un dönemde hiç eksi gün yokken söylenişi (artı gün 'en zor' diye anılmaz; leastUpDayRow ile aynı ad).
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi gün {enIyi} · en az yükselen gün {enZor} · ne kadar olduğu Premium\'da'**
+  String bestLeastUpDayLocked(String enIyi, String enZor);
+
   /// No description provided for @tarihCipiBugun.
   ///
   /// In tr, this message translates to:
@@ -18611,7 +18653,7 @@ abstract class AppLocalizations {
   /// Aylık getiri kartı: seri hatası (ham hata gösterilmez)
   ///
   /// In tr, this message translates to:
-  /// **'Tablo hesaplanamadı, yenileyince tekrar denenir.'**
+  /// **'Tablo hesaplanamadı.'**
   String get aylikGetiriHata;
 
   /// Ekran okuyucu: sıfıra yuvarlanan aylık getiri (yönsüz)

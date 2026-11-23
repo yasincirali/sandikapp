@@ -47,12 +47,15 @@ class KurAyrismasiSatiri extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final l = context.l10n;
+    // Zarardaki pozisyonda "kâr" yerine "zarar" dili (2026-11-23 #2);
+    // kâr hâli birebir aynı. Karar modelde (`kurAyrismasiZararda`).
+    final zarar = kurAyrismasiZararda(ayrisma);
     if (!ref.watch(premiumKilitliProvider)) OzellikOlcumu.say(Ozellik.kurAyrismasi);
     if (ref.watch(premiumKilitliProvider)) {
       return Padding(
         padding: const EdgeInsets.only(top: SandikSpace.xs),
         child: KilitSatiri(
-          metin: l.fxSplitLocked,
+          metin: zarar ? l.fxSplitLockedLoss : l.fxSplitLocked,
           kaynak: 'kur_ayrismasi',
           ozellik: 'kur_ayrismasi',
           kilitEtiketi: l.goalDateLockedLabel,
@@ -76,7 +79,9 @@ class KurAyrismasiSatiri extends ConsumerWidget {
     return Semantics(
       container: true,
       button: true,
-      label: l.fxSplitA11y(fiyat, kur),
+      label: zarar
+          ? l.fxSplitA11yLoss(fiyat, kur)
+          : l.fxSplitA11y(fiyat, kur),
       hint: l.fxSplitOpenHint,
       excludeSemantics: true,
       child: SandikTappable(
@@ -122,10 +127,18 @@ class KurAyrismasiSatiri extends ConsumerWidget {
 /// nötr satır (2026-11-13). Eskiden satır sessizce kayboluyordu; Premium
 /// kullanıcı nedenini öğrenmiyordu. Kapı [kurAyrismasiAlisKuruEksik].
 ///
+/// Metin gerçek davranışı söyler (Ar-Ge 2026-11-23 #1): eskiden "işlemi
+/// düzenleyip ekleyebilirsin" diyordu ama uygulamada alış kuru giren alan
+/// yok: kur kayıtta tarihten otomatik çekilir (`portfolio_provider`
+/// `_alisKuru`), düzenleme mevcut kuru kopyalar, eksikse
+/// `FxRateMigrationService` günde bir yeniden dener. Kullanıcı işlemi açıp
+/// alan bulamıyordu; şimdi "henüz bulunamadı, her gün yeniden denenir".
+///
 /// Gezinme YOK: varlık ekranından tek lotu düzenleyen basit bir giriş yok
 /// ("Varlığı güncelle" bayraklı ve tüm lotları tek kayda indirir; alış
-/// kurunu düzeltmek için o ağır akışa göndermek yanlış olurdu). Satır yolu
-/// söyler, chevron koymaz — dokunulamayan satırda chevron yalan olurdu.
+/// kurunu düzeltmek için o ağır akışa göndermek yanlış olurdu). Satır durumu
+/// söyler (eskiden yolu), chevron koymaz — dokunulamayan satırda chevron
+/// yalan olurdu.
 ///
 /// Yalnız Premium AÇIKKEN: ücretsiz kullanıcıda davranış değişmez (eskiden
 /// de hiçbir şey çizilmiyordu; kilitli kullanıcıya "kuru ekle" demek,
@@ -159,6 +172,7 @@ class KurAyrismasiEksikSatiri extends ConsumerWidget {
 }
 
 /// "Kâr nereden geldi" sayfası: [KurAyrismasi]'nın kaynak sayıları.
+/// Zarardaki pozisyonda başlık ve toplam satırı "zarar" der (2026-11-23).
 ///
 /// İlk satır döviz bazında alış ortalaması → bugünkü fiyat (2026-11-15).
 ///
@@ -177,7 +191,9 @@ class KurAyrismasiSayfasi extends StatelessWidget {
           {required KurAyrismasi ayrisma, required BazPara baz}) =>
       showSandikSheet<void>(
         context: context,
-        baslik: context.l10n.fxSplitSheetTitle,
+        baslik: kurAyrismasiZararda(ayrisma)
+            ? context.l10n.fxSplitSheetTitleLoss
+            : context.l10n.fxSplitSheetTitle,
         builder: (_) => KurAyrismasiSayfasi(ayrisma: ayrisma, baz: baz),
       );
 
@@ -269,7 +285,11 @@ class KurAyrismasiSayfasi extends StatelessWidget {
           satir(l.fxSplitFx, isaretli(ayrisma.kurEtkisi),
               alt: l.fxSplitSheetFxBody(doviz(ayrisma.dovizDeger), farkMetni)),
           Divider(height: 1, thickness: 1, color: c.hairline),
-          satir(l.fxSplitSheetTotal, isaretli(ayrisma.toplam)),
+          satir(
+              kurAyrismasiZararda(ayrisma)
+                  ? l.fxSplitSheetTotalLoss
+                  : l.fxSplitSheetTotal,
+              isaretli(ayrisma.toplam)),
         ],
       ),
     );

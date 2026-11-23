@@ -421,14 +421,16 @@ void main() {
       expect(find.byType(KilitSatiri), findsNothing);
     });
 
-    testWidgets('ücretsiz: yalnız en iyi günün tarihi açık, yüzde sızmaz',
+    testWidgets('ücretsiz: iki günün tarihi açık, yüzde sızmaz',
         (tester) async {
       await kur(tester, gorunur: true, kilitli: true);
       expect(find.byType(KilitSatiri), findsOneWidget);
-      expect(find.text("En iyi günün 4 Kasım · ne kadar olduğu Premium'da"),
+      // Başlık iki gün vaat ediyor; kilit iki tarihi de söyler (Ar-Ge 23 Kas
+      // 17:05 #4). Hiçbir yüzde açılmaz.
+      expect(
+          find.text(
+              "En iyi gün 4 Kasım · en zor gün 23 Ekim · ne kadar olduğu Premium'da"),
           findsOneWidget);
-      // En zor gün ve hiçbir yüzde açılmaz.
-      expect(find.textContaining('23 Ekim'), findsNothing);
       expect(find.textContaining('%'), findsNothing);
       final kilit = tester.widget<KilitSatiri>(find.byType(KilitSatiri));
       expect(kilit.kaynak, 'en_iyi_gun');
@@ -445,6 +447,30 @@ void main() {
           findsOneWidget);
       expect(find.textContaining('En iyi'), findsNothing);
       expect(find.textContaining('%'), findsNothing);
+    });
+
+    testWidgets('ücretsiz, hiç eksi gün yok: en zor gün "en az yükselen"',
+        (tester) async {
+      await kur(tester, gorunur: true, kilitli: true, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2),
+        enZor: DonemGunu(DateTime(2026, 10, 23), 0.4),
+      ));
+      expect(
+          find.text(
+              "En iyi gün 4 Kasım · en az yükselen gün 23 Ekim · ne kadar olduğu Premium'da"),
+          findsOneWidget);
+      expect(find.textContaining('en zor gün 23'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
+    });
+
+    testWidgets('ücretsiz, en zor gün ölçülmediyse tek tarihli eski metin',
+        (tester) async {
+      await kur(tester, gorunur: true, kilitli: true, gunler: (
+        enIyi: DonemGunu(DateTime(2026, 11, 4), 3.2),
+        enZor: null,
+      ));
+      expect(find.text("En iyi günün 4 Kasım · ne kadar olduğu Premium'da"),
+          findsOneWidget);
     });
 
     testWidgets('en zor gün altında renksiz "O günden beri" satırı, tek cümle',

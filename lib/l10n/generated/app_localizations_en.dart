@@ -1120,7 +1120,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fxSplitMissingRate =>
-      'No purchase rate saved; edit the transaction to add it';
+      'The rate on your purchase day isn\'t found yet; we retry daily';
 
   @override
   String get fxSplitSheetTitle => 'Where your gain came from';
@@ -1154,6 +1154,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fxSplitSheetTotal => 'Together: gain in TRY';
+
+  @override
+  String get fxSplitLockedLoss =>
+      'How much of your loss is price and how much is FX: Premium';
+
+  @override
+  String fxSplitA11yLoss(String price, String fx) {
+    return 'Part of your loss from price $price, part from the exchange rate $fx.';
+  }
+
+  @override
+  String get fxSplitSheetTitleLoss => 'Where your loss came from';
+
+  @override
+  String get fxSplitSheetTotalLoss => 'Together: loss in TRY';
+
+  @override
+  String get kurVeBasaBasKilitli =>
+      'The FX share and the rise needed to break even: Premium';
 
   @override
   String get fxSplitOpenHint => 'Opens the calculation details';
@@ -11765,6 +11784,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String bestToughestDayLocked(String enIyi, String enZor) {
+    return 'Best day $enIyi · toughest day $enZor · how much is in Premium';
+  }
+
+  @override
+  String bestLeastUpDayLocked(String enIyi, String enZor) {
+    return 'Best day $enIyi · smallest gain $enZor · how much is in Premium';
+  }
+
+  @override
   String get tarihCipiBugun => 'Today';
 
   @override
@@ -11854,8 +11883,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get aylikGetiriHata =>
-      'Couldn\'t calculate the table. Pull to refresh to try again.';
+  String get aylikGetiriHata => 'Couldn\'t calculate the table.';
 
   @override
   String aylikGetiriYuzde(String deger) {

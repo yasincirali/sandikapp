@@ -98,6 +98,16 @@ KurAyrismasi? kurAyrismasi(Asset pozisyon, {required double? guncelKur}) {
   );
 }
 
+/// Pozisyon kur ayrışmasında zararda mı (Ar-Ge 2026-11-23 #2)?
+///
+/// Satır, kilit ve "nereden geldi" sayfası zarardaki pozisyonda da
+/// çiziliyordu; ABD hissesinde zarar eden kullanıcı "kârının ne kadarı"
+/// okuyordu. Metin seçimi bu kapıdan: iki etkinin toplamı (= kartın TL
+/// kârı/zararı, [toplam]) sıfırın altındaysa zarar dili. Tam sıfır kâr
+/// dilinde kalır (eski davranış). İşaret kartta zaten ücretsiz görünür;
+/// kilit metninin "zarar" demesi sayı sızdırmaz.
+bool kurAyrismasiZararda(KurAyrismasi a) => a.fiyatEtkisi + a.kurEtkisi < 0;
+
 String _sembol(String currency) => switch (currency.toUpperCase()) {
       'USD' => r'$',
       'EUR' => '€',

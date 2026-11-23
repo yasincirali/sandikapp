@@ -14,7 +14,8 @@ import '../utils/tr_iyelik.dart' show trSayiIyelikBelirtmeEki, trSayiIyelikEki;
 import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_acilir.dart';
 import '../services/ozellik_olcumu.dart';
-import 'sandik_skeleton.dart' show SandikIcerikGecisi;
+import 'sandik_error_view.dart';
+import 'sandik_skeleton.dart' show SandikIcerikGecisi, SandikSkeleton;
 
 /// Performans'ta "hangi ay kazandım, hangi ay kaybettim" kartı — yıl × ay
 /// getiri tablosu (2026-11-11, Premium; paywall kaynağı `aylik_getiri`).
@@ -32,12 +33,22 @@ import 'sandik_skeleton.dart' show SandikIcerikGecisi;
 ///   (2026-11-12'den beri) aynı başlıkla 6 bölmeli ilerleme ve tablonun
 ///   hazır olacağı ay görünür. Eskiden kart hiç yoktu: Premium alan
 ///   kullanıcı özelliği arayıp bulamıyordu.
-/// - Seri hatasında kart kalır, tek satır "hesaplanamadı" der.
+/// - Seri hatasında kart kalır, tek satır "hesaplanamadı" + "Tekrar dene"
+///   (`retry`; 2026-11-23 #5, [SandikErrorView] kompakt). Eskiden yalnız "yenileyince
+///   tekrar denenir" yazıyordu; aşağı çekme jestini kimse söylemiyordu,
+///   düğme yoktu (TASARIM_DILI §6.1). Düğme provider'ı geçersiz kılar.
 /// - Yüklenirken kart yok (iskelet de yok): liste sonunda duran ek bir
 ///   kart; iskelet her açılışta "bir şey eksik" der, kart çoğu zaman
 ///   önbellekten anında gelir. Geç geldiğinde liste zıplamasın diye
 ///   [SandikIcerikGecisi] boyu akıtır, kart solarak belirir (2026-11-12;
 ///   hareketi azalt açıkken anında).
+///   Güncelleme (2026-11-23 #4): defter tabloya yetiyorsa (≥ 6 ay) ve seri
+///   ilk kez yükleniyorsa başlık + iki satır [SandikSkeleton]. İlk
+///   açılışta seri saniyeler sürebiliyor; kart sonradan çıkınca altındaki
+///   Zirve ve dipnot kayıyor, Premium kullanıcı aldığı kartı ilk bakışta
+///   bulamıyordu (yukarıdaki gerekçenin aynısı). Önbellekten gelen kart
+///   hâlâ anında; iskelet yalnız gerçekten beklerken görünür. Kısa
+///   defterde ve kilitliyken değişen yok.
 ///
 /// ## Yerleşim (HIG Dynamic Type; yatay kaydırma YOK)
 /// Her yıl önce yıl satırı ("2025 ▲ %12,4"), altında aylar.
@@ -149,13 +160,47 @@ class AylikGetiriKarti extends ConsumerWidget {
     final tablo = durum.valueOrNull;
     // Seri hatası: kart kalır, tek satır söyler (ham hata yok; bildirim
     // provider'da). Önceki tablo varsa (yenileme hatası) o kalır.
-    if (tablo == null && durum.hasError) {
+    // `!isLoading`: "Tekrar dene" sonrası hata önceki değer olarak
+    // taşınır; yeniden denerken hata satırı yerine iskelet görünsün.
+    if (tablo == null && durum.hasError && !durum.isLoading) {
       return (
         'hata',
         _kabuk(
           context,
-          Text(l.aylikGetiriHata,
-              style: context.t.bodySmall?.copyWith(color: context.c.text58)),
+          SandikErrorView(
+            error: durum.error!,
+            mesaj: l.aylikGetiriHata,
+            kompakt: true,
+            onRetry: () => ref.invalidate(aylikGetiriProvider(istek)),
+          ),
+        ),
+      );
+    }
+    // İlk yükleme: başlık + iskelet (#4). Boy tabloya yakın değil, iki
+    // satır: tablo da katlanmış hâlde başlık + tek cümledir, fazlası
+    // tablo gelmeyince (delikli seri) boşa yer tutardı.
+    if (tablo == null && durum.isLoading) {
+      return (
+        'yukleniyor',
+        _kabuk(
+          context,
+          // Ekran okuyucu bloğu değil durumu duyar (`SandikSkeletonList`
+          // ile aynı etiket); iskeletin kendisi semantikten çıkarılmış.
+          Semantics(
+            label: l.loadingUpper,
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SandikSkeleton(),
+                SizedBox(height: SandikSpace.sm),
+                FractionallySizedBox(
+                  widthFactor: 0.6,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: SandikSkeleton(),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }

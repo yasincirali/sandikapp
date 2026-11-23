@@ -613,9 +613,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         secili: SummaryPeriod.fromIndex(_selectedPeriodIdx)),
                   ],
                   ..._aylikGetiriBlogu(chartAssets, targetAssets),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: SandikSpace.smd),
                   const DisclaimerWidget(kisa: true),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SandikSpace.md),
                 ].map((w) => _SekmeSolmasi(
                     ozet: true, taze: _sekmeYeniDegisti, child: w))
               else
@@ -668,9 +668,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   // geçmişi çekemiyordu; uydurma seriye düşmesi engellendikten sonra
                   // (bkz. `analyze(..., allowSimulation)`) zaten kalıcı olarak
                   // "sinyal yok" gösteriyordu — yer kaplayan ölü bir yüzeydi.
-                  const SizedBox(height: 12),
+                  const SizedBox(height: SandikSpace.smd),
                   const DisclaimerWidget(kisa: true),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SandikSpace.md),
                 ].map((w) => _SekmeSolmasi(
                     ozet: false, taze: _sekmeYeniDegisti, child: w)),
             ],

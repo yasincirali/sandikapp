@@ -355,12 +355,15 @@ void main() {
 
     testWidgets('Premium: alış kuru eksik satırı görünür', (tester) async {
       await pump(tester, kilitli: false);
-      expect(find.textContaining('Alış kuru kayıtlı değil'), findsOneWidget);
+      // 2026-11-23 #1: metin gerçek davranışı söyler (kur otomatik
+      // çekilir, eksikse her gün yeniden denenir; düzenlenecek alan yok).
+      expect(find.textContaining('kur henüz bulunamadı'), findsOneWidget);
+      expect(find.textContaining('düzenleyip'), findsNothing);
     });
 
     testWidgets('ücretsiz: hiçbir şey (davranış değişmedi)', (tester) async {
       await pump(tester, kilitli: true);
-      expect(find.textContaining('Alış kuru kayıtlı değil'), findsNothing);
+      expect(find.textContaining('kur henüz bulunamadı'), findsNothing);
       expect(find.byType(KilitSatiri), findsNothing);
     });
   });
