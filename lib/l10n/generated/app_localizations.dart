@@ -14147,6 +14147,12 @@ abstract class AppLocalizations {
   /// **'Varlıkların ve işlem geçmişin; PDF ya da Excel'**
   String get dsPortfoyAlt;
 
+  /// Raporlar › Portföy dökümü kilitliyken alt metin; kullanıcının belgeye girecek kendi sayıları.
+  ///
+  /// In tr, this message translates to:
+  /// **'{varlik} varlık, {islem} işlem; PDF ya da Excel'**
+  String dsPortfoyAltKilitli(int varlik, int islem);
+
   /// No description provided for @ttBaslik.
   ///
   /// In tr, this message translates to:

@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../screens/paywall_screen.dart';
 import '../services/analytics_service.dart';
+import '../services/auth_service.dart' show AuthException;
 import '../services/crash_reporter.dart';
 import '../services/disa_aktarim/disa_aktarim_service.dart';
 import '../services/disa_aktarim/rapor_belgeleri.dart';
@@ -31,17 +33,37 @@ Future<void> portfoyDokumunuPaylas(BuildContext context, {Rect? kaynak}) async {
   if (kap.read(premiumKilitliProvider)) {
     unawaited(AnalyticsService.instance
         .logPremiumGateShown(feature: 'portfoy_disa_aktar'));
-    await PaywallScreen.show(context, source: 'portfoy_disa_aktar');
-    return;
+    // Satın alma sonrası aynı akışa düşülür (UI/UX turu 15, 2026-11-23 #1):
+    // eskiden burada `return` vardı; Raporlar sayfası çoktan kapandığı için
+    // Premium'u alan kullanıcı Raporlar'ı yeniden açıp satıra yeniden
+    // dokunmak zorundaydı. Ana sinyal `true` (Varlık Ekle tekli kaydıyla
+    // aynı, `kayit.dart` `yenidenDene`); vazgeçen ya da kapatan döner.
+    final aldi = await PaywallScreen.show(context, source: 'portfoy_disa_aktar');
+    if (aldi != true || !context.mounted) return;
   }
   // Raporlar sayfasının satırı kapandı; popover'ın bakacağı yer çağıranın
   // (Raporlar düğmesi) kendisi. Yoksa servis ekran ortasına düşer.
   kaynak ??= ShareCardService.originOf(context);
   final bicim = await disaAktarimBicimiSor(context);
   if (bicim == null || !context.mounted) return;
-  final durum = kap.read(portfolioProvider).valueOrNull;
+  // Sessiz dönüş yok (UI/UX turu 15 #7): eskiden `valueOrNull` okunuyordu;
+  // portföy henüz yükleniyorsa ya da oturum yoksa kullanıcı biçimi seçip
+  // hiçbir şey görmüyordu. Portföy yükleniyorsa beklenir; yüklenemezse ya
+  // da oturum yoksa hata gösterilir.
+  final PortfolioState durum;
+  try {
+    durum = await kap.read(portfolioProvider.future);
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'portfoyDokumunuPaylas.portfoy');
+    if (context.mounted) showAppError(context, e);
+    return;
+  }
+  if (!context.mounted) return;
   final kullanici = kap.read(authProvider).valueOrNull;
-  if (durum == null || kullanici == null) return;
+  if (kullanici == null) {
+    showAppError(context, AuthException(context.l10n.hataOturumDoldu));
+    return;
+  }
   final belge = portfoyBelgesi(
     lotlar: [
       for (final a in durum.assets)

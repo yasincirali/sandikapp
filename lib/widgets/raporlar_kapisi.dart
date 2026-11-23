@@ -195,7 +195,11 @@ class _RaporlarSayfasi extends ConsumerWidget {
         _RaporSatiri(
           ikon: Icons.description_rounded,
           baslik: l.dsPortfoyBaslik,
-          alt: l.dsPortfoyAlt,
+          // Kilitliyken kullanıcının kendi sayısı (UI/UX turu 15, Premium'a
+          // teşvik); sayı yoksa genel metin. Kilitsizken sağlayıcıya
+          // sorulmaz.
+          alt: portfoyDokumuAlti(l,
+              kilitli ? ref.watch(portfoyDokumuSayilariProvider) : null),
           kilitli: kilitli,
           onTap: () => ac((ekran) => portfoyDokumunuPaylas(ekran)),
         ),
@@ -272,6 +276,11 @@ class _RaporlarSayfasi extends ConsumerWidget {
 /// ücretsiz kullanıcıya kendi sayısı: "4 fonun · portföyünün %38'i" — kilit
 /// kartının kısa hâli, yalnız zaten gördüğü değerlerden. Fon durumu
 /// bilinmiyorsa (`null`, yükleniyor), kilitli ve fonsuzsa genel metin kalır.
+/// Portföy dökümü satırının alt metni: sayılar varsa "14 varlık, 63 işlem;
+/// PDF ya da Excel", yoksa genel metin (uydurma sayı yok).
+String portfoyDokumuAlti(AppLocalizations l, ({int varlik, int islem})? s) =>
+    s == null ? l.dsPortfoyAlt : l.dsPortfoyAltKilitli(s.varlik, s.islem);
+
 String xrayRaporAlti(AppLocalizations l, XrayFonPayi? f,
     {required bool kilitli}) {
   if (f == null) return l.xrRaporAlt;
@@ -344,7 +353,11 @@ class _RaporSatiri extends StatelessWidget {
     final c = context.c;
     return SandikTappable(
       onTap: onTap,
-      semanticLabel: baslik,
+      // Kilit ekran okuyucuda da söylenir (UI/UX turu 15 #6, HIG "yalnız
+      // görselle anlam yok"): eskiden yalnız başlık okunuyor, kilit yalnız
+      // kehribar simgeyle anlatılıyordu.
+      semanticLabel:
+          kilitli ? '$baslik, ${context.l10n.kilitli}' : baslik,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: SandikTouch.min),
         child: Padding(

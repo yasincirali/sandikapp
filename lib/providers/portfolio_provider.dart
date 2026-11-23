@@ -196,6 +196,34 @@ class AssetLimitExceededException implements Exception {
       'AssetLimitExceededException(current: $currentCount, limit: $limit)';
 }
 
+/// Toplu kayıt sınırda kesildi: ilk [kaydedilen] satır yazıldı, kalanı
+/// ([kaydedilen] dahil) yazılmadı.
+///
+/// UI/UX turu 15 (2026-11-23 #5): Varlık Ekle hızlı girişinde sınıra
+/// gelinince kalan satırlar kayboluyordu. Satın alan kullanıcının yalnız
+/// KALAN satırları kaydedilsin diye çağıran kesilen yeri bilmeli; aynı
+/// listeyi baştan kaydetmek ilk satırları çiftlerdi.
+class TopluSinirAsildi implements Exception {
+  const TopluSinirAsildi(this.sebep, this.kaydedilen);
+  final AssetLimitExceededException sebep;
+  final int kaydedilen;
+}
+
+/// [satirlar]'ı sırayla [kaydet]'e verir. Sınır istisnası satırın indeksiyle
+/// [TopluSinirAsildi] olarak yeniden atılır; öteki hatalar olduğu gibi geçer
+/// (çağıranın genel hata yolu `friendlyError` ile okur). Sınır kontrolü
+/// `addAsset`'te yazmadan ÖNCE yapıldığı için kesilen satır yazılmamıştır.
+Future<void> siraylaKaydet<T>(
+    List<T> satirlar, Future<void> Function(T satir) kaydet) async {
+  for (var i = 0; i < satirlar.length; i++) {
+    try {
+      await kaydet(satirlar[i]);
+    } on AssetLimitExceededException catch (e, st) {
+      Error.throwWithStackTrace(TopluSinirAsildi(e, i), st);
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------

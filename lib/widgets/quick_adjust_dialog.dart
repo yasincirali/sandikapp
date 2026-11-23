@@ -14,6 +14,7 @@ import '../providers/premium_provider.dart'
     show premiumOzellikleriGorunurProvider;
 import '../screens/paywall_screen.dart';
 import '../services/analytics_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/fiyat_kaynagi.dart' show FiyatKaynagi;
 import '../services/mevduat_hesabi.dart';
 import '../services/sozlesme_deposu.dart';
@@ -425,9 +426,24 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       widget.ref.read(premiumOzellikleriGorunurProvider);
   bool get _anaparamKilitli => widget.ref.read(premiumKilitliProvider);
 
-  void _anaparamPaywall() {
-    AnalyticsService.instance.logPremiumGateShown(feature: 'anaparam');
-    PaywallScreen.show(context, source: 'anaparam');
+  /// Satın alınca çip yerinde açılır ve alan dolar (UI/UX turu 15,
+  /// 2026-11-23 #2): eskiden sonuç beklenmiyordu; kilit `ref.read` ile
+  /// okunduğu için diyalog yeniden çizilmiyor, çip kilitli kalıyor ve
+  /// kullanıcı aldığı şeyi göremiyordu. `true` gelince `setState` hem kilidi
+  /// yeniden okutur hem de kilitsiz çipin dokunuşuyla aynı satırları koşar.
+  /// Sayı o an yeniden hesaplanır ([_anaparamAdedi]); kilitli çip sayı
+  /// taşımaz. Anaparam yalnız adet kipinde, bu yüzden alan [_qtyCtrl].
+  Future<void> _anaparamPaywall() async {
+    CrashReporter.arkaPlan(
+        AnalyticsService.instance.logPremiumGateShown(feature: 'anaparam'),
+        reason: 'quick_adjust.anaparamPaywall');
+    final aldi = await PaywallScreen.show(context, source: 'anaparam');
+    if (aldi != true || !mounted) return;
+    final adet = _anaparamAdedi;
+    setState(() {
+      if (adet != null) _qtyCtrl.text = _fmt(adet);
+      _error = null;
+    });
   }
 
   /// Tutar kipindeki "Son alımın" çipi: son alımın ödenen tutarı

@@ -180,7 +180,11 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
   }
 
   @override
-  Future<bool> kaydet({String? portfoyId}) async {
+  // [satinAlmaSonrasi]: paywall'dan `true` dönünce yapılan TEK yeniden
+  // deneme (UI/UX turu 15, 2026-11-23 #3/#4). İkinci denemede yine sınır
+  // gelirse (mağaza onayı gecikti) paywall bir daha açılır ama yeniden
+  // denenmez: döngü yok.
+  Future<bool> kaydet({String? portfoyId, bool satinAlmaSonrasi = false}) async {
     if (DemoModu.yazmaKapisi('mevduat')) return false;
     if (!(_form.currentState?.validate() ?? false)) {
       setState(() => _denendi = true);
@@ -206,8 +210,16 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
       // Sınır dolu: genel hata ("bir şeyler ters gitti") ve Crashlytics
       // non-fatal'ı değil, Varlık Ekle'deki gibi paywall (paywall kapıları
       // incelemesi, 2026-10-11). Yalnız `paywall_enabled` açıkken atılır.
-      if (mounted) {
-        await PaywallScreen.show(context, source: 'asset_limit_${e.limit}');
+      //
+      // Satın alınca kayıt bir kez yeniden denenir (Varlık Ekle tekli
+      // kaydının deseni, `kayit.dart` `yenidenDene`): eskiden `false`
+      // dönüyordu, form açık kalıyor ve kullanıcı Kaydet'e yeniden basması
+      // gerektiğini bilmiyordu.
+      if (!mounted) return false;
+      final aldi =
+          await PaywallScreen.show(context, source: 'asset_limit_${e.limit}');
+      if (aldi == true && !satinAlmaSonrasi && mounted) {
+        return kaydet(portfoyId: portfoyId, satinAlmaSonrasi: true);
       }
       return false;
     } catch (e, st) {
