@@ -5151,6 +5151,7 @@
   "dsExcelAlt": "Amounts as numbers; ready to sum and filter",
   "dsPortfoyBaslik": "Export portfolio",
   "dsPortfoyAlt": "Your assets and transaction history; PDF or Excel",
+  "dsPortfoyAltKilitli": "{varlik, plural, =1{1 asset} other{{varlik} assets}}, {islem, plural, =1{1 transaction} other{{islem} transactions}}; PDF or Excel",
   "ttBaslik": "Dividend forecast",
   "ttRaporAlt": "Expected dividends over the next 12 months, month by month",
   "ttKilitGovde": "What your BIST stocks' dividends from the last 12 months would add up to next year at today's holdings: monthly bars, per-asset list, net after withholding.",

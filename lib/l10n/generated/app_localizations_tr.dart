@@ -8662,6 +8662,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dsPortfoyAlt => 'Varlıkların ve işlem geçmişin; PDF ya da Excel';
 
   @override
+  String dsPortfoyAltKilitli(int varlik, int islem) {
+    return '$varlik varlık, $islem işlem; PDF ya da Excel';
+  }
+
+  @override
   String get ttBaslik => 'Temettü tahmini';
 
   @override

@@ -179,6 +179,20 @@ RaporBelgesi yillikRaporBelgesi(
 /// [lotlar] kullanıcının KENDİ ham defteri (silinenler hariç). Pozisyonlar
 /// `aggregatePositions` ile (ekranla aynı); TL değeri [tlYap] (durumun
 /// `toTRY`'si, canlı kur) ile.
+/// Portföy dökümüne girecek varlık ve işlem sayısı: [portfoyBelgesi] ile
+/// AYNI süzgeç (aktif lotlar; pozisyon `aggregatePositions`, işlem silme
+/// kaydı hariç). Raporlar › Portföy dökümü kilitliyken alt metin bunu
+/// yazar (UI/UX turu 15, 2026-11-23, Premium'a teşvik): X-Ray satırı gibi
+/// kullanıcının kendi verisi; kullanıcı neyi indireceğini görür. Sayı
+/// uydurulmaz: çağıran durum yoksa genel metne düşer.
+({int varlik, int islem}) portfoyDokumuSayilari(List<Asset> lotlar) {
+  final aktif = [for (final a in lotlar) if (a.isActive) a];
+  return (
+    varlik: aggregatePositions(aktif).length,
+    islem: aktif.where((a) => !a.isDeleteLog).length,
+  );
+}
+
 RaporBelgesi portfoyBelgesi({
   required List<Asset> lotlar,
   required double Function(double tutar, String paraBirimi) tlYap,

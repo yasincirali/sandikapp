@@ -8786,6 +8786,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your assets and transaction history; PDF or Excel';
 
   @override
+  String dsPortfoyAltKilitli(int varlik, int islem) {
+    String _temp0 = intl.Intl.pluralLogic(
+      varlik,
+      locale: localeName,
+      other: '$varlik assets',
+      one: '1 asset',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      islem,
+      locale: localeName,
+      other: '$islem transactions',
+      one: '1 transaction',
+    );
+    return '$_temp0, $_temp1; PDF or Excel';
+  }
+
+  @override
   String get ttBaslik => 'Dividend forecast';
 
   @override

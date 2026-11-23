@@ -5826,6 +5826,8 @@
   "dsExcelAlt": "Tutarlar sayı olarak; toplanabilir, süzülebilir",
   "dsPortfoyBaslik": "Portföyü dışa aktar",
   "dsPortfoyAlt": "Varlıkların ve işlem geçmişin; PDF ya da Excel",
+  "dsPortfoyAltKilitli": "{varlik} varlık, {islem} işlem; PDF ya da Excel",
+  "@dsPortfoyAltKilitli": {"description": "Raporlar › Portföy dökümü kilitliyken alt metin; kullanıcının belgeye girecek kendi sayıları.", "placeholders": {"varlik": {"type": "int"}, "islem": {"type": "int"}}},
   "ttBaslik": "Temettü tahmini",
   "ttRaporAlt": "Önümüzdeki 12 ayda beklenen temettü, ay ay",
   "ttKilitGovde": "BIST hisselerinin son 12 ayda dağıttığı temettü, bugünkü lotunla tekrarlansa önümüzdeki yıl ne kadar eder: ay ay çubuklar, varlık varlık liste, stopaj sonrası net.",

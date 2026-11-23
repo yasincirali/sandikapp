@@ -42,19 +42,37 @@ extension _Kayit on _AddAssetScreenState {
         // Hata: eskiden kimseye söylenmiyordu (yakalanmamış async hata);
         // şimdi sayfa kapanır ve hata gösterilir. Sayfa açık kalıp yeniden
         // denenmez — döngü yarıda kesildiyse ilk satırlar çoktan eklendi,
-        // aynı listeyi yeniden kaydetmek onları çiftlerdi.
+        // aynı listeyi yeniden kaydetmek onları çiftlerdi. Bu yüzden
+        // satın alma sonrası (UI/UX turu 15, 2026-11-23 #5) liste baştan
+        // DEĞİL, kesilen satırdan (`TopluSinirAsildi.kaydedilen`) devam
+        // eder: kalan satırlar kaydedilir, çift yok.
         onSaveBatch: (entries) async {
           bool kaydedildi;
           try {
             kaydedildi = await _saveBatch(entries);
-          } on AssetLimitExceededException catch (e) {
+          } on TopluSinirAsildi catch (e) {
             // Sınıra kadar olanlar eklendi; kalanı için paywall (genel hata
             // değil — paywall kapıları incelemesi, 2026-10-11).
             if (ctx.mounted) Navigator.pop(ctx);
-            if (mounted) {
-              await PaywallScreen.show(context,
-                  source: 'asset_limit_${e.limit}');
+            if (!mounted) return;
+            final aldi = await PaywallScreen.show(context,
+                source: 'asset_limit_${e.sebep.limit}');
+            if (aldi != true || !mounted) return;
+            // Tek yeniden deneme, yalnız kalanlar. Yine sınır gelirse
+            // (mağaza onayı gecikti) paywall bir daha açılır, döngü yok.
+            try {
+              await _saveBatch(entries.sublist(e.kaydedilen), kalanlar: true);
+            } on TopluSinirAsildi catch (e2) {
+              if (mounted) {
+                await PaywallScreen.show(context,
+                    source: 'asset_limit_${e2.sebep.limit}');
+              }
+              return;
+            } catch (e2) {
+              if (mounted) showAppError(context, e2);
+              return;
             }
+            if (mounted) await _kayitBitti(true);
             return;
           } catch (e) {
             if (ctx.mounted) Navigator.pop(ctx);
@@ -78,20 +96,25 @@ extension _Kayit on _AddAssetScreenState {
 
   /// `true` → kayıtlar eklendi (çağıran sayfayı ve ekranı kapatır);
   /// `false` → tek satır forma uygulandı, kayıt yok.
-  Future<bool> _saveBatch(List<ParsedEntry> entries) async {
+  ///
+  /// [kalanlar]: satın alma sonrası kalan satırlar; tek satır kalsa da forma
+  /// uygulanmaz, kaydedilir (kullanıcı onu toplu kaydın parçası olarak yazdı).
+  /// Sınır kesintisi [TopluSinirAsildi] olarak çıkar ([siraylaKaydet]).
+  Future<bool> _saveBatch(List<ParsedEntry> entries,
+      {bool kalanlar = false}) async {
     // Sözlük döngüden ÖNCE çözülür: `context` async boşlukların ardında
     // kullanılamaz (`use_build_context_synchronously`), tür adı ise fiyat
     // çekiminden sonra gerekiyor.
     final l = context.l10n;
     if (entries.isEmpty) return false;
-    if (entries.length == 1) {
+    if (entries.length == 1 && !kalanlar) {
       _applyParsedEntry(entries.first);
       return false;
     }
     final lookup = ref.read(addAssetPriceLookupProvider);
     _n.setSaving(true);
     try {
-      for (final entry in entries) {
+      await siraylaKaydet(entries, (entry) async {
         String ticker = '';
         String assetName = '';
         String currency = entry.type.defaultCurrency;
@@ -139,7 +162,7 @@ extension _Kayit on _AddAssetScreenState {
               portfoyId: _hedefPortfoy,
               yol: 'hizli_metin',
             );
-      }
+      });
     } finally {
       _n.setSaving(false);
     }
