@@ -1969,7 +1969,14 @@ class _AddHeader extends ConsumerWidget {
                 onTap: dolu
                     // Dolu kartta da tek kural (`sinir_uyarisi.dart`):
                     // paywall açıksa doğrudan Premium'a götürür (2026-11-12).
-                    ? () => takipSiniriUyarisi(context, ref, limit)
+                    // Premium alınırsa ekleme sayfası açılır (Ar-Ge 23 Kas
+                    // 22:03 #4; yıldız/arama yolları 21 Kas'ta düzelmişti).
+                    ? () async {
+                        if (await takipSiniriBekle(context, ref, limit) &&
+                            context.mounted) {
+                          _ekle(context);
+                        }
+                      }
                     : () => _ekle(context),
                 // Dokunma hedefi 56 pt (kartın tamamı); görsel kutu 44 pt
                 // (taslak), 6 pt dikey pay.

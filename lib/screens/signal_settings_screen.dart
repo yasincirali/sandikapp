@@ -103,14 +103,21 @@ class SignalSettingsScreen extends ConsumerWidget {
           // hâl. Kayıtlı tercih değişmez, Premium'da geri gelir.
           schedule: slotaSigdir(schedules[type] ?? kDefaultSchedule, slot),
           slot: slot,
-          onFrequencyChanged: (f) {
+          onFrequencyChanged: (f) async {
             if (f.gunlukEnFazla > slot) {
-              AnalyticsService.instance
-                  .logPremiumGateShown(feature: 'signal_frequency');
-              PaywallScreen.show(context, source: 'signal_frequency');
-              return;
+              // Premium'u sıklık seçerken alan kişinin seçimi uygulanır
+              // (Ar-Ge 23 Kas 22:03 #1): eskiden paywall ateşle-unut açılıyor,
+              // dönüşte sıklık hâlâ günde 1 kalıyordu. Slot sağlayıcısı geç
+              // güncellense de satın alma sonucuna güvenilir (Karşılaştır
+              // `_satinAlinca` deseni).
+              if (!await _premiumAl(context, source: 'signal_frequency') ||
+                  !context.mounted) {
+                return;
+              }
             }
-            ref.read(signalScheduleProvider.notifier).setFrequency(type, f);
+            await ref
+                .read(signalScheduleProvider.notifier)
+                .setFrequency(type, f);
           },
           onHoursChanged: (h) async {
             // Kısılmış hâlde saat seçmek, gösterilen sıklığı (günde 1)
@@ -176,11 +183,7 @@ class SignalSettingsScreen extends ConsumerWidget {
           if (onAyarAcik) ...[
             _OnAyarKarti(
               slot: slot,
-              onPaywall: () {
-                AnalyticsService.instance
-                    .logPremiumGateShown(feature: 'signal_on_ayar');
-                PaywallScreen.show(context, source: 'signal_on_ayar');
-              },
+              onPaywall: () => _premiumAl(context, source: 'signal_on_ayar'),
             ),
             const SizedBox(height: SandikSpace.md),
           ],
@@ -245,6 +248,20 @@ class SignalSettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Sinyal kapılarının ortak paywall'u: `true` yalnız satın alma
+/// tamamlandıysa (`aldi == true`, Karşılaştır `_paywallAc` ile aynı). Çağıran
+/// `true`'da kullanıcının dokunduğu seçimi aynı yoldan uygular; aksi hâlde
+/// Premium'u seçim yaparken alan kişi aynı dokunuşu tekrarlamak zorunda
+/// kalıyordu (Ar-Ge 23 Kas 22:03 #1-#3).
+Future<bool> _premiumAl(BuildContext context,
+    {required String source, String? feature}) async {
+  CrashReporter.arkaPlan(
+      AnalyticsService.instance
+          .logPremiumGateShown(feature: feature ?? source),
+      reason: 'signal_settings.kapiOlayi');
+  return await PaywallScreen.show(context, source: source) == true;
 }
 
 class _PremiumCard extends StatelessWidget {
@@ -441,23 +458,32 @@ class _CategorySection extends StatelessWidget {
                 showPremiumChip: paywallVisible && IndicatorId.premiumMu(id),
                 parametreDurumu: parametreDurumu,
                 ozelAyar: GostergeParametreleri.dogrula(id, parametreler[id]),
-                onTap: () {
+                onTap: () async {
                   if (!izinli.contains(id)) {
-                    AnalyticsService.instance
-                        .logPremiumGateShown(feature: 'indicator_$id');
-                    PaywallScreen.show(context, source: 'signal_settings_$id');
-                    return;
+                    // Satın alınca dokunulan gösterge açılır (Ar-Ge 23 Kas
+                    // 22:03 #3). `izinli` build'den kalma (bayat kilit, tur
+                    // 12 #3-4): yeniden sorulmaz, satın alma sonucuna
+                    // güvenilir. Zaten seçiliyse (askıdaki Premium'dan kalan
+                    // kayıt) toggle onu kapatırdı; dokunuşun niyeti açmak.
+                    if (!await _premiumAl(context, source: 'signal_settings_$id',
+                            feature: 'indicator_$id') ||
+                        !context.mounted ||
+                        selected.contains(id)) {
+                      return;
+                    }
                   }
                   onToggle(id);
                 },
-                onParametre: () {
+                onParametre: () async {
                   if (parametreDurumu == OzellikDurumu.kilitli) {
-                    AnalyticsService.instance
-                        .logPremiumGateShown(feature: 'gosterge_parametre');
-                    PaywallScreen.show(context, source: 'gosterge_parametre');
-                    return;
+                    // Satın alınca periyot sayfası açılır (#3); kilit durumu
+                    // yeniden okunmaz, yukarıdaki gibi.
+                    if (!await _premiumAl(context, source: 'gosterge_parametre') ||
+                        !context.mounted) {
+                      return;
+                    }
                   }
-                  _parametreSheet(context, id);
+                  await _parametreSheet(context, id);
                 },
               ),
         ],
@@ -1248,7 +1274,9 @@ class _OnAyarKarti extends ConsumerWidget {
   const _OnAyarKarti({required this.slot, required this.onPaywall});
 
   final int slot;
-  final VoidCallback onPaywall;
+
+  /// Paywall'u açar; `true` yalnız satın alma tamamlandıysa.
+  final Future<bool> Function() onPaywall;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1299,17 +1327,17 @@ class _OnAyarKarti extends ConsumerWidget {
             adet: etiketler.length,
             // Özel: aralık dışı → zemin çizilmez, üç seçenek de dokunulur.
             secili: secili?.index ?? -1,
-            onSec: (i) {
+            onSec: (i) async {
               final a = SinyalOnAyar.values[i];
               // Kategori satırındaki kapıyla aynı kural: ücretsiz günlük
               // bildirim sınırını aşan sıklık Premium ister, hiçbir şey
-              // yazılmaz.
+              // yazılmaz. Premium alınırsa seçilen ön ayar uygulanır (Ar-Ge
+              // 23 Kas 22:03 #2); `slot` build'den kalma, yeniden sorulmaz.
               if (sinyalOnAyarTanimi(a, AssetType.hisse).siklik.gunlukEnFazla >
                   slot) {
-                onPaywall();
-                return;
+                if (!await onPaywall() || !context.mounted) return;
               }
-              sinyalOnAyariUygula(ref, a);
+              await sinyalOnAyariUygula(ref, a);
             },
             oge: (context, i, _) => sandikKilitliSegmentEtiketi(
               context,

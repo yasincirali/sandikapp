@@ -8376,7 +8376,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Sekiz gösterge, kendi periyotların ve her varlığında bildirim.';
 
   @override
-  String get pwdSinyalPremium => '8 gösterge, sınırsız bildirim';
+  String get pwdSinyalPremium => '8 gösterge, saatlik bildirim';
 
   @override
   String get pwdKarsEtiket => 'Karşılaştır';
@@ -9486,7 +9486,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sgnPremiumGostergeSatiri =>
-      'EMA, Stokastik, Trend Gücü, Williams %R, CCI ve sınırsız bildirim Premium\'da';
+      'EMA, Stokastik, Trend Gücü, Williams %R, CCI ve saatlik bildirim Premium\'da';
 
   @override
   String get sgnAyarAciklamaUcretsiz =>

@@ -8489,7 +8489,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Eight indicators, your own periods and alerts on every asset.';
 
   @override
-  String get pwdSinyalPremium => '8 indicators, unlimited alerts';
+  String get pwdSinyalPremium => '8 indicators, hourly alerts';
 
   @override
   String get pwdKarsEtiket => 'Compare';
@@ -9643,7 +9643,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sgnPremiumGostergeSatiri =>
-      'EMA, Stochastic, Trend Strength, Williams %R, CCI and unlimited alerts in Premium';
+      'EMA, Stochastic, Trend Strength, Williams %R, CCI and hourly alerts in Premium';
 
   @override
   String get sgnAyarAciklamaUcretsiz =>

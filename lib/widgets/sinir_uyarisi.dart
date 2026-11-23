@@ -90,10 +90,9 @@ Future<bool> ortakSiniriBekle(BuildContext context, WidgetRef ref, int limit) =>
       kaynak: 'partner_limit',
     );
 
-/// Ateşle-unut kısayolları.
-void takipSiniriUyarisi(BuildContext context, WidgetRef ref, int limit) =>
-    _arkaPlan(takipSiniriBekle(context, ref, limit), 'sinirUyarisi.takip');
-
+/// Ateşle-unut kısayolları. Takip listesinin ateşle-unut kısayolu
+/// (`takipSiniriUyarisi`) son çağıranı da `takipSiniriBekle`'ye geçince
+/// kalktı (Ar-Ge 23 Kas 22:03 #4): satın alınca dokunuşun işi sürmeli.
 void alarmSiniriUyarisi(BuildContext context, WidgetRef ref, int limit) =>
     _arkaPlan(alarmSiniriBekle(context, ref, limit), 'sinirUyarisi.alarm');
 

@@ -25,8 +25,10 @@ class BildirimOnAyarKarti extends ConsumerStatefulWidget {
   const BildirimOnAyarKarti({super.key, required this.onPaywall});
 
   /// Seçilen ön ayarın sinyal sıklığı ücretsiz günlük sınırı aşıyorsa
-  /// çağrılır; o durumda hiçbir şey yazılmaz.
-  final VoidCallback onPaywall;
+  /// çağrılır; `true` (satın alma tamamlandı) dönerse seçilen ön ayar
+  /// uygulanır, aksi hâlde hiçbir şey yazılmaz (Ar-Ge 23 Kas 22:03 #2:
+  /// eskiden "Çok"a basıp Premium alan kişi dönüşte hâlâ "Az" görüyordu).
+  final Future<bool> Function() onPaywall;
 
   @override
   ConsumerState<BildirimOnAyarKarti> createState() =>
@@ -42,8 +44,9 @@ class _BildirimOnAyarKartiState extends ConsumerState<BildirimOnAyarKarti> {
   Future<void> _sec(BildirimOnAyar a) async {
     if (_yaziliyor) return;
     if (bildirimOnAyariPremiumIster(a, ref.read(sinyalSlotSiniriProvider))) {
-      widget.onPaywall();
-      return;
+      // Slot sağlayıcısı satın almadan sonra geç güncellenebilir: yeniden
+      // sorulmaz, satın alma sonucuna güvenilir.
+      if (!await widget.onPaywall() || !mounted || _yaziliyor) return;
     }
     setState(() {
       _yaziliyor = true;
