@@ -5996,6 +5996,8 @@
   "@dayRowA11y": {"placeholders": {"satir": {"type": "String"}, "pct": {"type": "String"}}},
   "bestDayLocked": "Your best day was {tarih} · how much is in Premium",
   "leastDownDayLocked": "Your smallest drop was {tarih} · how much is in Premium",
+  "bestToughestDayLocked": "Best day {enIyi} · toughest day {enZor} · how much is in Premium",
+  "bestLeastUpDayLocked": "Best day {enIyi} · smallest gain {enZor} · how much is in Premium",
   "tarihCipiBugun": "Today",
   "tarihCipiDun": "Yesterday",
   "tarihCipiBaskaTarih": "Other date",

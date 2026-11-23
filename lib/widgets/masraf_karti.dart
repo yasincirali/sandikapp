@@ -26,6 +26,9 @@ import 'radar_ortak.dart' show RozetCipi;
 /// [kilitli] iken (paywall açık, Premium değil) iki toplam görünür, kalem
 /// kalem döküm yerine tek kilit satırı çizilir: "ne ödedim" sorusunun
 /// cevabı ücretsiz, "nereye ödedim" Premium. Yıllık toplam Yıllık rapor'da.
+/// Hiç tutar yokken (sütun hep "—") kilit yok, kalemler ücretsizde de
+/// görünür: gizlenecek sayı yok, açıklamalar "nasıl eklenir"in cevabı
+/// (Ar-Ge 23 Kas 17:05 #1).
 class MasrafKarti extends StatefulWidget {
   const MasrafKarti({super.key, required this.ozet, this.kilitli = false});
 
@@ -60,6 +63,11 @@ class _MasrafKartiState extends State<MasrafKarti> {
         ? ozet.kalemler
         : ozet.kalemler.take(MasrafKarti.kapaliKalem).toList();
     final odenenVar = ozet.odenenToplamTry > 0;
+    // Kilit yalnız gizlenecek kişisel tutar varken (Ar-Ge 23 Kas 17:05 #1):
+    // tutarsız kartta sütun hep "—", kalem açıklamaları ise "nasıl
+    // eklenir"in tek cevabı. "Nasıl eklenir"e dokunana paywall satırı
+    // göstermek ölü uçtu ve Premium'u değersiz bir kilitle ucuzlatıyordu.
+    final kilitli = widget.kilitli && (odenenVar || ozet.tahminiVar);
 
     if (!odenenVar && !ozet.tahminiVar && !_bosAcik) {
       return Padding(
@@ -132,19 +140,23 @@ class _MasrafKartiState extends State<MasrafKarti> {
                   const SizedBox(height: SandikSpace.smd),
                   Divider(height: 1, color: context.c.hairline),
                 ],
-                if (widget.kilitli)
+                if (kilitli)
                   Padding(
                     padding: const EdgeInsets.only(top: SandikSpace.xs),
+                    // `ozellik` diğer kilitlerle aynı: verilmeyince
+                    // `premium_gate_shown` Masraflar için hiç düşmüyordu
+                    // (Ar-Ge 23 Kas 17:05 #5).
                     child: KilitSatiri(
                         metin: l.costsBreakdownLocked(ozet.kalemler.length),
-                        kaynak: 'masraf_dokumu'),
+                        kaynak: 'masraf_dokumu',
+                        ozellik: 'masraf_dokumu'),
                   )
                 else
                   for (var i = 0; i < gorunen.length; i++) ...[
                     if (i > 0) Divider(height: 1, color: context.c.hairline),
                     _Satir(kalem: gorunen[i]),
                   ],
-                if (fazla && !widget.kilitli)
+                if (fazla && !kilitli)
                   Semantics(
                     button: true,
                     expanded: _acik,
@@ -223,7 +235,7 @@ class _Toplam extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.t.numMedium.copyWith(
-                fontWeight: FontWeight.w700, color: context.c.text90),
+                fontWeight: FontWeight.w600, color: context.c.text90),
           ),
         ],
       );
@@ -286,7 +298,7 @@ class _Satir extends StatelessWidget {
           Text(
             deger,
             style: context.t.numSmall.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: tutar != null ? context.c.text90 : context.c.text58,
             ),
           ),

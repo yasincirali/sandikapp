@@ -18524,6 +18524,18 @@ abstract class AppLocalizations {
   /// **'En az düşen günün {tarih} · ne kadar olduğu Premium\'da'**
   String leastDownDayLocked(String tarih);
 
+  /// Kilitli en iyi/en zor gün kartı, dönemde iki gün de ölçüldüyse: başlık iki gün vaat ediyor, iki tarih de açık; yüzdeler kilitli (Ar-Ge 23 Kas 17:05 #4).
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi gün {enIyi} · en zor gün {enZor} · ne kadar olduğu Premium\'da'**
+  String bestToughestDayLocked(String enIyi, String enZor);
+
+  /// bestToughestDayLocked'un dönemde hiç eksi gün yokken söylenişi (artı gün 'en zor' diye anılmaz; leastUpDayRow ile aynı ad).
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi gün {enIyi} · en az yükselen gün {enZor} · ne kadar olduğu Premium\'da'**
+  String bestLeastUpDayLocked(String enIyi, String enZor);
+
   /// No description provided for @tarihCipiBugun.
   ///
   /// In tr, this message translates to:

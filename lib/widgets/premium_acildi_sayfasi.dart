@@ -19,6 +19,7 @@ import '../services/aylik_getiri_tablosu.dart'
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../services/crash_reporter.dart';
+import 'kapanis_ozeti_sheet.dart' show kapanisRaporPaywallKaynagi;
 import 'sattiklarin.dart' show showSattiklarinListesi;
 
 /// Satın alma sonrası sayfa (Ar-Ge 12 Kas 17:04 #4, "değdi" anı).
@@ -71,7 +72,11 @@ PremiumAcildiHedef? premiumAcildiKaynakHedefi(String kaynak) {
   return switch (kaynak) {
     'aylik_rapor' => PremiumAcildiHedef.aylikRapor,
     'temettu_tahmini' || 'temettu_verimi' => PremiumAcildiHedef.temettu,
-    'sattiklarin' || 'kapanis_ozeti' => PremiumAcildiHedef.sattiklarin,
+    // Kapanış özetinin kilidi `kapanis_rapor` açar; eski `kapanis_ozeti`
+    // hiçbir paywall'un kaynağı değildi (yalnız paylaşım bağlantısının
+    // kampanya adı), eşleme ölüydü (Ar-Ge 23 Kas 17:05 #3).
+    'sattiklarin' || kapanisRaporPaywallKaynagi =>
+      PremiumAcildiHedef.sattiklarin,
     'aylik_getiri' => PremiumAcildiHedef.aylikGetiri,
     _ => null,
   };

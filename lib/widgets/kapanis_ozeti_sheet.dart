@@ -59,6 +59,14 @@ Future<void> showKapanisOzeti(
     builder: (_) => KapanisOzetiSayfasi(ozet: ozet, tutarGizli: tutarGizli),
   );
   if (!context.mounted) return;
+  // Satın alma sonrası kullanıcı istediği rapora gelir (Ar-Ge 23 Kas 17:05
+  // #2, #414 kalıbı): kapanış sayfası çoktan kapandı, yoksa Portföy ›
+  // Sattıkların › aynı satıştan yeniden gelmesi gerekirdi. Vazgeçen döner.
+  if (secim == _Secim.paywall) {
+    final aldi = await PaywallScreen.show(context,
+        source: kapanisRaporPaywallKaynagi);
+    if (aldi != true || !context.mounted) return;
+  }
   switch (secim) {
     case _Secim.paylas:
       final pct = ozet.karPct;
@@ -75,14 +83,12 @@ Future<void> showKapanisOzeti(
       );
       return;
     case _Secim.rapor:
+    case _Secim.paywall:
       await pushGuarded(
           context,
           adaptiveRoute<void>(
               settings: const RouteSettings(name: 'yillik_rapor'),
               builder: (_) => const YillikRaporScreen()));
-      return;
-    case _Secim.paywall:
-      await PaywallScreen.show(context, source: kapanisRaporPaywallKaynagi);
       return;
     case null:
       break;

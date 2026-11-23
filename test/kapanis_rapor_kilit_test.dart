@@ -68,6 +68,34 @@ void main() {
     expect(kapanisRaporPaywallKaynagi, 'kapanis_rapor');
   });
 
+  testWidgets('kilitliyken satın alma tamamlanınca yıllık rapor açılır',
+      (tester) async {
+    // Ar-Ge 23 Kas 17:05 #2: paywall `true` dönünce kullanıcı Sattıkların'a
+    // geri dönmeden istediği rapora gelir.
+    final gozcu = await _ac(tester, kilitli: true);
+    await tester.tap(find.byKey(const ValueKey('kapanis_rapor')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(gozcu.adlar, contains('paywall'));
+    final nav = gozcu.navigator!;
+    nav.pop(true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(gozcu.adlar.last, 'yillik_rapor');
+  });
+
+  testWidgets('kilitliyken paywall vazgeçilirse rapor açılmaz',
+      (tester) async {
+    final gozcu = await _ac(tester, kilitli: true);
+    await tester.tap(find.byKey(const ValueKey('kapanis_rapor')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    gozcu.navigator!.pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(gozcu.adlar, isNot(contains('yillik_rapor')));
+  });
+
   testWidgets('Premium: bağlantı değişmedi, yıllık rapora gider',
       (tester) async {
     final gozcu = await _ac(tester, kilitli: false);

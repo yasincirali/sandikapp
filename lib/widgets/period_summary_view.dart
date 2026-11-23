@@ -1211,21 +1211,30 @@ class _EnIyiGunKarti extends StatelessWidget {
     final bugun = simdi ?? DateTime.now();
     String tarih(DonemGunu g) => fmtGunAy(g.gun, dil: dil, bugun: bugun);
     final enIyi = gunler.enIyi;
+    final enZor = gunler.enZor;
     if (!kilitli) OzellikOlcumu.say(Ozellik.enIyiGun);
     if (kilitli) {
+      // Başlık iki gün vaat ediyor; en zor gün ölçüldüyse kilit iki tarihi
+      // de söyler (Ar-Ge 23 Kas 17:05 #4), yüzdeler kilitli kalır. Ad açık
+      // görünümle aynı kuraldan: hiç artı gün yoksa "en az düşen" (o
+      // durumda tek tarihli eski metin, en zor gün de eksi), hiç eksi gün
+      // yoksa en zor gün "en az yükselen".
       return _BaglamKarti(
         baslik: l.bestToughestDayTitle,
         child: KilitSatiri(
           metin: enIyi.pct < 0
               ? l.leastDownDayLocked(tarih(enIyi))
-              : l.bestDayLocked(tarih(enIyi)),
+              : enZor == null
+                  ? l.bestDayLocked(tarih(enIyi))
+                  : enZor.pct > 0
+                      ? l.bestLeastUpDayLocked(tarih(enIyi), tarih(enZor))
+                      : l.bestToughestDayLocked(tarih(enIyi), tarih(enZor)),
           kaynak: 'en_iyi_gun',
           ozellik: 'en_iyi_gun',
           kilitEtiketi: l.goalDateLockedLabel,
         ),
       );
     }
-    final enZor = gunler.enZor;
     return _BaglamKarti(
       baslik: l.bestToughestDayTitle,
       child: Column(

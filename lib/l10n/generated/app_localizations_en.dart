@@ -11784,6 +11784,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String bestToughestDayLocked(String enIyi, String enZor) {
+    return 'Best day $enIyi · toughest day $enZor · how much is in Premium';
+  }
+
+  @override
+  String bestLeastUpDayLocked(String enIyi, String enZor) {
+    return 'Best day $enIyi · smallest gain $enZor · how much is in Premium';
+  }
+
+  @override
   String get tarihCipiBugun => 'Today';
 
   @override
