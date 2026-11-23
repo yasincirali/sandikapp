@@ -12,6 +12,12 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+
+## ⏳ 2026-11-23 Mağaza açıklamasında "sınırsız sinyal bildirimi" (sen, sonraki mağaza gönderiminde)
+Uygulama içi metin düzeltildi (#tur 18): Premium sinyal bildirimi **saatlik** (10:00-18:00 arası en fazla günde 9 tur), sınırsız değil.
+Mağaza metni hâlâ eski: `store_listing/ios/tr/description.txt:45` "sınırsız sinyal bildirimi", `store_listing/ios/en/description.txt:45` "unlimited signal alerts".
+Sonraki App Store gönderiminde "saatlik sinyal bildirimi" / "hourly signal alerts" yap (Play açıklamasında da aynı satır varsa onu da).
+
 ## ⏳ 2026-11-20 Aylık rapora "geçmişte kaç kez oldu" ölçümü (`analiz-hazirla`)
 
 Aylık varlık raporu artık "önceki 12 dönemde 2 kez" gibi bir sayım da
