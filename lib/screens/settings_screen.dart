@@ -765,10 +765,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: EdgeInsets.only(bottom: SandikSpace.smd),
             ),
             BildirimOnAyarKarti(
-              onPaywall: () {
-                AnalyticsService.instance
-                    .logPremiumGateShown(feature: 'bildirim_on_ayar');
-                PaywallScreen.show(context, source: 'signal_on_ayar');
+              onPaywall: () async {
+                CrashReporter.arkaPlan(
+                    AnalyticsService.instance
+                        .logPremiumGateShown(feature: 'bildirim_on_ayar'),
+                    reason: 'settings.bildirimOnAyarKapisi');
+                return await PaywallScreen.show(context,
+                        source: 'signal_on_ayar') ==
+                    true;
               },
             ),
             const SizedBox(height: 12),

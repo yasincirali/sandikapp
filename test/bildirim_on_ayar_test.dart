@@ -138,7 +138,7 @@ void main() {
       WidgetTester tester, {
       SunucuBildirimTercihleri sunucu = (ortakHareketi: true, donemOzeti: true),
       int slot = 1 << 30,
-      VoidCallback? onPaywall,
+      Future<bool> Function()? onPaywall,
       double olcek = 1.0,
       double genislik = 390,
     }) async {
@@ -161,7 +161,8 @@ void main() {
             ),
             home: Scaffold(
               body: ListView(children: [
-                BildirimOnAyarKarti(onPaywall: onPaywall ?? () {}),
+                BildirimOnAyarKarti(
+                    onPaywall: onPaywall ?? () async => false),
               ]),
             ),
           ),
@@ -213,13 +214,33 @@ void main() {
     testWidgets('Premium sınırı: Çok paywall açar, hiçbir şey yazılmaz',
         (tester) async {
       var paywall = 0;
-      final c = await pump(tester, slot: 1, onPaywall: () => paywall++);
+      final c = await pump(tester, slot: 1, onPaywall: () async {
+        paywall++;
+        return false;
+      });
       await tester.tap(find.text('Çok'));
       await tester.pumpAndSettle();
       expect(paywall, 1);
       // Ücretsizde (slot 1) varsayılan kayıt günde 1 uygulanır: Dengeli
       // seçili çizilmez (Ar-Ge 22 Kas 12:03 #1).
       expect(c.read(bildirimOnAyarProvider).value, isNull);
+    });
+
+    // Ar-Ge 23 Kas 22:03 #2: "Çok"a basıp Premium alan kişide seçim
+    // uygulanır. Slot bilerek 1'de kalır (sağlayıcı satın almadan sonra geç
+    // güncellenebilir); kart satın alma sonucuna güvenmeli.
+    testWidgets('Premium sınırı: satın alınca Çok uygulanır', (tester) async {
+      var paywall = 0;
+      final c = await pump(tester, slot: 1, onPaywall: () async {
+        paywall++;
+        return true;
+      });
+      await tester.tap(find.text('Çok'));
+      await tester.pumpAndSettle();
+      expect(paywall, 1);
+      expect(c.read(signalScheduleProvider)[AssetType.hisse]?.frequency,
+          sinyalOnAyarTanimi(SinyalOnAyar.cok, AssetType.hisse).siklik);
+      expect(c.read(signalNotificationsProvider), isTrue);
     });
 
     for (final (w, olcek) in const [(320.0, 1.0), (320.0, 2.0), (430.0, 3.1)]) {

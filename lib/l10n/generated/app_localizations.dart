@@ -13682,7 +13682,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'8 gösterge, sınırsız bildirim'**
+  /// **'8 gösterge, saatlik bildirim'**
   String get pwdSinyalPremium;
 
   /// No description provided for @pwdKarsEtiket.
@@ -15446,7 +15446,7 @@ abstract class AppLocalizations {
   /// No description provided for @sgnPremiumGostergeSatiri.
   ///
   /// In tr, this message translates to:
-  /// **'EMA, Stokastik, Trend Gücü, Williams %R, CCI ve sınırsız bildirim Premium\'da'**
+  /// **'EMA, Stokastik, Trend Gücü, Williams %R, CCI ve saatlik bildirim Premium\'da'**
   String get sgnPremiumGostergeSatiri;
 
   /// No description provided for @sgnAyarAciklamaUcretsiz.

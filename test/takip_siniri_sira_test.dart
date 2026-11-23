@@ -114,7 +114,8 @@ void main() {
     expect(src.contains('SnackBarAction'), isFalse,
         reason: 'Kaybolan "Premium" düğmesi yerine paywall açılır.');
     final takip = ekranKaynagiSync('lib/screens/watchlist_screen.dart');
-    expect(takip.contains('takipSiniriUyarisi(context, ref, limit)'), isTrue,
-        reason: 'Dolu kapasite kartı da aynı kuralı kullanır.');
+    expect(takip.contains('takipSiniriBekle(context, ref, limit)'), isTrue,
+        reason: 'Dolu kapasite kartı da aynı kuralı kullanır; satın alınca '
+            'ekleme sayfası açılır (Ar-Ge 23 Kas 22:03 #4).');
   });
 }

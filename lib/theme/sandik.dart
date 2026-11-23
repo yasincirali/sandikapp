@@ -411,6 +411,12 @@ class _AlttanModalRoute<T> extends MaterialPageRoute<T> {
 /// pencere geçişin son yarısındaki ikinci dokunuşu kaçırıyordu.
 DateTime? _lastPushAt;
 
+/// Testler arası sızıntıyı keser: pencere gerçek saatle ölçülür, ardışık iki
+/// widget testi 500 ms içinde koşunca ikinci testin push'u sessizce düşüyordu
+/// (CI'da kapanis_rapor_kilit_test, 23 Kas).
+@visibleForTesting
+void pushGuardSifirla() => _lastPushAt = null;
+
 Future<T?> pushGuarded<T>(
   BuildContext context,
   Route<T> route, {

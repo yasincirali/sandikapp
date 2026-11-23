@@ -5702,7 +5702,7 @@
   },
   "pwdSinyalEtiket": "Sinyal",
   "pwdSinyalBaslik": "Sekiz gösterge, kendi periyotların ve her varlığında bildirim.",
-  "pwdSinyalPremium": "8 gösterge, sınırsız bildirim",
+  "pwdSinyalPremium": "8 gösterge, saatlik bildirim",
   "pwdKarsEtiket": "Karşılaştır",
   "pwdKarsRozet": "{ucretsiz} → {premium} seri",
   "@pwdKarsRozet": {
@@ -6108,7 +6108,7 @@
   "varlikGuncelleOnayBaslik": "{n, plural, =1{Kayıt yeniden yazılsın mı?} other{{n} hareket silinsin mi?}}",
   "@varlikGuncelleOnayBaslik": {"placeholders": {"n": {"type": "int"}}},
   "varlikGuncelleOnayGovde": "Bu işlem geri alınamaz.",
-  "sgnPremiumGostergeSatiri": "EMA, Stokastik, Trend Gücü, Williams %R, CCI ve sınırsız bildirim Premium'da",
+  "sgnPremiumGostergeSatiri": "EMA, Stokastik, Trend Gücü, Williams %R, CCI ve saatlik bildirim Premium'da",
   "sgnAyarAciklamaUcretsiz": "Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini seç. RSI, MACD ve Bollinger ücretsiz; bildirimi günde 1 kez gelir.",
   "sgnOrnekBildirim": "Örnek bildirimi gönder",
   "sgnIzinKapaliAyarlar": "Bildirim izni kapalı · Ayarlar'da aç",
