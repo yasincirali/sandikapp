@@ -211,7 +211,9 @@ void main() {
           (ortakHareketi: false, donemOzeti: true));
     });
 
-    testWidgets('Premium sınırı: Çok paywall açar, hiçbir şey yazılmaz',
+    // Ar-Ge 26 Kas 02:03 #2: kilitli "Çok"a ilk dokunuş paywall açmaz;
+    // önce ne getirdiği + "Premium'la açılır." ve "Premium'la aç" düğmesi.
+    testWidgets('Premium sınırı: ilk dokunuş açıklama gösterir, paywall yok',
         (tester) async {
       var paywall = 0;
       final c = await pump(tester, slot: 1, onPaywall: () async {
@@ -220,9 +222,18 @@ void main() {
       });
       await tester.tap(find.text('Çok'));
       await tester.pumpAndSettle();
-      expect(paywall, 1);
+      expect(paywall, 0);
+      expect(find.textContaining("Hepsi açık"), findsOneWidget);
+      expect(find.textContaining("Premium'la açılır."), findsOneWidget);
+      expect(find.text("Premium'la aç"), findsOneWidget);
       // Ücretsizde (slot 1) varsayılan kayıt günde 1 uygulanır: Dengeli
       // seçili çizilmez (Ar-Ge 22 Kas 12:03 #1).
+      expect(c.read(bildirimOnAyarProvider).value, isNull);
+
+      // Düğme paywall'ı açar; vazgeçince hiçbir şey yazılmaz.
+      await tester.tap(find.text("Premium'la aç"));
+      await tester.pumpAndSettle();
+      expect(paywall, 1);
       expect(c.read(bildirimOnAyarProvider).value, isNull);
     });
 
@@ -237,10 +248,28 @@ void main() {
       });
       await tester.tap(find.text('Çok'));
       await tester.pumpAndSettle();
+      expect(paywall, 0, reason: 'ilk dokunuş yalnız açıklar');
+      await tester.tap(find.text("Premium'la aç"));
+      await tester.pumpAndSettle();
       expect(paywall, 1);
       expect(c.read(signalScheduleProvider)[AssetType.hisse]?.frequency,
           sinyalOnAyarTanimi(SinyalOnAyar.cok, AssetType.hisse).siklik);
       expect(c.read(signalNotificationsProvider), isTrue);
+      expect(find.text("Premium'la aç"), findsNothing);
+    });
+
+    testWidgets('Premium: Çok kilitsiz, ilk dokunuşta uygulanır',
+        (tester) async {
+      var paywall = 0;
+      final c = await pump(tester, onPaywall: () async {
+        paywall++;
+        return false;
+      });
+      await tester.tap(find.text('Çok'));
+      await tester.pumpAndSettle();
+      expect(paywall, 0);
+      expect(c.read(bildirimOnAyarProvider).value, BildirimOnAyar.cok);
+      expect(find.text("Premium'la aç"), findsNothing);
     });
 
     for (final (w, olcek) in const [(320.0, 1.0), (320.0, 2.0), (430.0, 3.1)]) {

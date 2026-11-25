@@ -6,6 +6,7 @@ import '../providers/bildirim_on_ayar_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import 'sandik_async_button.dart';
 import 'sandik_segment.dart';
 
 /// Ayarlar › Bildirimler'in başındaki tek soru: "Bildirimler ne sıklıkta
@@ -21,6 +22,14 @@ import 'sandik_segment.dart';
 /// karışmasıyla "Özel" bırakırdı). Ayrı bir yükleniyor göstergesi yok:
 /// segment iyimser kayar, yazma arka planda biter
 /// (`yukleniyor_tek_davranis_test` — elle çizilmiş meşgul hâl yasak).
+///
+/// Kilitli seçenek (Ar-Ge 26 Kas 02:03 #2): ücretsiz kullanıcının kilitli
+/// "Çok"a ilk dokunuşu seçimi değiştirmez, paywall da açmaz; açıklama satırı
+/// Çok'un ne getirdiğini + "Premium'la açılır." der ve altında "Premium'la
+/// aç" düğmesi çıkar. Eskiden dokunuş doğrudan paywall'a gidiyordu; kişi
+/// ne alacağını görmeden karar veriyordu. Değer önce, ödeme sonra; baskı ve
+/// geri sayım yok. Aynı seçeneğe ikinci dokunuş da düğme gibi paywall'a
+/// gider. Premium kullanıcıda kilit olmadığı için davranış aynen.
 class BildirimOnAyarKarti extends ConsumerStatefulWidget {
   const BildirimOnAyarKarti({super.key, required this.onPaywall});
 
@@ -41,13 +50,32 @@ class _BildirimOnAyarKartiState extends ConsumerState<BildirimOnAyarKarti> {
   /// Yazma sürerken segmentin göstereceği seçim (iyimser).
   BildirimOnAyar? _hedef;
 
+  /// Açıklaması gösterilen kilitli seçenek (henüz seçilmedi, ödenmedi).
+  BildirimOnAyar? _onizleme;
+
   Future<void> _sec(BildirimOnAyar a) async {
     if (_yaziliyor) return;
     if (bildirimOnAyariPremiumIster(a, ref.read(sinyalSlotSiniriProvider))) {
-      // Slot sağlayıcısı satın almadan sonra geç güncellenebilir: yeniden
-      // sorulmaz, satın alma sonucuna güvenilir.
-      if (!await widget.onPaywall() || !mounted || _yaziliyor) return;
+      if (_onizleme != a) {
+        setState(() => _onizleme = a);
+        return;
+      }
+      return _premiumlaAc(a);
     }
+    if (_onizleme != null) setState(() => _onizleme = null);
+    await _uygula(a);
+  }
+
+  Future<void> _premiumlaAc(BildirimOnAyar a) async {
+    if (_yaziliyor) return;
+    // Slot sağlayıcısı satın almadan sonra geç güncellenebilir: yeniden
+    // sorulmaz, satın alma sonucuna güvenilir.
+    if (!await widget.onPaywall() || !mounted || _yaziliyor) return;
+    setState(() => _onizleme = null);
+    await _uygula(a);
+  }
+
+  Future<void> _uygula(BildirimOnAyar a) async {
     setState(() {
       _yaziliyor = true;
       _hedef = a;
@@ -74,14 +102,17 @@ class _BildirimOnAyarKartiState extends ConsumerState<BildirimOnAyarKarti> {
     final yuklendi = durum.hasValue;
     final secili = _hedef ?? durum.valueOrNull;
     final etiketler = [l10n.s5OnAyarAz, l10n.s5OnAyarDengeli, l10n.s5OnAyarCok];
+    // Başka yoldan Premium alınınca kilit kalkar; eski önizleme yalan söylemesin.
+    final onizleme = _onizleme != null &&
+            bildirimOnAyariPremiumIster(_onizleme!, slot)
+        ? _onizleme
+        : null;
     final aciklama = !yuklendi
         ? ''
-        : switch (secili) {
-            BildirimOnAyar.az => l10n.bildirimOnAyarAzAciklama,
-            BildirimOnAyar.dengeli => l10n.bildirimOnAyarDengeliAciklama,
-            BildirimOnAyar.cok => l10n.bildirimOnAyarCokAciklama,
-            null => l10n.bildirimOnAyarOzelAciklama,
-          };
+        : onizleme != null
+            ? '${_aciklamaMetni(l10n, onizleme)} '
+                '${l10n.bildirimOnAyarPremiumlaAcilir}'
+            : _aciklamaMetni(l10n, secili);
     return SandikCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -108,7 +139,8 @@ class _BildirimOnAyarKartiState extends ConsumerState<BildirimOnAyarKarti> {
                   child: Text(
                     l10n.s5OnAyarOzel,
                     style: context.t.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      // w600 tavanı (unslop, yasin 5 Kas; Ar-Ge 26 Kas #6).
+                      fontWeight: FontWeight.w600,
                       color: context.c.amberText,
                     ),
                   ),
@@ -137,8 +169,39 @@ class _BildirimOnAyarKartiState extends ConsumerState<BildirimOnAyarKarti> {
             style: context.t.bodySmall
                 ?.copyWith(color: context.c.text58, height: 1.4),
           ),
+          if (onizleme != null)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: SandikAsyncTap(
+                key: const ValueKey('bildirimOnAyarPremiumlaAc'),
+                onTap: () => _premiumlaAc(onizleme),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                      minHeight: SandikTouch.min, minWidth: SandikTouch.min),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    widthFactor: 1,
+                    child: Text(
+                      l10n.bildirimOnAyarPremiumlaAc,
+                      style: context.t.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: context.c.amberText,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
+
+  static String _aciklamaMetni(AppLocalizations l10n, BildirimOnAyar? a) =>
+      switch (a) {
+        BildirimOnAyar.az => l10n.bildirimOnAyarAzAciklama,
+        BildirimOnAyar.dengeli => l10n.bildirimOnAyarDengeliAciklama,
+        BildirimOnAyar.cok => l10n.bildirimOnAyarCokAciklama,
+        null => l10n.bildirimOnAyarOzelAciklama,
+      };
 }

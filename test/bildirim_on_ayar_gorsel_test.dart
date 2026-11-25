@@ -92,7 +92,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
     // Eski düzende grup yok; yalnız yeni düzende açılır.
-    final grup = find.text('AYRINTILI');
+    // Başlık cümle düzenine geçti (yasin 5 Kas); büyük harf aramak kareyi hiç
+    // açmıyordu (Ar-Ge 26 Kas 02:03 iç not).
+    final grup = find.text('Ayrıntılı');
     if (ayrinti && grup.evaluate().isNotEmpty) {
       await tester.tap(grup);
       for (var i = 0; i < 20; i++) {

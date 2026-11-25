@@ -326,8 +326,9 @@ void main() {
 
       await bak(SettingsBolum.gorunum,
           [_tr.settingsGroupGeneral, _tr.settingsGroupPortfolioView]);
-      await bak(SettingsBolum.hesap,
-          [_tr.settingsGroupSecurityAccount, _tr.settingsGroupData]);
+      // Hesap'ın ilk grup başlığı sayfa adını tekrar ettiği için kalktı
+      // (Ar-Ge 26 Kas 02:03 #3); "Veri" ayrımı taşır.
+      await bak(SettingsBolum.hesap, [_tr.settingsGroupData]);
       await bak(
           SettingsBolum.yardim, [_tr.yardimVeDestek, _tr.settingsGroupAbout]);
     });
