@@ -11,6 +11,7 @@ import '../config/destek.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/bildirim_on_ayar_provider.dart';
+import '../models/asset_type.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/price_alert_provider.dart';
 import '../providers/seviye_alarmi_provider.dart';
@@ -41,6 +42,7 @@ import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
 import '../services/biometric_lock_service.dart';
 import '../widgets/bildirim_izni_uyarisi.dart';
+import '../widgets/premium_abonelik_satiri.dart' show aboneligiYonet;
 import '../widgets/sik_sorulanlar.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_config_service.dart';
@@ -136,16 +138,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _confirmDeleteAccount() async {
     if (_deleting) return;
     // 1. Kademe — uyarı
+    final aboneMi = ref.read(magazaPremiumProvider);
     final firstConfirm = await showSandikConfirm(
       context: context,
       title: context.l10n.deleteAccountTitle,
       // Mağaza aboneliği hesapla birlikte bitmez (sunucu RevenueCat kaydını
       // siler ama yenilemeyi yalnız App Store / Play kapatır). Apple 5.1.1(v)
       // kullanıcıya bunun söylenmesini ister; abonesi olmayana gürültü.
-      message: ref.read(magazaPremiumProvider)
+      message: aboneMi
           ? '${context.l10n.deleteAccountBody}\n\n'
               '${context.l10n.deleteAccountSubscriptionNote}'
           : context.l10n.deleteAccountBody,
+      // Not yolu da göstersin (Ar-Ge 26 Kas 02:03 #1): "aboneliğin sürer"
+      // deyip yönetme yolunu vermemek ölü uçtu; kişi Profil > Premium'u
+      // kendi arıyordu. Ek bir metin düğmesi: silme yolu (Devam, şifre)
+      // aynen, bir dokunuş bile eklenmez. Diyalog açık kalır, kişi
+      // mağazadan dönünce silmeye devam edebilir.
+      detail: aboneMi
+          ? TextButton(
+              key: const ValueKey('hesapSilAboneligiYonet'),
+              style: TextButton.styleFrom(
+                foregroundColor: context.c.amberText,
+                minimumSize: SandikTouch.minSize,
+              ),
+              onPressed: () => aboneligiYonet(context),
+              child: Text(context.l10n.aboneligiYonet),
+            )
+          : null,
       confirmLabel: context.l10n.continueAction,
       destructive: true,
       barrierDismissible: false,
@@ -671,7 +690,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // "GELİŞTİRİCİ" başlığı altında cron/edge/APNs jargonlu, "Bu
             // hesap admin değil" diyen 943 satırlık bir ekrana çıkıyordu.
             if (ref.watch(isPushAdminProvider).valueOrNull == true) ...[
-              const SizedBox(height: 28),
+              const SizedBox(height: SandikSpace.xl),
               SandikSectionHeader(title: context.l10n.diagnosticsUpper),
               const SizedBox(height: 12),
               _SettingsTile(
@@ -690,7 +709,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // Debug build'de admin olmasa da görünür — Crashlytics testi
             // geliştiricinin kendi cihazında yapılır.
             if (kDebugMode) ...[
-              const SizedBox(height: 28),
+              const SizedBox(height: SandikSpace.xl),
               const SandikSectionHeader(title: 'Geliştirici (debug)'),
               const SizedBox(height: 12),
               _SettingsTile(
@@ -731,7 +750,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       const _YaziBoyutuPicker(),
       const SizedBox(height: 12),
       const _LanguagePicker(),
-      const SizedBox(height: 28),
+      // Bölüm arası tek değer (Ar-Ge 26 Kas 02:03 #5): ham 24 ve 28 karışıktı.
+      const SizedBox(height: SandikSpace.xl),
       SandikSectionHeader(title: l.settingsGroupPortfolioView),
       _SubSectionTitle(l.settingsBaseCurrencyLabel),
       const SizedBox(height: 8),
@@ -743,7 +763,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const _BugunkuPortfoyAnahtari(),
       ],
       const _AnaEkranWidgetBolumu(),
-      const SizedBox(height: 24),
+      const SizedBox(height: SandikSpace.xl),
     ];
   }
 
@@ -811,7 +831,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _SubSectionTitle(context.l10n.canliEtkinlikAltBaslik),
               const _LiveActivitySection(),
             ],
-            const SizedBox(height: 28),
+            const SizedBox(height: SandikSpace.xl),
       ];
 
   /// Ön ayarın dokunmadığı, "ne zaman / ne" satırları: kullanıcının kendi
@@ -853,7 +873,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         0);
                 return aktif == 0
                     ? context.l10n.alertSetFromAssetScreen
-                    : '$aktif aktif alarm';
+                    // Sabit Türkçe metin İngilizcede de Türkçe çıkıyordu
+                    // (Ar-Ge 26 Kas 02:03 #4).
+                    : context.l10n.nActiveAlarmsAll(aktif);
               }(),
               onTap: () => pushGuarded(
                 context,
@@ -949,8 +971,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 final y? => context.l10n.biometricLockYontem(y.name),
                 null => context.l10n.biometricLock,
               },
-              subtitle:
-                  context.l10n.biometricLockSubtitle,
+              // Tek ad, platformun kendi adı (Ar-Ge 26 Kas 02:03 #7): üç
+              // yöntemi birden saymak ("Face ID / parmak izi / PIN") kişiye
+              // kendi telefonunda ne olacağını söylemiyordu. Platform
+              // hedeften okunur, kurulum kaynağından değil.
+              subtitle: defaultTargetPlatform == TargetPlatform.iOS
+                  ? context.l10n.biometricLockSubtitleIos
+                  : context.l10n.biometricLockSubtitleAndroid,
               value: ref.watch(biometricLockProvider),
               onChanged: (v) async {
                 if (v) {
@@ -1021,11 +1048,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ];
     // Kim olduğun ve nasıl korunduğun bir grup, verinin
     // kendisi (dışa aktarma, silme) ayrı grup. Silme en altta kalır.
+    //
+    // İlk grubun "Güvenlik ve hesap" başlığı kalktı (Ar-Ge 26 Kas 02:03 #3):
+    // sayfa başlığı "Hesap & güvenlik"i ters sırayla tekrar ediyordu
+    // (Bildirimler'de aynısı 5 Kas'ta kaldırıldı). İkinci grubun "Veri"
+    // başlığı kalır; ayrımı o taşır.
     return [
-      SandikSectionHeader(title: context.l10n.settingsGroupSecurityAccount),
-      const SizedBox(height: 12),
       ...hesapSatirlari,
-      const SizedBox(height: 28),
+      const SizedBox(height: SandikSpace.xl),
       SandikSectionHeader(title: context.l10n.settingsGroupData),
       const SizedBox(height: 12),
       ...veriSatirlari,
@@ -1170,7 +1200,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       const SizedBox(height: SandikSpace.sm),
       iletisim,
       puan,
-      const SizedBox(height: 28),
+      const SizedBox(height: SandikSpace.xl),
       SandikSectionHeader(title: context.l10n.settingsGroupAbout),
       const SizedBox(height: 12),
       yenilikler,
@@ -1194,7 +1224,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // hub'ın dört bölümüyle aynı ağırlıkta durmaları listeyi
           // olduğundan kalabalık gösteriyordu (madde 10).
           return <Widget>[
-            const SizedBox(height: 28),
+            const SizedBox(height: SandikSpace.xl),
             _GelismisGrup(
               acik: _gelismisAcik,
               onDegis: () => setState(() => _gelismisAcik = !_gelismisAcik),
@@ -1202,7 +1232,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ];
         }(),
-        const SizedBox(height: 24),
+        const SizedBox(height: SandikSpace.xl),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           // Sürüm SABİT yazılmıyordu artık: fastlane CI'da bump ettiği
@@ -1455,7 +1485,9 @@ class _SubSectionTitle extends StatelessWidget {
     return Padding(
       // Üstte belirgin boşluk: alt başlık kendinden ÖNCEKİ satırdan
       // ayrılmalı, sonrakiyle birlikte okunmalı.
-      padding: const EdgeInsets.fromLTRB(8, 18, 8, 6),
+      // Yatay iç boşluk 0 (Ar-Ge 26 Kas 02:03 #5): grup başlığı ve seçici
+      // kutusuyla aynı sol kenar; eskiden 8 pt içeride, üçüncü bir kenardı.
+      padding: const EdgeInsets.only(top: 18, bottom: SandikSpace.xs2),
       child: Text(
         text,
         style: context.t.bodySmall?.copyWith(
@@ -1652,11 +1684,14 @@ String bazBirimAdi(AppLocalizations l, BaseCurrency b) => switch (b) {
 class _BaseCurrencyPicker extends ConsumerWidget {
   const _BaseCurrencyPicker();
 
-  static const _options = <(BaseCurrency, IconData)>[
+  // Altın varlık türünün kendi sikkesi (Ar-Ge 26 Kas 02:03 #6): madalya
+  // (`workspace_premium`) uygulamada Premium'u çağrıştırıyor, ücretsiz
+  // kullanıcı Altın'ı kilitli sanabiliyordu. Tek kaynak `AssetType.altin`.
+  static final _options = <(BaseCurrency, IconData)>[
     (BaseCurrency.try_, Icons.currency_lira_rounded),
     (BaseCurrency.usd, Icons.attach_money_rounded),
     (BaseCurrency.eur, Icons.euro_rounded),
-    (BaseCurrency.gold, Icons.workspace_premium_rounded),
+    (BaseCurrency.gold, AssetType.altin.icon),
   ];
 
   @override
@@ -1738,15 +1773,15 @@ class _BaseCurrencyPicker extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: SandikSpace.xs),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
-          child: Text(
-            kurYok
-                ? context.l10n.rateNotFetched
-                : context.l10n.baseCurrencyNote(
-                    bazBirimAdi(context.l10n, baz.etkinBirim).toLowerCase()),
-            style: context.t.bodySmall?.copyWith(color: context.c.text58),
-          ),
+        // Açıklama satırları seçici kutusunun kenarında (Ar-Ge 26 Kas 02:03
+        // #5): eskiden 4 pt içeride duruyordu; Görünüm'de üç ayrı sol kenar
+        // vardı. Tema/dil/yazı boyutu/seviye açıklamaları da aynı kenarda.
+        Text(
+          kurYok
+              ? context.l10n.rateNotFetched
+              : context.l10n.baseCurrencyNote(
+                  bazBirimAdi(context.l10n, baz.etkinBirim).toLowerCase()),
+          style: context.t.bodySmall?.copyWith(color: context.c.text58),
         ),
       ],
     );
@@ -1836,13 +1871,10 @@ class _InvestorLevelPicker extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            '${current.aciklama(context)} '
-            '${context.l10n.investorLevelNote}',
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
-          ),
+        Text(
+          '${current.aciklama(context)} '
+          '${context.l10n.investorLevelNote}',
+          style: context.t.bodySmall?.copyWith(color: context.c.text36),
         ),
         // Anket (2026-10-04; bayrak `seviye_anketi` 2026-10-05'te kalktı):
         // hangi seviyede olduğundan emin olmayan kullanıcı etiket seçmek
@@ -1951,12 +1983,9 @@ class _LanguagePicker extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            l.languageNote,
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
-          ),
+        Text(
+          l.languageNote,
+          style: context.t.bodySmall?.copyWith(color: context.c.text36),
         ),
       ],
     );
@@ -2975,12 +3004,9 @@ class _YaziBoyutuPicker extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            l.textSizeNote,
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
-          ),
+        Text(
+          l.textSizeNote,
+          style: context.t.bodySmall?.copyWith(color: context.c.text36),
         ),
       ],
     );

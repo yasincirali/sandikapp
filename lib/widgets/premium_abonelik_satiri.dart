@@ -13,6 +13,22 @@ import '../utils/tr_format.dart' show fmtMagazaTutari;
 import 'sandik_async_button.dart';
 import 'satin_alim_geri_yukleme.dart';
 
+/// Mağazanın abonelik sayfasını açar; açılamazsa elle gidilecek yolu söyler.
+///
+/// Ölü uç olmasın (Ar-Ge 21 Kas tur 6 #3): sayfa açılamazsa elle gidilecek
+/// yol söylenir. Platform tema/hedeften okunur, kurulum kaynağından değil.
+/// Tek yer (Ar-Ge 26 Kas 02:03 #1): Premium satırı, hesap silme onayı ve
+/// Yardım'daki Premium sorusu aynı yolu kullanır; snack metni ayrışmasın.
+Future<void> aboneligiYonet(BuildContext context) async {
+  if (await AbonelikYonetimi.ac() || !context.mounted) return;
+  final l10n = context.l10n;
+  sandikSnack(
+      context,
+      Theme.of(context).platform == TargetPlatform.iOS
+          ? l10n.prmYonetAcilamadiIos
+          : l10n.prmYonetAcilamadiAndroid);
+}
+
 /// Profil'de Premium hakkı satırı (S14-A, 2026-10-05): ne tür hak, ne zaman
 /// yenilenir/biter (ücretsiz denemede ilk ödeme günü), ve iki eylem.
 ///
@@ -142,17 +158,7 @@ class PremiumAbonelikSatiri extends ConsumerWidget {
             if (yonet)
               TextButton(
                 style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
-                onPressed: () async {
-                  if (await AbonelikYonetimi.ac() || !context.mounted) return;
-                  // Ölü uç olmasın (Ar-Ge 21 Kas tur 6 #3): sayfa açılamazsa
-                  // elle gidilecek yol söylenir. Platform tema/hedeften
-                  // okunur, kurulum kaynağından değil.
-                  sandikSnack(
-                      context,
-                      Theme.of(context).platform == TargetPlatform.iOS
-                          ? l10n.prmYonetAcilamadiIos
-                          : l10n.prmYonetAcilamadiAndroid);
-                },
+                onPressed: () => aboneligiYonet(context),
                 child: Text(l10n.prmYonet),
               ),
             if (sonGunler)

@@ -2951,7 +2951,7 @@ abstract class AppLocalizations {
   /// No description provided for @downloadMyDataSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Hareketlerini Excel, tüm verilerini JSON olarak al (KVKK Madde 11)'**
+  /// **'Hareketlerini Excel, tüm verilerini JSON olarak al'**
   String get downloadMyDataSubtitle;
 
   /// No description provided for @downloadMyDataExcel.
@@ -3320,11 +3320,17 @@ abstract class AppLocalizations {
   /// **'Sessiz saatler'**
   String get quietHours;
 
-  /// No description provided for @biometricLockSubtitle.
+  /// No description provided for @biometricLockSubtitleIos.
   ///
   /// In tr, this message translates to:
-  /// **'Uygulamayı açarken Face ID / parmak izi / cihaz PIN\'i iste'**
-  String get biometricLockSubtitle;
+  /// **'Uygulamayı açarken Face ID ya da şifre iste'**
+  String get biometricLockSubtitleIos;
+
+  /// No description provided for @biometricLockSubtitleAndroid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulamayı açarken parmak izi ya da ekran kilidi iste'**
+  String get biometricLockSubtitleAndroid;
 
   /// No description provided for @doneTitle.
   ///
@@ -10456,12 +10462,6 @@ abstract class AppLocalizations {
   /// **'Portföy görünümü'**
   String get settingsGroupPortfolioView;
 
-  /// No description provided for @settingsGroupSecurityAccount.
-  ///
-  /// In tr, this message translates to:
-  /// **'Güvenlik ve hesap'**
-  String get settingsGroupSecurityAccount;
-
   /// No description provided for @settingsGroupData.
   ///
   /// In tr, this message translates to:
@@ -12221,6 +12221,12 @@ abstract class AppLocalizations {
   /// **'Yönet'**
   String get prmYonet;
 
+  /// No description provided for @aboneligiYonet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aboneliği yönet'**
+  String get aboneligiYonet;
+
   /// No description provided for @prmGeriYukle.
   ///
   /// In tr, this message translates to:
@@ -13468,6 +13474,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hepsi açık; sinyaller 2 saatte bir, %50 güvenden itibaren.'**
   String get bildirimOnAyarCokAciklama;
+
+  /// No description provided for @bildirimOnAyarPremiumlaAcilir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'la açılır.'**
+  String get bildirimOnAyarPremiumlaAcilir;
+
+  /// No description provided for @bildirimOnAyarPremiumlaAc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'la aç'**
+  String get bildirimOnAyarPremiumlaAc;
 
   /// No description provided for @bildirimOnAyarOzelAciklama.
   ///

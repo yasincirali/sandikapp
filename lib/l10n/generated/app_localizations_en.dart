@@ -1724,7 +1724,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadMyDataSubtitle =>
-      'Get your transactions as Excel, all your data as JSON (KVKK Article 11)';
+      'Get your transactions as Excel, all your data as JSON';
 
   @override
   String get downloadMyDataExcel => 'Excel (all transactions)';
@@ -1934,8 +1934,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quietHours => 'Quiet hours';
 
   @override
-  String get biometricLockSubtitle =>
-      'Ask for Face ID / fingerprint / device PIN when opening the app';
+  String get biometricLockSubtitleIos =>
+      'Ask for Face ID or passcode when opening the app';
+
+  @override
+  String get biometricLockSubtitleAndroid =>
+      'Ask for fingerprint or screen lock when opening the app';
 
   @override
   String get doneTitle => 'Done';
@@ -6404,9 +6408,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGroupPortfolioView => 'Portfolio view';
 
   @override
-  String get settingsGroupSecurityAccount => 'Security & account';
-
-  @override
   String get settingsGroupData => 'Data';
 
   @override
@@ -7591,6 +7592,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmGeriYukle => 'Restore purchases';
 
   @override
+  String get aboneligiYonet => 'Manage subscription';
+
+  @override
   String get prmIptalIpucu =>
       'Cancel or change your plan on the store\'s subscription page.';
 
@@ -8362,6 +8366,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bildirimOnAyarOzelAciklama =>
       'You\'ve set notifications one by one. Picking an option applies it to all of them.';
+
+  @override
+  String get bildirimOnAyarPremiumlaAcilir => 'Unlocks with Premium.';
+
+  @override
+  String get bildirimOnAyarPremiumlaAc => 'Unlock with Premium';
 
   @override
   String get bildirimAyrintiliUpper => 'Detailed';

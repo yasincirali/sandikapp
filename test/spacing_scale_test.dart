@@ -62,7 +62,9 @@ void main() {
     // 2026-10-30: PDF yazıcıları sayımdan çıktı → 40.
     // 2026-11-12: gerçek 36'ya inmişti (eşik güncellenmemişti; Varlık Ekle
     // turunda yeni ölçek dışı boşluk eklenmedi) → 36.
-    const esik = 36;
+    // 2026-11-26: Ayarlar'ın bölüm araları tek değere (SandikSpace.xl)
+    // indi, yedi ham 28 kalktı (Ar-Ge 26 Kas 02:03 #5) → 29.
+    const esik = 29;
 
     final offenders = collect();
 

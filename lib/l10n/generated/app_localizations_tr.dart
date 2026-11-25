@@ -1704,7 +1704,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get downloadMyDataSubtitle =>
-      'Hareketlerini Excel, tüm verilerini JSON olarak al (KVKK Madde 11)';
+      'Hareketlerini Excel, tüm verilerini JSON olarak al';
 
   @override
   String get downloadMyDataExcel => 'Excel (tüm hareketler)';
@@ -1914,8 +1914,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get quietHours => 'Sessiz saatler';
 
   @override
-  String get biometricLockSubtitle =>
-      'Uygulamayı açarken Face ID / parmak izi / cihaz PIN\'i iste';
+  String get biometricLockSubtitleIos =>
+      'Uygulamayı açarken Face ID ya da şifre iste';
+
+  @override
+  String get biometricLockSubtitleAndroid =>
+      'Uygulamayı açarken parmak izi ya da ekran kilidi iste';
 
   @override
   String get doneTitle => 'Tamamlandı';
@@ -6314,9 +6318,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get settingsGroupPortfolioView => 'Portföy görünümü';
 
   @override
-  String get settingsGroupSecurityAccount => 'Güvenlik ve hesap';
-
-  @override
   String get settingsGroupData => 'Veri';
 
   @override
@@ -7484,6 +7485,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmGeriYukle => 'Satın alımları geri yükle';
 
   @override
+  String get aboneligiYonet => 'Aboneliği yönet';
+
+  @override
   String get prmIptalIpucu =>
       'İptal ve plan değişikliği mağazanın abonelik sayfasında yapılır.';
 
@@ -8250,6 +8254,12 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get bildirimOnAyarOzelAciklama =>
       'Bildirimleri tek tek ayarlamışsın. Bir seçenek seçersen hepsine uygulanır.';
+
+  @override
+  String get bildirimOnAyarPremiumlaAcilir => 'Premium\'la açılır.';
+
+  @override
+  String get bildirimOnAyarPremiumlaAc => 'Premium\'la aç';
 
   @override
   String get bildirimAyrintiliUpper => 'Ayrıntılı';
