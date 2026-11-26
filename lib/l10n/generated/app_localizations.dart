@@ -5738,6 +5738,18 @@ abstract class AppLocalizations {
   /// **'Yapay zekâ da bu dosyada varlık tablosu bulamadı.'**
   String get importAiNoMatch;
 
+  /// No description provided for @importAiNoMatchDuzelt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sütunları düzelt ile elle seçebilirsin.'**
+  String get importAiNoMatchDuzelt;
+
+  /// No description provided for @importAiNoMatchGorsel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy ekranının görüntüsünden de ekleyebilirsin.'**
+  String get importAiNoMatchGorsel;
+
   /// No description provided for @importAiLimit.
   ///
   /// In tr, this message translates to:
@@ -13822,6 +13834,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'yapay zekâyla eşleme'**
   String get pwdEkstrePremium;
+
+  /// No description provided for @pwdEkstreGorselBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy ekranının görüntüsünden maliyetleri topluca doldur.'**
+  String get pwdEkstreGorselBaslik;
+
+  /// No description provided for @pwdEkstreGorselPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'ekran görüntüsünden toplu maliyet'**
+  String get pwdEkstreGorselPremium;
 
   /// No description provided for @pwdYillikAlt.
   ///

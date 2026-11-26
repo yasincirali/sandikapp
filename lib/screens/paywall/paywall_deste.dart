@@ -519,14 +519,22 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           l.prmNotUcretsiz,
           l.prmNotPremium,
         ),
+      // Ekran görüntüsünden maliyetle gelen kişi aynı kartta kendi
+      // dokunduğu işi okur (Ar-Ge 26 Kas 1203 #3): görüntü cihazda okunur,
+      // yapay zekâ değil; "yapay zekâ eşlesin" başlığı tıklananı
+      // anlatmıyordu. Yeni kart türü yok, yalnız iki satır kaynağa göre.
       PaywallKarti.ekstre => (
           _KartRengi.yesil,
           l.pwdEkstreEtiket,
-          l.pwdEkstreBaslik,
+          widget.source == 'ekran_goruntusu'
+              ? l.pwdEkstreGorselBaslik
+              : l.pwdEkstreBaslik,
           null,
           _EkstreGorseli(renk: _KartRengi.yesil),
           null,
-          l.pwdEkstrePremium,
+          widget.source == 'ekran_goruntusu'
+              ? l.pwdEkstreGorselPremium
+              : l.pwdEkstrePremium,
         ),
     };
     return DesteKarti(

@@ -3412,6 +3412,13 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yapay zekâ da bu dosyada varlık tablosu bulamadı.';
 
   @override
+  String get importAiNoMatchDuzelt => 'Sütunları düzelt ile elle seçebilirsin.';
+
+  @override
+  String get importAiNoMatchGorsel =>
+      'Portföy ekranının görüntüsünden de ekleyebilirsin.';
+
+  @override
   String get importAiLimit =>
       'Bugünlük yapay zekâ eşleme hakkın doldu; yarın yeniden dene.';
 
@@ -8460,6 +8467,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwdEkstrePremium => 'yapay zekâyla eşleme';
+
+  @override
+  String get pwdEkstreGorselBaslik =>
+      'Portföy ekranının görüntüsünden maliyetleri topluca doldur.';
+
+  @override
+  String get pwdEkstreGorselPremium => 'ekran görüntüsünden toplu maliyet';
 
   @override
   String pwdYillikAlt(String aylik) {

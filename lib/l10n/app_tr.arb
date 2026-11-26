@@ -2154,6 +2154,8 @@
   "importAiRizaGerekli": "Yapay zekâyla eşleme için onayın gerekiyor; düğmeye yeniden bas.",
   "importAiSuggested": "Sütunları yapay zekâ önerdi; eşlemeyi kontrol et, gerekirse düzelt.",
   "importAiNoMatch": "Yapay zekâ da bu dosyada varlık tablosu bulamadı.",
+  "importAiNoMatchDuzelt": "Sütunları düzelt ile elle seçebilirsin.",
+  "importAiNoMatchGorsel": "Portföy ekranının görüntüsünden de ekleyebilirsin.",
   "importAiLimit": "Bugünlük yapay zekâ eşleme hakkın doldu; yarın yeniden dene.",
   "importAiFailed": "Yapay zekâ eşlemesi şu an yapılamadı. Biraz sonra yeniden dene.",
   "importTradesApplied": "{count} varlığın alım satımları gerçek tarih ve fiyatıyla hesap hareketlerinden alındı.",
@@ -5748,6 +5750,8 @@
   "pwdEkstreEtiket": "Ekstre",
   "pwdEkstreBaslik": "Ekstreni yükle, satırları yapay zekâ eşlesin.",
   "pwdEkstrePremium": "yapay zekâyla eşleme",
+  "pwdEkstreGorselBaslik": "Portföy ekranının görüntüsünden maliyetleri topluca doldur.",
+  "pwdEkstreGorselPremium": "ekran görüntüsünden toplu maliyet",
   "pwdYillikAlt": "Yılda bir kez ödenir · ayda {aylik}",
   "@pwdYillikAlt": {
     "placeholders": {

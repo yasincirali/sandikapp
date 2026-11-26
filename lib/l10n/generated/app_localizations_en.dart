@@ -3471,6 +3471,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'AI couldn\'t find a holdings table in this file either.';
 
   @override
+  String get importAiNoMatchDuzelt =>
+      'You can pick them yourself with Fix columns.';
+
+  @override
+  String get importAiNoMatchGorsel =>
+      'You can also add them from a screenshot of your portfolio screen.';
+
+  @override
   String get importAiLimit =>
       'You\'ve used today\'s AI mapping allowance; try again tomorrow.';
 
@@ -8588,6 +8596,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdEkstrePremium => 'AI matching';
+
+  @override
+  String get pwdEkstreGorselBaslik =>
+      'Fill in costs in bulk from a screenshot of your portfolio screen.';
+
+  @override
+  String get pwdEkstreGorselPremium => 'bulk costs from a screenshot';
 
   @override
   String pwdYillikAlt(String aylik) {

@@ -253,7 +253,8 @@ class KilitSatiri extends ConsumerWidget {
       required this.metin,
       required this.kaynak,
       this.ozellik,
-      this.kilitEtiketi});
+      this.kilitEtiketi,
+      this.onAcildi});
 
   final String metin;
 
@@ -269,14 +270,28 @@ class KilitSatiri extends ConsumerWidget {
   /// (Ar-Ge 20 Kas tur 2 #6): 21 çağrının hiçbiri vermiyordu, ikon sessizdi.
   final String? kilitEtiketi;
 
+  /// Paywall satın alma/geri yüklemeyle (`true`) kapanırsa çağrılır: kişi
+  /// kilide neden dokunduysa o iş kendiliğinden başlar (Ar-Ge 26 Kas 1203
+  /// #1: ekstre satırında Premium alan kişi ekrana dönüyor, satır düğmeye
+  /// dönüşüyor ama eşleme başlamıyordu; ikinci dokunuş isteniyordu).
+  /// Vermeyen çağrılar eskisi gibi sonucu yok sayar. Satırın kendi
+  /// context'i satın alma sonrası ağaçtan düşer (kilit kalkınca satır
+  /// gider); `mounted` denetimi çağıranın işidir.
+  final VoidCallback? onAcildi;
+
   /// Kilit dokunuşunun tek yolu: satır da, kilitli kartın gövdesi de buradan
   /// açar (Ar-Ge 22 Kas 0703 #1: kart gövdesine dokunuş ölüydü).
   static void ac(BuildContext context,
-      {required String kaynak, String? ozellik}) {
+      {required String kaynak, String? ozellik, VoidCallback? onAcildi}) {
     if (ozellik != null) {
       AnalyticsService.instance.logPremiumGateShown(feature: ozellik);
     }
-    PaywallScreen.show(context, source: kaynak);
+    final acildi = PaywallScreen.show(context, source: kaynak);
+    if (onAcildi != null) {
+      acildi.then((aldi) {
+        if (aldi == true) onAcildi();
+      });
+    }
   }
 
   @override
@@ -290,7 +305,8 @@ class KilitSatiri extends ConsumerWidget {
       child: Semantics(
         button: true,
         child: SandikTappable(
-          onTap: () => ac(context, kaynak: kaynak, ozellik: ozellik),
+          onTap: () => ac(context,
+              kaynak: kaynak, ozellik: ozellik, onAcildi: onAcildi),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: SandikTouch.min),
             child: Row(

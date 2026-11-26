@@ -385,8 +385,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final e = _ekstre;
     // Çift dokunuş koruması ve gösterge düğmede (SandikAsyncButton,
     // 2026-10-08 tek yükleniyor davranışı); eski `_aiEsleniyor` bayrağı
-    // yalnızca bunu yapıyordu.
-    if (e == null) return;
+    // yalnızca bunu yapıyordu. `mounted`: kilit satırının satın alma
+    // dönüşü (`KilitSatiri.onAcildi`) ekran kapandıktan sonra da gelebilir.
+    if (e == null || !mounted) return;
     final l = context.l10n;
     setState(() => _kartMesaji = null);
     try {
@@ -408,7 +409,16 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       }
       if (!mounted) return;
       if (yeni == null) {
-        setState(() => _kartMesaji = l.importAiNoMatch);
+        // Ar-Ge 26 Kas 1203 #4: mesaj ölü uçtu; Premium kişi hakkını harcadı,
+        // elindeki yollar söylenmiyordu. Yeni düğme yok (ikisi de ekranda
+        // zaten var: "Sütunları düzelt" bu kartta, ekran görüntüsü düğmesi
+        // kartın hemen üstünde); cümle durumda gerçekten olan yolu gösterir.
+        setState(() => _kartMesaji = [
+              l.importAiNoMatch,
+              if (e.ana != null) l.importAiNoMatchDuzelt,
+              if (RemoteConfigService.instance.ekranGoruntusuMaliyet)
+                l.importAiNoMatchGorsel,
+            ].join(' '));
         return;
       }
       final cozulmus = await _fonAdlariniCoz(yeni);
@@ -431,11 +441,17 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
           setState(() => _kartMesaji = l.prmKilitEkstreAi);
         }
       } else if (h.riza) {
-        // Rıza başka cihazda geri çekilmiş: bir sonraki dokunuşta sorulur.
-        setState(() {
-          _aiRizasi = false;
-          _kartMesaji = l.importAiRizaGerekli;
-        });
+        // Rıza başka cihazda geri çekilmiş. Önce "bir sonraki dokunuşta
+        // sorulur" deniyordu (kart "düğmeye yeniden bas" yazıyordu); kişi
+        // zaten basmıştı (Ar-Ge 26 Kas 1203 #2). Şimdi rıza sayfası hemen
+        // açılır: onaylarsa eşleme sürer, vazgeçerse mesaj yok. İkinci
+        // denemede de rıza hatası gelirse metin görünür (sonsuz döngü yok).
+        _aiRizasi = false;
+        if (!yenidenDeneme) {
+          await _aiIleEsle(yenidenDeneme: true);
+        } else {
+          setState(() => _kartMesaji = l.importAiRizaGerekli);
+        }
       } else {
         setState(
             () => _kartMesaji = h.kota ? l.importAiLimit : l.importAiFailed);
@@ -872,8 +888,14 @@ class _EslemeKarti extends StatelessWidget {
           if (aiGorunur && !sonuc.aiOnerisi && sonuc.tutarKalemleri.isEmpty) ...[
             const SizedBox(height: SandikSpace.xs),
             if (aiKilitli)
+              // Satın alınca eşleme kendiliğinden başlar (Ar-Ge 26 Kas 1203
+              // #1; metin yolunda önce rıza sayfası, vazgeçerse susar).
+              // `ozellik`: kapı hunisinde ekstre de görünsün (#6).
               KilitSatiri(
-                  metin: context.l10n.prmKilitEkstreAi, kaynak: 'ekstre_ai')
+                  metin: context.l10n.prmKilitEkstreAi,
+                  kaynak: 'ekstre_ai',
+                  ozellik: 'ekstre_ai',
+                  onAcildi: onAi)
             else ...[
               Text(
                 // Metin yolunda "belge telefonundan çıkmaz" doğru değil.
@@ -1064,13 +1086,16 @@ class _AiRizaSayfasi extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(l.importAiRizaBaslik,
+                // w600 tavanı (unslop, Ar-Ge 26 Kas 1203 #5); metin TAM kalır.
                 style: t.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700, color: c.text90)),
+                    ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
             const SizedBox(height: SandikSpace.sm),
             Text(l.importAiRizaMetin,
                 style: t.bodyMedium?.copyWith(color: c.text58)),
             const SizedBox(height: SandikSpace.lg),
+            // İki düğme eşit 44 pt (HIG; önce yalnız "Vazgeç" alıyordu).
             FilledButton(
+              style: FilledButton.styleFrom(minimumSize: SandikTouch.minSize),
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(l.importAiRizaKabul),
             ),
