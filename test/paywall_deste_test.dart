@@ -39,6 +39,8 @@ void main() {
         'analiz_notu': PaywallKarti.not,
         'ekstre_ai': PaywallKarti.ekstre,
         'ekran_goruntusu': PaywallKarti.ekstre,
+        // Saatli fiyat bildirimi (0188).
+        'saatli_bildirim': PaywallKarti.saatli,
         'yillik_rapor': PaywallKarti.rapor,
         'portfoy_disa_aktar': PaywallKarti.rapor,
         // Masraf dökümü X-Ray'in yanında; aylık rapor rapor kartında
@@ -189,7 +191,9 @@ void main() {
       expect(
           desteSirasi('profile_banner',
               radar: true, ekstreAi: true, portfoy: true, zirve: true),
-          PaywallKarti.values);
+          // Saatli kartı yalnız kendi kaynağından açılır (tablo yokken
+          // özellik gizli; genel destede vaat etmez).
+          PaywallKarti.values.where((k) => k != PaywallKarti.saatli));
     });
 
     test('zirve kartı yalnız kapı canlıyken; zirve kaynağı onunla açılır', () {
@@ -256,6 +260,15 @@ void main() {
       // o kilide dokunduysa özellik canlıdır (paywall incelemesi, 2026-10-20).
       expect(desteSirasi('hacim_radari', radar: false, ekstreAi: false).first,
           PaywallKarti.hacim);
+    });
+
+    test('saatli bildirim kartı yalnız kendi kilidinden açılan destede', () {
+      // Tablo canlıda yokken özellik gizli; deste bunu bilmediği için kart
+      // yalnız dokunulan kilitle gelir (0188).
+      expect(desteSirasi('profile_banner', radar: true, ekstreAi: true),
+          isNot(contains(PaywallKarti.saatli)));
+      expect(desteSirasi('saatli_bildirim', radar: false, ekstreAi: false).first,
+          PaywallKarti.saatli);
     });
 
     test(

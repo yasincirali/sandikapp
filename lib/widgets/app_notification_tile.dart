@@ -76,6 +76,11 @@ class AppNotificationTile extends StatelessWidget {
           Icons.notifications_active_rounded,
           l10n.notifTypeAlarm
         ),
+      // 0188: saatli fiyat bildirimi — kullanıcının seçtiği saat.
+      AppNotification.saatliBildirim => (
+          Icons.schedule_rounded,
+          l10n.saatliTekil
+        ),
       _ => (Icons.event_note_rounded, l10n.notifTypeReminder),
     };
     // Bilgi bildirimi: yön/kazanç anlamı yok, marka vurgusu (amber).

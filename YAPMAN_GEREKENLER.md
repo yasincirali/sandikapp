@@ -13,6 +13,14 @@
 > yeni rehber geçerlidir.
 
 
+## ⏳ 2026-11-26 Saatli fiyat bildirimi (0188 + `saatli-bildirim`) — dağıtım sırası
+Premium "Saatli bildirim": kullanıcının seçtiği saatlerde (varlık başına 5 saat, en çok 5 varlık) fiyat push'u.
+1. **Migration 0188** Frankfurt'a (`supabase-deploy.yml`). Yalnız ekler: iki tablo, kapı fonksiyonları, tetikleyici, `app_notifications` CHECK genişlemesi, `saatli-bildirim` cron'u (`*/15 * * * *`).
+2. **Fonksiyon `saatli-bildirim`** aynı dağıtımda (`functions: saatli-bildirim` ya da `all`). Yeni secret YOK: `PRICE_ALERTS_CRON_SECRET` / Vault `price_alerts_cron_secret` paylaşılır. Fonksiyon migration'dan önce giderse tablo yok der ve boş döner; migration fonksiyondan önce giderse cron 15 dakikada bir 404 alır (zararsız, `net._http_response`'ta görünür).
+3. **Sıra önemsiz, eski build etkilenmez:** uygulama tabloyu bulamazsa bölümü, zil menüsünü ve Ayarlar satırını hiç göstermez. Migration canlıya gidince yeni build'de Premium kullanıcı görür (paywall kapalıyken yalnız admin).
+4. Doğrulama: `select count(*) from saatli_bildirimler;` ve 15 dk sonra `net._http_response`'ta `saatli-bildirim` için 200. Elle deneme: fonksiyonu `{"dry_run": true}` gövdesiyle çağır.
+5. Açık kararlar (tasarım "Kararlar"): ücretsiz tadımlık YOK, hızlı alarm turuna dokunulmadı, günlük push tavanı EKLENMEDİ — istersen ayrı iş.
+
 ## ⏳ 2026-11-23 Mağaza açıklamasında "sınırsız sinyal bildirimi" (sen, sonraki mağaza gönderiminde)
 Uygulama içi metin düzeltildi (müşteri turu 18): Premium sinyal bildirimi **saatlik** (10:00-18:00 arası en fazla günde 9 tur), sınırsız değil.
 Mağaza metni hâlâ eski: `store_listing/ios/tr/description.txt:45` "sınırsız sinyal bildirimi", `store_listing/ios/en/description.txt:45` "unlimited signal alerts".

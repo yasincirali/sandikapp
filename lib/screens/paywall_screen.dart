@@ -9,6 +9,7 @@ import '../models/asset.dart' show Asset;
 import '../models/asset_type.dart';
 import '../models/portfoy_grubu.dart';
 import '../models/position.dart' show aggregatePositions, aktifLotlar;
+import '../models/saatli_bildirim.dart' show SaatliBildirim;
 import '../providers/auth_provider.dart' show partnersProvider;
 import '../providers/portfolio_provider.dart' show portfolioProvider;
 import '../providers/premium_provider.dart' show satinAlmaServisiProvider;

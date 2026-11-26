@@ -63,6 +63,8 @@ import 'legal_doc_screen.dart';
 import 'onboarding_screen.dart';
 import 'push_diagnostics_screen.dart';
 import 'price_alerts_screen.dart';
+import 'saatli_bildirimler_screen.dart';
+import '../providers/saatli_bildirim_provider.dart';
 import 'signal_settings_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 
@@ -882,6 +884,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 adaptiveRoute<void>(settings: const RouteSettings(name: 'price_alerts'), builder: (_) => const PriceAlertsScreen()),
               ),
             ),
+            // Saatli fiyat bildirimi (0188, Premium). Tablo yoksa ya da
+            // kullanıcıya açık değilse satır yok; kilitliyse satır yine
+            // görünür, sayfadaki kilit paywall'a götürür.
+            if (ref.watch(saatliBildirimDurumuProvider) != OzellikDurumu.gizli)
+              _SettingsTile(
+                icon: Icons.schedule_rounded,
+                title: context.l10n.saatliBaslik,
+                subtitle: switch (ref
+                        .watch(saatliBildirimlerProvider)
+                        .valueOrNull
+                        ?.length ??
+                    0) {
+                  0 => context.l10n.saatliAyarAlt,
+                  final n => context.l10n.saatliAktifSayi(n),
+                },
+                onTap: () => pushGuarded(
+                  context,
+                  adaptiveRoute<void>(
+                      settings: const RouteSettings(name: 'saatli_bildirimler'),
+                      builder: (_) => const SaatliBildirimlerScreen()),
+                ),
+              ),
             const _QuietHoursTile(),
             const _BriefSlotTile(),
       ];

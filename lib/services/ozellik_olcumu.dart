@@ -168,7 +168,12 @@ enum Ozellik {
   paylasimKarti('paylasim_karti', 'Paylaşım kartı'),
 
   /// Hızlı al / sat penceresi açıldı.
-  hizliAlSat('hizli_al_sat', 'Hızlı al / sat');
+  hizliAlSat('hizli_al_sat', 'Hızlı al / sat'),
+
+  /// Saatli fiyat bildirimi KAYDI (0188, yasin 2026-11-26). Soru: Premium
+  /// kullanıcı "seçtiğim saatte fiyatı gönder"i kuruyor mu. Kod paywall
+  /// kaynağıyla aynı (`saatli_bildirim`).
+  saatliBildirim('saatli_bildirim', 'Saatli fiyat bildirimi', premium: true);
 
   const Ozellik(this.kod, this.ad, {this.premium = false});
   final String kod;

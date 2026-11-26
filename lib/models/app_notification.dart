@@ -34,6 +34,10 @@ class AppNotification {
   /// `cizim_alarm_id`. İkisi de dokununca varlık ekranı (push'la aynı).
   static const cizimAlarm = 'cizim_alarm';
 
+  /// Saatli fiyat bildirimi (0188, `saatli-bildirim`); `data` push'la aynı
+  /// (`symbol`, `label`, `saatli`). Dokununca varlık (push'la aynı varış).
+  static const saatliBildirim = 'saatli_bildirim';
+
   final String id;
   final String type;
   final String title;

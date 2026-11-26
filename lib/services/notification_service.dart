@@ -26,6 +26,9 @@ import '../screens/hafta_ozeti_screen.dart';
 import '../screens/tam_ekran_grafik_screen.dart' show TamEkranGrafikEkrani;
 import 'remote_config_service.dart';
 import '../screens/asset_not_found_screen.dart';
+import '../screens/varlik_sayfasi.dart' show showVarlikSayfasi;
+import '../models/varlik_kimligi.dart';
+import 'symbol_search_service.dart' show SymbolHit;
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
 import '../config/pref_keys.dart';
 // `alarmSembolu`: alarm kurarken kullanılan sembol kuralı. Bildirimi
@@ -846,6 +849,13 @@ class NotificationService {
             reason: 'notification.cizgiAc');
         return;
       }
+      // Saatli fiyat bildirimi (0188) portföyde olmayan varlığa da kurulur:
+      // eşleşme yoksa varlık sayfası. `saatli` anahtarı eklemedir; eski
+      // build onu okumaz, eskisi gibi yalnız portföydeki varlığı açar.
+      if (data['saatli']?.toString() == '1') {
+        openSaatliVarlik(symbol, data['label']?.toString());
+        return;
+      }
       openPriceAlertAsset(symbol);
       return;
     }
@@ -1222,6 +1232,24 @@ class NotificationService {
       initialPeriodDays: 0,
       gelenAlarmId: alertId,
     );
+  }
+
+  /// Saatli fiyat bildiriminin varışı (0188): portföydeki varlıksa varlık
+  /// ekranı ([openPriceAlertAsset]), değilse varlık sayfası
+  /// ([showVarlikSayfasi]; kimlik aramayla aynı kuraldan,
+  /// [VarlikKimligi.fromSymbolHit]). Kimlik kurulamazsa sessiz.
+  void openSaatliVarlik(String symbol, String? label) {
+    openPriceAlertAsset(symbol, onNotFound: () {
+      final context = _navigatorKey?.currentState?.overlay?.context;
+      if (context == null) return;
+      final kimlik = VarlikKimligi.fromSymbolHit(SymbolHit(
+          ticker: symbol,
+          name: (label ?? '').trim().isEmpty ? symbol : label!.trim(),
+          source: ''));
+      if (kimlik == null) return;
+      CrashReporter.arkaPlan(showVarlikSayfasi(context, kimlik),
+          reason: 'notification.saatliVarlik');
+    });
   }
 
   /// Çizgi alarmının çizgisini yatay grafikte açar (yasin 2026-10-29:

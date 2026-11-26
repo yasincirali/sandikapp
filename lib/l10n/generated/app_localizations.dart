@@ -19065,6 +19065,132 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu fonların dağılımı henüz yayımlanmadı'**
   String get ziYayimlanmadi;
+
+  /// No description provided for @saatliBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatli bildirimler'**
+  String get saatliBaslik;
+
+  /// No description provided for @saatliTekil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatli bildirim'**
+  String get saatliTekil;
+
+  /// No description provided for @saatliEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatli bildirim ekle'**
+  String get saatliEkle;
+
+  /// No description provided for @saatliAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin saatlerde varlığın o anki fiyatını bildirim olarak gönderiyoruz.'**
+  String get saatliAciklama;
+
+  /// No description provided for @saatliKilitSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin saatte fiyat bildirimi Premium\'da'**
+  String get saatliKilitSatiri;
+
+  /// No description provided for @saatliYenidenGonderilir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'la yeniden gönderilir'**
+  String get saatliYenidenGonderilir;
+
+  /// No description provided for @saatliSaatEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saat ekle'**
+  String get saatliSaatEkle;
+
+  /// No description provided for @saatliSaatlerEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatler'**
+  String get saatliSaatlerEtiket;
+
+  /// No description provided for @saatliEnFazlaSaat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık başına en fazla {n} saat'**
+  String saatliEnFazlaSaat(int n);
+
+  /// No description provided for @saatliSessizUyari.
+  ///
+  /// In tr, this message translates to:
+  /// **'{saat} sessiz saatlerine denk geliyor; seçtiğin için yine de gönderilir.'**
+  String saatliSessizUyari(String saat);
+
+  /// No description provided for @saatliSinir.
+  ///
+  /// In tr, this message translates to:
+  /// **'En fazla {varlik} varlık, varlık başına {saat} saat seçebilirsin.'**
+  String saatliSinir(int varlik, int saat);
+
+  /// No description provided for @saatliVarlikSec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık seç'**
+  String get saatliVarlikSec;
+
+  /// No description provided for @saatliAra.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık ara'**
+  String get saatliAra;
+
+  /// No description provided for @saatliSonucYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşleşen varlık yok'**
+  String get saatliSonucYok;
+
+  /// No description provided for @saatliAyarAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin saatte fiyat'**
+  String get saatliAyarAlt;
+
+  /// No description provided for @saatliAktifSayi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{1 varlık} other{{n} varlık}}'**
+  String saatliAktifSayi(int n);
+
+  /// No description provided for @saatliSaatSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'{saat} saatini kaldır'**
+  String saatliSaatSil(String saat);
+
+  /// No description provided for @pwdSaatliEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatli bildirim'**
+  String get pwdSaatliEtiket;
+
+  /// No description provided for @pwdSaatliBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin varlığın fiyatı, seçtiğin saatte telefonuna gelsin.'**
+  String get pwdSaatliBaslik;
+
+  /// No description provided for @pwdSaatliUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sabah ve akşam özeti'**
+  String get pwdSaatliUcretsiz;
+
+  /// No description provided for @pwdSaatliPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'{varlik} varlık, günde {saat} saat'**
+  String pwdSaatliPremium(int varlik, int saat);
 }
 
 class _AppLocalizationsDelegate

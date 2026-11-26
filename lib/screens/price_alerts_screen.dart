@@ -36,6 +36,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/kapanan_satir.dart';
 import '../widgets/alarm_kur_sheet.dart';
+import '../widgets/saatli_bildirim.dart' show SaatliBildirimBolumu;
 import 'paywall_screen.dart' show PaywallScreen;
 import 'signal_settings_screen.dart' show SignalSettingsScreen;
 import '../widgets/sandik_baglam_menusu.dart';
@@ -310,6 +311,10 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               // sinyal bildirimleri listenin sonunda tek satır. Süzülmüş
               // (tek sembol) listede yok: satır bütün varlıkları sayar.
               if (widget.sembol == null) const _SinyalSatiri(),
+              // Saatli fiyat bildirimleri (0188, Premium): alarm değil ama
+              // "neyi izliyorum" sorusunun parçası; tablo yoksa (migration
+              // canlıda değil) ya da kullanıcıya açık değilse hiç çizilmez.
+              if (widget.sembol == null) const SaatliBildirimBolumu(),
             ];
             // İzin reddedilmişse listedeki hiçbir alarm haber veremez
             // (Ar-Ge 16:45 #1, 2026-10-21). Liste kaydırılırken satır üstte
@@ -1075,6 +1080,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             ),
           ),
         ],
+        // Alarm yokken de saatli bildirim bölümü (0188); gizliyse yer kaplamaz.
+        if (s == null) const SaatliBildirimBolumu(ustBosluk: SandikSpace.xl),
       ],
     );
   }

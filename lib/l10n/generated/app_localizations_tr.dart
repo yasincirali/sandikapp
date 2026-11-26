@@ -11954,4 +11954,87 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ziYayimlanmadi => 'Bu fonların dağılımı henüz yayımlanmadı';
+
+  @override
+  String get saatliBaslik => 'Saatli bildirimler';
+
+  @override
+  String get saatliTekil => 'Saatli bildirim';
+
+  @override
+  String get saatliEkle => 'Saatli bildirim ekle';
+
+  @override
+  String get saatliAciklama =>
+      'Seçtiğin saatlerde varlığın o anki fiyatını bildirim olarak gönderiyoruz.';
+
+  @override
+  String get saatliKilitSatiri => 'Seçtiğin saatte fiyat bildirimi Premium\'da';
+
+  @override
+  String get saatliYenidenGonderilir => 'Premium\'la yeniden gönderilir';
+
+  @override
+  String get saatliSaatEkle => 'Saat ekle';
+
+  @override
+  String get saatliSaatlerEtiket => 'Saatler';
+
+  @override
+  String saatliEnFazlaSaat(int n) {
+    return 'Varlık başına en fazla $n saat';
+  }
+
+  @override
+  String saatliSessizUyari(String saat) {
+    return '$saat sessiz saatlerine denk geliyor; seçtiğin için yine de gönderilir.';
+  }
+
+  @override
+  String saatliSinir(int varlik, int saat) {
+    return 'En fazla $varlik varlık, varlık başına $saat saat seçebilirsin.';
+  }
+
+  @override
+  String get saatliVarlikSec => 'Varlık seç';
+
+  @override
+  String get saatliAra => 'Varlık ara';
+
+  @override
+  String get saatliSonucYok => 'Eşleşen varlık yok';
+
+  @override
+  String get saatliAyarAlt => 'Seçtiğin saatte fiyat';
+
+  @override
+  String saatliAktifSayi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n varlık',
+      one: '1 varlık',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String saatliSaatSil(String saat) {
+    return '$saat saatini kaldır';
+  }
+
+  @override
+  String get pwdSaatliEtiket => 'Saatli bildirim';
+
+  @override
+  String get pwdSaatliBaslik =>
+      'Seçtiğin varlığın fiyatı, seçtiğin saatte telefonuna gelsin.';
+
+  @override
+  String get pwdSaatliUcretsiz => 'Sabah ve akşam özeti';
+
+  @override
+  String pwdSaatliPremium(int varlik, int saat) {
+    return '$varlik varlık, günde $saat saat';
+  }
 }
