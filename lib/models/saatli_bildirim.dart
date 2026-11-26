@@ -85,6 +85,17 @@ class SaatliBildirim {
       '${(dakika ~/ 60).toString().padLeft(2, '0')}:'
       '${(dakika % 60).toString().padLeft(2, '0')}';
 
+  /// [baslangic]'tan (dahil) başlayıp listede olmayan ilk 15 dakikalık adım;
+  /// gün sonunda başa sarar. Hepsi doluysa (olamaz: en çok 5 saat)
+  /// [baslangic]. Saat çarkının açılış konumu.
+  static int ilkBosSaat(List<int> saatler, int baslangic) {
+    for (var i = 0; i < 24 * 60 ~/ adimDk; i++) {
+      final d = (baslangic + i * adimDk) % (24 * 60);
+      if (!saatler.contains(d)) return d;
+    }
+    return baslangic;
+  }
+
   /// Seçilebilir bütün saatler (00:00 … 23:45).
   static List<int> get tumSaatler =>
       [for (var d = 0; d < 24 * 60; d += adimDk) d];

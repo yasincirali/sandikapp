@@ -1,6 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart' show CupertinoDatePicker, CupertinoDatePickerMode;
+import 'package:flutter/cupertino.dart'
+    show
+        CupertinoDatePicker,
+        CupertinoDatePickerMode,
+        CupertinoTextThemeData,
+        CupertinoTheme;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,7 +31,7 @@ import 'arama_satiri.dart';
 import 'para_akisi_karti.dart' show KilitSatiri;
 import 'sandik_arama_alani.dart';
 import 'sandik_async_button.dart';
-import 'tur_filtre_cipleri.dart' show SandikFiltreCipi;
+import 'varlik_rozeti.dart';
 
 /// Paywall kaynağı ve ölçüm kodu (aynı ad, `ozellik_olcumu_test`).
 const saatliKaynak = 'saatli_bildirim';
@@ -69,15 +74,22 @@ Future<void> saatliBildirimAkisi(
     return;
   }
   final mevcut = liste.where((b) => b.symbol == secim!.sembol).firstOrNull;
+  final gorunenAd = mevcut?.label ?? secim.ad;
+  // Başlık kimliği (rozet, tür) portföy/takip kaydından; yoksa sembolden.
+  final kayit = alarmAdaylari(ref)
+      .where((a) => a.sembol == secim!.sembol)
+      .firstOrNull
+      ?.kimlik;
+  // Başlık sayfanın içinde (rozet + ad + "sembol · tür"; bkz.
+  // [SaatSecimSayfasi]); kabuk yalnız tutamacı çizer.
   await showSandikSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    baslik: mevcut?.label ?? secim.ad,
-    altMetin: context.l10n.saatliEnFazlaSaat(SaatliBildirim.enFazlaSaat),
     builder: (_) => SaatSecimSayfasi(
       sembol: secim!.sembol,
-      ad: mevcut?.label ?? secim.ad,
+      ad: gorunenAd,
+      kimlik: saatliKimlik(secim.sembol, gorunenAd, kayit),
       mevcut: mevcut,
     ),
   );
@@ -106,13 +118,19 @@ Future<SaatliSecim?> _varlikSec(BuildContext context, WidgetRef ref) =>
             // (eski çağıran) tür sembolden çıkarılır — arama satırıyla aynı
             // kural. Kimlik kurulamıyorsa satır yine görünür, hisse sayılır:
             // kullanıcının kendi varlığı listeden düşmemeli.
-            a.kimlik ??
-                VarlikKimligi.fromSymbolHit(
-                    SymbolHit(ticker: a.sembol, name: a.ad, source: '')) ??
-                VarlikKimligi.hisse(a.sembol, a.ad),
+            saatliKimlik(a.sembol, a.ad, a.kimlik),
         ],
       ),
     );
+
+/// Varlığın kimliği: kayıttan gelen ([kayit]) yoksa sembolden (arama
+/// satırıyla aynı kural); o da kurulamıyorsa hisse sayılır — satır ve
+/// başlık yine görünür, kullanıcının varlığı düşmez.
+VarlikKimligi saatliKimlik(String sembol, String ad, VarlikKimligi? kayit) =>
+    kayit ??
+    VarlikKimligi.fromSymbolHit(
+        SymbolHit(ticker: sembol, name: ad, source: '')) ??
+    VarlikKimligi.hisse(sembol, ad);
 
 /// Varlık seçici: boş sorguda portföy + takip, yazınca katalog araması
 /// (`SymbolSearchService`, takibe alma ekranıyla aynı servis ve bekleme).
@@ -341,17 +359,50 @@ class _SaatliVarlikSeciciState extends ConsumerState<SaatliVarlikSecici> {
 /// Saat seçimi: 15 dakika adımlı saat çarkı (iOS sistem kalıbı, iki
 /// platformda aynı), seçilen saatler en çok beş çip. Kayıt sayfanın
 /// düğmesinin İÇİNDE (tek yükleniyor davranışı); hata düğmenin altında,
-/// sayfa açık kalır, seçim kaybolmaz.
+/// sayfa açık kalır, seçim kaybolmaz. Yeni kayıt da var olanı düzenleme de
+/// (Alarmlarım'daki satır, varlık seçicide "3 saat" yazan satır) bu sayfa.
+///
+/// ## Görünüm (2026-11-26, yasin: "varlık seçtikten sonra saat seçme
+/// ekranını da düzeltmeliyiz… marka algımızı da kullanıp")
+/// Eski hâl: kabuk içerik payı vermediği için açıklama, çipler ve Kaydet
+/// ekran kenarına yapışıktı; başlık yalnız addı (hangi varlık olduğu
+/// seçicideki satırdan kopuktu); çark başlıksız boşlukta, "Saat ekle" ondan
+/// kopuk bir metin bağlantısıydı; seçili saatler süzme çipiydi (onay
+/// işareti "seçili süzgeç" der, dokununca silindiği görünmüyordu); çark
+/// sistem yazısıyla çiziliyordu (DM Sans değil).
+/// Şimdi:
+/// - Başlık seçicideki satırın kimliği: `VarlikRozeti` + ad +
+///   "sembol · tür" (aynı varlık iki adımda iki farklı görünmesin).
+///   `SandikSheetBasligi` içeride (başlığı duruma göre değişen sayfa,
+///   TASARIM_DILI §4).
+/// - "Saatler" bölüm başlığı + sağda "3/5": sınır baştan görünür; eski
+///   "Varlık başına en fazla 5 saat" alt metni sayacın ekran okuyucu
+///   cümlesine taşındı.
+/// - Seçili saat = kaldırılabilir çip: saat + ×, 44 pt, dokununca kalkar.
+/// - Çark ve "Saat ekle" tek kartta: ne eklediğin çarkta, düğme hemen
+///   altında. Saat zaten listedeyse düğme pasif ve NEDENİNİ söyler
+///   ("09:00 listede"); beş saat doluysa çark yerine "birini kaldır".
+/// - Birincil eylem en altta tek: Kaydet (`SandikAsyncButton`, ✓ durumu).
+///
+/// Reddedilen yön: önerilen saat ızgarası (09:00 · 10:00 · 12:30 · 18:00 …
+/// tek dokunuşla ekle). Hızlıydı ama hangi saatlerin "önerildiği" bizim
+/// uydurmamız olurdu (kullanıcının hangi saatte fiyat istediğine dair
+/// verimiz yok) ve 15 dakikalık her adımı yine çark isterdi: iki giriş
+/// yolu, tek iş. Çark HIG'in saat girişi kalıbı.
 class SaatSecimSayfasi extends ConsumerStatefulWidget {
   const SaatSecimSayfasi({
     super.key,
     required this.sembol,
     required this.ad,
+    this.kimlik,
     this.mevcut,
   });
 
   final String sembol;
   final String ad;
+
+  /// Başlıktaki rozet ve "sembol · tür" için; verilmezse sembolden çıkarılır.
+  final VarlikKimligi? kimlik;
   final SaatliBildirim? mevcut;
 
   @override
@@ -360,8 +411,12 @@ class SaatSecimSayfasi extends ConsumerStatefulWidget {
 
 class _SaatSecimSayfasiState extends ConsumerState<SaatSecimSayfasi> {
   late final List<int> _saatler = [...?widget.mevcut?.saatler];
-  // Varsayılan çark konumu: 09:00 (piyasa açılışı öncesi, ilk akla gelen).
-  int _cark = 9 * 60;
+  late final VarlikKimligi _kimlik =
+      widget.kimlik ?? saatliKimlik(widget.sembol, widget.ad, null);
+  // Varsayılan çark konumu: 09:00 (piyasa açılışı öncesi, ilk akla gelen);
+  // listede varsa ondan sonraki ilk boş 15 dakika. Düzenlemede sayfa
+  // "09:00 listede" pasif düğmesiyle açılmasın, ilk dokunuş ekleyebilsin.
+  late int _cark = SaatliBildirim.ilkBosSaat(_saatler, 9 * 60);
   String? _hata;
   final _basari = SandikBasariSinyali();
 
@@ -370,7 +425,6 @@ class _SaatSecimSayfasiState extends ConsumerState<SaatSecimSayfasi> {
         _saatler.length >= SaatliBildirim.enFazlaSaat) {
       return;
     }
-    SandikHaptic.selection.perform();
     setState(() {
       _saatler
         ..add(_cark)
@@ -378,6 +432,11 @@ class _SaatSecimSayfasiState extends ConsumerState<SaatSecimSayfasi> {
       _hata = null;
     });
   }
+
+  void _kaldir(int s) => setState(() {
+        _saatler.remove(s);
+        _hata = null;
+      });
 
   Future<void> _kaydet() async {
     final me = ref.read(authProvider).valueOrNull;
@@ -424,110 +483,263 @@ class _SaatSecimSayfasiState extends ConsumerState<SaatSecimSayfasi> {
   Widget build(BuildContext context) {
     final c = context.c;
     final l10n = context.l10n;
+    final hp = SandikSpace.screenH(context);
+    final altPay = MediaQuery.paddingOf(context).bottom;
     final sessiz = ref.watch(quietHoursProvider).valueOrNull;
     final sessizSaat = _saatler
         .where((s) =>
             SaatliBildirim.sessizPencerede(s, sessiz?.start, sessiz?.end))
         .firstOrNull;
     final dolu = _saatler.length >= SaatliBildirim.enFazlaSaat;
-    final simdi = DateTime.now();
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(l10n.saatliAciklama,
-            style: context.t.bodyMedium?.copyWith(color: c.text58)),
-        const SizedBox(height: SandikSpace.md),
-        if (_saatler.isNotEmpty) ...[
-          Text(l10n.saatliSaatlerEtiket,
-              style: context.t.labelLarge?.copyWith(color: c.text58)),
+    final ikinci = context.t.bodyMedium?.copyWith(color: c.text58);
+    // Büyük yazıda (×2) içerik sayfa boyunu aşar: kaydırılır, taşmaz.
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(hp, SandikSpace.xs, hp, SandikSpace.md + altPay),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _baslik(context),
+          const SizedBox(height: SandikSpace.smd),
+          Text(l10n.saatliAciklama, style: ikinci),
           const SizedBox(height: SandikSpace.sm),
-          Wrap(
-            spacing: SandikSpace.sm,
-            runSpacing: SandikSpace.sm,
-            children: [
-              for (final s in _saatler)
-                SandikFiltreCipi(
-                  key: ValueKey('saatliCip_$s'),
-                  ad: SaatliBildirim.saatMetni(s),
-                  secili: true,
-                  semantik: l10n.saatliSaatSil(SaatliBildirim.saatMetni(s)),
-                  onTap: () => setState(() {
-                    _saatler.remove(s);
-                    _hata = null;
-                  }),
+          SandikSectionHeader(
+            title: l10n.saatliSaatlerEtiket,
+            minHeight: SandikTouch.min,
+            trailing: Semantics(
+              // "3/5" sesli okunurken anlamını yitirir: tam cümle.
+              label: '${l10n.saatliSaatSayisi(_saatler.length)}, '
+                  '${l10n.saatliEnFazlaSaat(SaatliBildirim.enFazlaSaat)}',
+              child: ExcludeSemantics(
+                child: Text(
+                  l10n.saatliSayac(_saatler.length, SaatliBildirim.enFazlaSaat),
+                  key: const ValueKey('saatliSayac'),
+                  style: context.t.labelLarge?.copyWith(
+                      color: c.text58,
+                      fontFeatures: const [FontFeature.tabularFigures()]),
                 ),
-            ],
+              ),
+            ),
           ),
+          if (_saatler.isEmpty)
+            Text(l10n.saatliSaatYok,
+                key: const ValueKey('saatliSaatYok'),
+                style: context.t.bodyMedium?.copyWith(color: c.text36))
+          else
+            Wrap(
+              spacing: SandikSpace.sm,
+              runSpacing: SandikSpace.sm,
+              children: [
+                for (final s in _saatler)
+                  _SaatCipi(
+                    key: ValueKey('saatliCip_$s'),
+                    saat: SaatliBildirim.saatMetni(s),
+                    onKaldir: () => _kaldir(s),
+                  ),
+              ],
+            ),
           const SizedBox(height: SandikSpace.md),
-        ],
-        if (!dolu) ...[
-          SizedBox(
-            height: SandikSpace.xl * 5,
-            child: CupertinoDatePicker(
-              mode: CupertinoDatePickerMode.time,
-              use24hFormat: true,
-              minuteInterval: SaatliBildirim.adimDk,
-              initialDateTime: DateTime(
-                  simdi.year, simdi.month, simdi.day, _cark ~/ 60, _cark % 60),
-              onDateTimeChanged: (d) => _cark = d.hour * 60 + d.minute,
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              key: const ValueKey('saatliSaatEkle'),
-              onPressed: _ekle,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(l10n.saatliSaatEkle),
-            ),
-          ),
-        ],
-        // Sessiz saatlerle çakışma: tek satır, ikon + cümle (yalnız renk değil).
-        if (sessizSaat != null)
-          Padding(
-            key: const ValueKey('saatliSessizUyari'),
-            padding: const EdgeInsets.only(top: SandikSpace.sm),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          if (dolu)
+            Row(
+              key: const ValueKey('saatliDolu'),
               children: [
                 ExcludeSemantics(
-                  child: Icon(Icons.bedtime_outlined,
+                  child: Icon(Icons.info_outline_rounded,
                       size: SandikSpace.md, color: c.text58),
                 ),
                 const SizedBox(width: SandikSpace.sm),
                 Expanded(
-                  child: Text(
-                      l10n.saatliSessizUyari(
-                          SaatliBildirim.saatMetni(sessizSaat)),
-                      style: context.t.bodySmall?.copyWith(color: c.text58)),
-                ),
+                    child: Text(l10n.saatliDolu,
+                        style: context.t.bodySmall?.copyWith(color: c.text58))),
               ],
+            )
+          else
+            _carkKarti(context),
+          // Sessiz saatlerle çakışma: tek satır, ikon + cümle (yalnız renk değil).
+          if (sessizSaat != null)
+            Padding(
+              key: const ValueKey('saatliSessizUyari'),
+              padding: const EdgeInsets.only(top: SandikSpace.smd),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(Icons.bedtime_outlined,
+                        size: SandikSpace.md, color: c.text58),
+                  ),
+                  const SizedBox(width: SandikSpace.sm),
+                  Expanded(
+                    child: Text(
+                        l10n.saatliSessizUyari(
+                            SaatliBildirim.saatMetni(sessizSaat)),
+                        style: context.t.bodySmall?.copyWith(color: c.text58)),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: SandikSpace.lg),
+          SandikAsyncButton(
+            key: const ValueKey('saatliKaydet'),
+            basari: _basari,
+            onPressed: _saatler.isEmpty ? null : _kaydet,
+            child: Text(l10n.save),
+          ),
+          if (_hata != null)
+            Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.sm),
+              child: Text(_hata!,
+                  key: const ValueKey('saatliHata'),
+                  style: context.t.bodySmall?.copyWith(color: c.loss)),
+            ),
+          if (widget.mevcut != null) ...[
+            const SizedBox(height: SandikSpace.xs),
+            SandikAsyncButton(
+              key: const ValueKey('saatliSil'),
+              tur: SandikAsyncTur.metin,
+              onPressed: _sil,
+              child: Text(l10n.delete),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Seçicideki satırın kimliği (rozet, ad, "sembol · tür"); başlık
+  /// semantiği `SandikSheetBasligi`'nden.
+  Widget _baslik(BuildContext context) {
+    final k = _kimlik;
+    return Row(
+      children: [
+        VarlikRozeti(type: k.type, ticker: k.ticker),
+        const SizedBox(width: SandikSpace.sm2),
+        Expanded(
+          child: SandikSheetBasligi(
+            widget.ad,
+            altMetin: [
+              if (aramaSembolEtiketi(k) case final e?) e,
+              k.type.labelOf(context.l10n),
+            ].join(' · '),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Çark + "Saat ekle" tek kartta.
+  ///
+  /// Çark yazısı DM Sans, rakamlar sabit genişlikte (marka yazısı; sistem
+  /// yazısıyla çizilen çark sayfada yabancı duruyordu). Satır boyu 44 pt
+  /// (varsayılan 32): dokunma hedefi ve büyük yazıya pay. Yazı ölçeği çarkta
+  /// 1,3'te durur: çarkın satır geometrisi sabit (iOS'un saat çarkı da
+  /// Dynamic Type ile büyümez), daha büyük rakam satırdan taşar. Bu, ölçeği
+  /// yok saymak değil üst sınır; sayfanın geri kalanı tam ölçekle büyür.
+  Widget _carkKarti(BuildContext context) {
+    final c = context.c;
+    final l10n = context.l10n;
+    final simdi = DateTime.now();
+    final ekli = _saatler.contains(_cark);
+    return SandikCard(
+      key: const ValueKey('saatliCark'),
+      padding: const EdgeInsets.fromLTRB(
+          SandikSpace.smd, SandikSpace.sm, SandikSpace.smd, SandikSpace.smd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.3,
+            child: CupertinoTheme(
+              data: CupertinoTheme.of(context).copyWith(
+                textTheme: CupertinoTextThemeData(
+                  dateTimePickerTextStyle: context.t.titleLarge?.copyWith(
+                      color: c.text90,
+                      fontFeatures: const [FontFeature.tabularFigures()]),
+                ),
+              ),
+              child: SizedBox(
+                height: SandikTouch.min * 5,
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.time,
+                  use24hFormat: true,
+                  minuteInterval: SaatliBildirim.adimDk,
+                  itemExtent: SandikTouch.min,
+                  initialDateTime: DateTime(simdi.year, simdi.month, simdi.day,
+                      _cark ~/ 60, _cark % 60),
+                  onDateTimeChanged: (d) =>
+                      setState(() => _cark = d.hour * 60 + d.minute),
+                ),
+              ),
             ),
           ),
-        const SizedBox(height: SandikSpace.md),
-        SandikAsyncButton(
-          key: const ValueKey('saatliKaydet'),
-          basari: _basari,
-          onPressed: _saatler.isEmpty ? null : _kaydet,
-          child: Text(l10n.save),
+          const SizedBox(height: SandikSpace.sm),
+          OutlinedButton.icon(
+            key: const ValueKey('saatliSaatEkle'),
+            // Nötr ikincil (amber bütçesi): sayfada amber Kaydet'in ve seçili
+            // saatlerin; tema çerçevesi pasifken de amber kalıyordu, "09:00
+            // listede" etkin gibi duruyordu.
+            style: OutlinedButton.styleFrom(
+              foregroundColor: c.text90,
+              disabledForegroundColor: c.text36,
+              side: BorderSide(color: ekli ? c.hairline : c.text20, width: 1.5),
+            ),
+            // Seçim değişti (listeye saat girdi): en hafif titreşim, HIG.
+            onPressed: ekli
+                ? null
+                : () {
+                    SandikHaptic.selection.perform();
+                    _ekle();
+                  },
+            icon: Icon(ekli ? Icons.check_rounded : Icons.add_rounded),
+            label: Text(ekli
+                ? l10n.saatliZatenEkli(SaatliBildirim.saatMetni(_cark))
+                : l10n.saatliSaatEkle),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Seçili saat: saat + ×, dokununca kalkar. Süzme çipi (`SandikFiltreCipi`)
+/// değil: onun onay işareti "bu süzgeç seçili" der, burada iş kaldırmak.
+/// Tüm işlem/filtre ekranındaki etkin filtre çipiyle aynı dil (amber ton,
+/// sonda ×), ama 44 pt (o çip 36'da kalıyordu; HIG §7/1).
+class _SaatCipi extends StatelessWidget {
+  const _SaatCipi({super.key, required this.saat, required this.onKaldir});
+
+  final String saat;
+  final VoidCallback onKaldir;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return SandikTappable(
+      semanticLabel: context.l10n.saatliSaatSil(saat),
+      haptic: SandikHaptic.selection,
+      scale: 0.94,
+      onTap: onKaldir,
+      child: ExcludeSemantics(
+        child: Container(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          padding: const EdgeInsets.only(
+              left: SandikSpace.md, right: SandikSpace.smd),
+          decoration: context.chip(selected: true, radius: SandikRadius.lg),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                saat,
+                style: context.t.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: c.text90,
+                    fontFeatures: const [FontFeature.tabularFigures()]),
+              ),
+              const SizedBox(width: SandikSpace.xs2),
+              Icon(Icons.close_rounded, size: 16, color: c.text58),
+            ],
+          ),
         ),
-        if (_hata != null)
-          Padding(
-            padding: const EdgeInsets.only(top: SandikSpace.sm),
-            child: Text(_hata!,
-                key: const ValueKey('saatliHata'),
-                style: context.t.bodySmall?.copyWith(color: c.loss)),
-          ),
-        if (widget.mevcut != null)
-          SandikAsyncButton(
-            key: const ValueKey('saatliSil'),
-            tur: SandikAsyncTur.metin,
-            onPressed: _sil,
-            child: Text(l10n.delete),
-          ),
-        const SizedBox(height: SandikSpace.md),
-      ],
+      ),
     );
   }
 }

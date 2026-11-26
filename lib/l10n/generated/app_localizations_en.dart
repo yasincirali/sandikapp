@@ -12324,6 +12324,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String saatliSayac(int n, int enFazla) {
+    return '$n/$enFazla';
+  }
+
+  @override
+  String saatliZatenEkli(String saat) {
+    return '$saat is already in the list';
+  }
+
+  @override
+  String get saatliDolu => 'Remove one to add another time.';
+
+  @override
+  String get saatliSaatYok => 'No times picked yet.';
+
+  @override
   String get pwdSaatliEtiket => 'Scheduled price';
 
   @override

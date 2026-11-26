@@ -163,8 +163,9 @@ List<AlarmAdayi> alarmAdaylari(WidgetRef ref) {
 
 class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   /// Çalanlar grubunu kişi bu oturumda elle açtı/kapattı mı; `null` →
-  /// karar otomatik ([calanlarOneCiksin]): son 24 saatte çalma varsa açık ve
-  /// üstte, yoksa kapalı ve altta ("liste neyi bekliyorum'u cevaplar").
+  /// karar otomatik ([calanlarOneCiksin]): son 24 saatte çalma varsa açık,
+  /// yoksa kapalı; grup her durumda altta ("liste neyi bekliyorum'u
+  /// cevaplar"; 26 Kas'a kadar yeni çalmada üstteydi).
   /// Elle seçim yalnız bu ekran açıkken korunur (kalıcı değil, Ar-Ge 7 Kas
   /// 13:40 #2): ertesi açılışta yeni bir çalma yine öne çıkabilsin.
   bool? _calanlarElle;
@@ -290,11 +291,16 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             ]..sort((a, b) => _calmaAni(b)!.compareTo(_calmaAni(a)!));
             final sh = SandikSpace.screenH(context);
             final adaylar = {for (final a in _adaylar()) a.sembol: a};
-            // Yeni çalma (son 24 saat) öne çıkar: grup en üstte ve açık
-            // (Ar-Ge 7 Kas 13:40 #2). Yer yalnız bu karardan; elle aç/kapa
-            // grubu yerinden oynatmaz (parmağın altındaki başlık kaçmasın).
-            // Açık gelişte panel doğrudan açık çizilir, açılış hareketi yok
-            // (`SandikAcilir` ilk değeri `acik`'tan alır).
+            // Yeni çalma (son 24 saat) grubu AÇIK getirir (Ar-Ge 7 Kas 13:40
+            // #2); elle aç/kapa grubu yerinden oynatmaz (parmağın altındaki
+            // başlık kaçmasın). Açık gelişte panel doğrudan açık çizilir,
+            // açılış hareketi yok (`SandikAcilir` ilk değeri `acik`'tan alır).
+            // Yer artık HER ZAMAN bekleyenlerin altı (yasin 2026-11-26:
+            // "çalan alarmları alarmlarım sayfasında en alta al"). 7 Kas'ta
+            // yeni çalma en üste çıkıyordu; ama çalmış alarm bildirimle zaten
+            // haber verilmiş olay, ekranın ilk işi "neyi bekliyorum"u
+            // göstermek. Açık gelme kararı kaldı: aşağı inen kişi grubu
+            // kapalı bulup bir dokunuş daha yapmasın.
             final yeniCalma = calan.isNotEmpty &&
                 calanlarOneCiksin(
                     _calmaAni(calan.first), ref.read(alarmSaatProvider)());
@@ -318,9 +324,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             // hiyerarşi tersti; bilgi de taşımıyordu (katlı "Çalanlar (N)"
             // iki grubu zaten ayırıyor). Bölüm başlığı artık varlığın adı.
             final ogeler = <Widget>[
-              if (yeniCalma) ...calanlar,
               for (final g in _grupla(bekleyen)) _grup(context, g, adaylar),
-              if (!yeniCalma) ...calanlar,
+              ...calanlar,
               // "Neyi izliyorum" tek yerde (Ar-Ge 14 Kas 02:03 #3): Premium
               // sinyal bildirimleri listenin sonunda tek satır. Süzülmüş
               // (tek sembol) listede yok: satır bütün varlıkları sayar.

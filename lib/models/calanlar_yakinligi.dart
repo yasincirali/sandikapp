@@ -15,8 +15,10 @@ library;
 const calanlarYakinlikSiniri = Duration(hours: 24);
 
 /// En yeni çalma [calanlarYakinlikSiniri]'ndan yeniyse `true`: Çalanlar
-/// açık ve listenin en üstünde. Hiç çalma yoksa ([enYeniCalma] null) ya da
-/// daha eskiyse `false` (kapalı, altta).
+/// açık gelir. Hiç çalma yoksa ([enYeniCalma] null) ya da daha eskiyse
+/// `false` (kapalı). Grubun YERİ bu karardan bağımsız, her zaman listenin
+/// altı (yasin 2026-11-26: "çalan alarmları en alta al"); 7 Kas–26 Kas
+/// arasında yeni çalma grubu en üste de taşıyordu.
 ///
 /// Saati ileride görünen çalma (cihaz saati geride) yeni sayılır: fark
 /// negatif, sınırın altında.

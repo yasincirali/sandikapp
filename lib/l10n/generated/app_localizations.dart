@@ -19165,6 +19165,30 @@ abstract class AppLocalizations {
   /// **'{saat} saatini kaldır'**
   String saatliSaatSil(String saat);
 
+  /// No description provided for @saatliSayac.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n}/{enFazla}'**
+  String saatliSayac(int n, int enFazla);
+
+  /// No description provided for @saatliZatenEkli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{saat} listede'**
+  String saatliZatenEkli(String saat);
+
+  /// No description provided for @saatliDolu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni saat için birini kaldır.'**
+  String get saatliDolu;
+
+  /// No description provided for @saatliSaatYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz saat seçmedin.'**
+  String get saatliSaatYok;
+
   /// No description provided for @pwdSaatliEtiket.
   ///
   /// In tr, this message translates to:
