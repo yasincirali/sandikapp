@@ -2308,6 +2308,15 @@
       "sigan": {"type": "int"}
     }
   },
+  "iktKotaGovdeDolu": "Ücretsiz plandaki {sinir} varlık dolu. Sepetteki {bulunan} kalem Premium'la eklenir; sepet bekler.",
+  "@iktKotaGovdeDolu": {
+    "placeholders": {
+      "sinir": {"type": "int"},
+      "bulunan": {"type": "int"}
+    }
+  },
+  "iktSepetteBekliyor": "{n} kalem sepette bekliyor",
+  "@iktSepetteBekliyor": {"placeholders": {"n": {"type": "int"}}},
   "iktKotaPremium": "Premium'a geç, hepsini ekle",
   "iktKotaSiganlar": "{sigan} kalemi kaydet, kalanı sepette bırak",
   "@iktKotaSiganlar": {
@@ -6139,6 +6148,7 @@
   "watchlistLimitPremiumIpucu": "Premium'u açar",
   "varlikKotasiKalan": "Ücretsiz planda {kalan} yeni varlık hakkın kaldı ({sinir} varlık).",
   "@varlikKotasiKalan": {"placeholders": {"kalan": {"type": "int"}, "sinir": {"type": "int"}}},
+  "varlikKotasiPremiumuGor": "Premium'u gör",
   "varlikKotasiDolu": "Ücretsiz plandaki {sinir} varlık doldu. Var olan varlığına alım ekleyebilirsin; yeni varlık Premium'da.",
   "@varlikKotasiDolu": {"placeholders": {"sinir": {"type": "int"}}},
   "sgnSlotNotu": "Ücretsiz sürümde RSI, MACD ve Bollinger sinyalleri her tür için günde 1 kez bildirilir. Premium'da sekiz göstergenin tamamı, seçtiğin sıklıkta gelir.",

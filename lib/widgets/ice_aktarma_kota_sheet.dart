@@ -12,18 +12,26 @@ enum IceAktarmaKotaSecimi { premium, siganlar, vazgec }
 /// sığanları kaydet, vazgeç. Kapatma = vazgeç.
 class IceAktarmaKotaSheet extends StatelessWidget {
   const IceAktarmaKotaSheet(
-      {super.key, required this.bulunan, required this.sigan});
+      {super.key,
+      required this.bulunan,
+      required this.sigan,
+      required this.sinir});
 
   final int bulunan;
   final int sigan;
 
+  /// Ücretsiz plan sınırı; yalnız hiç kalem sığmadığında gövdede söylenir.
+  final int sinir;
+
   static Future<IceAktarmaKotaSecimi> sor(BuildContext context,
-          {required int bulunan, required int sigan}) async =>
+          {required int bulunan,
+          required int sigan,
+          required int sinir}) async =>
       await showSandikSheet<IceAktarmaKotaSecimi>(
         context: context,
         shape:
             const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
-        builder: (_) => IceAktarmaKotaSheet(bulunan: bulunan, sigan: sigan),
+        builder: (_) => IceAktarmaKotaSheet(bulunan: bulunan, sigan: sigan, sinir: sinir),
       ) ??
       IceAktarmaKotaSecimi.vazgec;
 
@@ -49,7 +57,12 @@ class IceAktarmaKotaSheet extends StatelessWidget {
                 style: t.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.w600, color: c.text90)),
             const SizedBox(height: SandikSpace.sm),
-            Text(l.iktKotaGovde(bulunan, sigan),
+            // Hiç kalem sığmıyorsa "kotaya 0 tanesi sığıyor" demez (UI/UX
+            // turu 20 #5): düğmesi zaten gizli; gövde sepetin beklediğini söyler.
+            Text(
+                sigan == 0
+                    ? l.iktKotaGovdeDolu(sinir, bulunan)
+                    : l.iktKotaGovde(bulunan, sigan),
                 textAlign: TextAlign.center,
                 style: t.bodyMedium?.copyWith(color: c.text58)),
             const SizedBox(height: SandikSpace.lg),

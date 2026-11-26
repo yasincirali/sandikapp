@@ -3544,6 +3544,16 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String iktKotaGovdeDolu(int sinir, int bulunan) {
+    return 'Ücretsiz plandaki $sinir varlık dolu. Sepetteki $bulunan kalem Premium\'la eklenir; sepet bekler.';
+  }
+
+  @override
+  String iktSepetteBekliyor(int n) {
+    return '$n kalem sepette bekliyor';
+  }
+
+  @override
   String get iktKotaPremium => 'Premium\'a geç, hepsini ekle';
 
   @override
@@ -9574,6 +9584,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String varlikKotasiKalan(int kalan, int sinir) {
     return 'Ücretsiz planda $kalan yeni varlık hakkın kaldı ($sinir varlık).';
   }
+
+  @override
+  String get varlikKotasiPremiumuGor => 'Premium\'u gör';
 
   @override
   String varlikKotasiDolu(int sinir) {

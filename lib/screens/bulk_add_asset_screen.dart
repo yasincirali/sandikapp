@@ -19,6 +19,7 @@ import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'add_asset_screen.dart';
 import 'csv_import_screen.dart';
@@ -106,19 +107,28 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       if (plan.asiyor) {
         unawaited(AnalyticsService.instance
             .logPremiumGateShown(feature: 'bulk_add_quota_plan'));
-        final secim = await IceAktarmaKotaSheet.sor(context,
-            bulunan: items.length, sigan: plan.sigan.length);
-        if (!mounted) return;
-        switch (secim) {
-          case IceAktarmaKotaSecimi.vazgec:
-            return;
-          case IceAktarmaKotaSecimi.siganlar:
+        // Paywall satın almadan kapanınca sheet BİR kez daha açılır (UI/UX
+        // turu 20, 2026-11-26 #3): eskiden her şey sessizce dururdu, sheet de
+        // gitmişti; kullanıcı Kaydet'e yeniden basıp aynı soruyu baştan
+        // görüyordu. İkinci sorunda "sığanları kaydet" ya da vazgeç seçebilir.
+        // Döngü yok: ikinci kez Premium seçip yine kapatırsa durur.
+        for (var tur = 0;; tur++) {
+          final secim = await IceAktarmaKotaSheet.sor(context,
+              bulunan: items.length,
+              sigan: plan.sigan.length,
+              sinir: kota.sinir);
+          if (!mounted) return;
+          if (secim == IceAktarmaKotaSecimi.vazgec) return;
+          if (secim == IceAktarmaKotaSecimi.siganlar) {
             items = plan.sigan;
-          case IceAktarmaKotaSecimi.premium:
-            final upgraded = await PaywallScreen.show(context,
-                source: 'bulk_add_asset_limit');
-            if (!mounted || upgraded != true) return;
-            // Premium'a geçti: sınır kalktı, hepsi yazılır.
+            break;
+          }
+          final upgraded = await PaywallScreen.show(context,
+              source: 'bulk_add_asset_limit');
+          if (!mounted) return;
+          // Premium'a geçti: sınır kalktı, hepsi yazılır.
+          if (upgraded == true) break;
+          if (tur >= 1) return;
         }
         if (items.isEmpty) return;
       }
@@ -343,7 +353,13 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     }
 
     if (failures.isEmpty) {
-      ref.read(bulkCartProvider.notifier).clear();
+      // `clear()` YOK (UI/UX turu 20, 2026-11-26 #1): kaydedilen kalem zaten
+      // anında sepetten düşüyor (F13). Eskiden burada sepet toptan
+      // temizlenirdi; kota sheet'inde "sığanları kaydet, kalanı sepette
+      // bırak" seçilince sığmayan kalemler (çoğu ekstreden okunup elle
+      // düzeltilmiş satırlar) sözün tersine siliniyordu. Kalan varsa ekran
+      // kapanırken tek satırla söylenir.
+      final bekleyen = ref.read(bulkCartProvider).length;
       // Başarı dialog'u YOK — tekli ekleme de göstermiyor. Başarılı bir
       // kayıt kendini portföyde görünen yeni satırlarla zaten anlatır;
       // araya onay penceresi koymak kullanıcıya fazladan bir dokunuş
@@ -372,7 +388,12 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
             pozisyonAnahtari: _saved == 1
                 ? ref.read(portfolioProvider.notifier).sonEklenenPozisyon
                 : null);
-        Navigator.of(context).pop(true);
+        // Kendi rotası: satın alma sonrası seçilen hedef üstte açıksa onu
+        // kapatmasın (`kendiRotasiniKapat`, UI/UX turu 20 #2).
+        kendiRotasiniKapat(context, true);
+        if (bekleyen > 0 && rootCtx.mounted) {
+          sandikSnack(rootCtx, l.iktSepetteBekliyor(bekleyen));
+        }
         await Future<void>.delayed(bekle);
         if (rootCtx.mounted) {
           await ReviewPromptSheet.belkiGoster(rootCtx, ReviewAni.topluEkleme);

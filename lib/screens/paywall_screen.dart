@@ -48,7 +48,7 @@ part 'paywall/paywall_deste.dart';
 /// edilmez, düğme "Abone ol" der ve dokununca "kullanılamıyor" söylenir.
 ///
 /// Kullanım:
-///   PaywallScreen.show(context, source: 'asset_limit_dialog');
+///   PaywallScreen.show(context, source: 'asset_limit_${e.limit}');
 class PaywallScreen extends ConsumerStatefulWidget {
   final String source;
 

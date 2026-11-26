@@ -2180,6 +2180,15 @@
       "sigan": {"type": "int"}
     }
   },
+  "iktKotaGovdeDolu": "All {sinir} assets on the free plan are used. The {bulunan} items in your cart can be added with Premium; the cart will wait.",
+  "@iktKotaGovdeDolu": {
+    "placeholders": {
+      "sinir": {"type": "int"},
+      "bulunan": {"type": "int"}
+    }
+  },
+  "iktSepetteBekliyor": "{n, plural, =1{1 item is waiting in the cart} other{{n} items are waiting in the cart}}",
+  "@iktSepetteBekliyor": {"placeholders": {"n": {"type": "int"}}},
   "iktKotaPremium": "Go Premium, add all",
   "iktKotaSiganlar": "Save {sigan} items, keep the rest in the cart",
   "@iktKotaSiganlar": {
@@ -5443,6 +5452,7 @@
   "partnerLimitFree": "On the free plan you can add up to {n} partners. End a current partnership to add a new one.",
   "@partnerLimitFree": {"placeholders": {"n": {"type": "int"}}},
   "watchlistLimitPremiumIpucu": "Opens Premium",
+  "varlikKotasiPremiumuGor": "See Premium",
   "varlikKotasiDolu": "You've used all {sinir} assets on the free plan. You can still add to assets you hold; new assets need Premium.",
   "sgnSlotNotu": "On the free plan RSI, MACD and Bollinger signals are sent once a day per type. Premium covers all eight indicators at the frequency you choose.",
   "sgnSlotKilitli": "{secenek}, Premium",

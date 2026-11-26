@@ -96,7 +96,9 @@ void main() {
       reason: 'Hem `_save()` hem hızlı giriş kaydı sinyal döndürmeli. '
           'Sonuçsuz `pop` sinyali yutar ve sekme geçişi sessizce çalışmaz.',
     );
-    expect(add.contains('Navigator.pop(context, sonuc);'), isTrue,
+    // 2026-11-26 (UI/UX turu 20 #2): düz pop yerine `kendiRotasiniKapat`;
+    // sonuç yine çağırana gider, üstte açılmış hedef kapanmaz.
+    expect(add.contains('kendiRotasiniKapat(context, sonuc);'), isTrue,
         reason: '`_kayitBitti` sonucu çağırana döndürmüyor.');
   });
 
@@ -121,11 +123,13 @@ void main() {
 
   test('toplu ekleme zinciri korunur', () {
     // BulkAdd -> true -> AddAsset kendini kapatır -> MainNav sekmeyi çevirir.
-    expect(RegExp(r'Navigator\.of\(context\)\.pop\(true\)').hasMatch(bulk),
+    // 2026-11-26: kapanış `kendiRotasiniKapat(context, true)` (turu 20 #2).
+    expect(RegExp(r'kendiRotasiniKapat\(context, true\)').hasMatch(bulk),
         isTrue,
         reason: 'Toplu ekleme başarıda `true` döndürmeli.');
     expect(
-      RegExp(r'added == true && context\.mounted[\s\S]{0,120}?pop\(true\)')
+      RegExp(r'added == true && context\.mounted[\s\S]{0,120}?'
+              r'kendiRotasiniKapat\(context, true\)')
           .hasMatch(add),
       isTrue,
       reason: 'AddAssetScreen, BulkAdd sonucunu YUKARI taşımalı; yoksa '

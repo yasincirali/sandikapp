@@ -3602,6 +3602,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String iktKotaGovdeDolu(int sinir, int bulunan) {
+    return 'All $sinir assets on the free plan are used. The $bulunan items in your cart can be added with Premium; the cart will wait.';
+  }
+
+  @override
+  String iktSepetteBekliyor(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n items are waiting in the cart',
+      one: '1 item is waiting in the cart',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get iktKotaPremium => 'Go Premium, add all';
 
   @override
@@ -9731,6 +9747,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String varlikKotasiKalan(int kalan, int sinir) {
     return 'You have $kalan new assets left on the free plan ($sinir assets).';
   }
+
+  @override
+  String get varlikKotasiPremiumuGor => 'See Premium';
 
   @override
   String varlikKotasiDolu(int sinir) {

@@ -20,7 +20,7 @@ void main() {
     test('kaynaklar doğru karta eşlenir', () {
       const beklenen = {
         'asset_limit_7': PaywallKarti.varlik,
-        'asset_limit_dialog': PaywallKarti.varlik,
+        'asset_limit_form': PaywallKarti.varlik,
         'bulk_add_asset_limit': PaywallKarti.varlik,
         'watchlist_limit': PaywallKarti.varlik,
         'alarm_limit': PaywallKarti.varlik,

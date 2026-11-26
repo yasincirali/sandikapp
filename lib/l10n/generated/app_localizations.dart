@@ -5924,6 +5924,18 @@ abstract class AppLocalizations {
   /// **'Sepette {bulunan} kalem var, ücretsiz kotaya {sigan} tanesi sığıyor. Kalanı Premium\'la hemen ya da sonra ekleyebilirsin.'**
   String iktKotaGovde(int bulunan, int sigan);
 
+  /// No description provided for @iktKotaGovdeDolu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz plandaki {sinir} varlık dolu. Sepetteki {bulunan} kalem Premium\'la eklenir; sepet bekler.'**
+  String iktKotaGovdeDolu(int sinir, int bulunan);
+
+  /// No description provided for @iktSepetteBekliyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} kalem sepette bekliyor'**
+  String iktSepetteBekliyor(int n);
+
   /// No description provided for @iktKotaPremium.
   ///
   /// In tr, this message translates to:
@@ -15586,6 +15598,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ücretsiz planda {kalan} yeni varlık hakkın kaldı ({sinir} varlık).'**
   String varlikKotasiKalan(int kalan, int sinir);
+
+  /// No description provided for @varlikKotasiPremiumuGor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'u gör'**
+  String get varlikKotasiPremiumuGor;
 
   /// No description provided for @varlikKotasiDolu.
   ///
