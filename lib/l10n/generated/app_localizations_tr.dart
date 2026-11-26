@@ -12039,6 +12039,22 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String saatliSayac(int n, int enFazla) {
+    return '$n/$enFazla';
+  }
+
+  @override
+  String saatliZatenEkli(String saat) {
+    return '$saat listede';
+  }
+
+  @override
+  String get saatliDolu => 'Yeni saat için birini kaldır.';
+
+  @override
+  String get saatliSaatYok => 'Henüz saat seçmedin.';
+
+  @override
   String get pwdSaatliEtiket => 'Saatli bildirim';
 
   @override

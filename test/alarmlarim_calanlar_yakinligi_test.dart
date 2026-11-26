@@ -17,10 +17,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'helpers/yazi_olcegi.dart';
 
 /// Alarmlarım 3. tur (Ar-Ge 7 Kas 13:40): son 24 saatte çalan alarm varsa
-/// Çalanlar açık ve en üstte, yoksa kapalı ve altta; elle seçim oturumda
-/// korunur. Yön oku nötr renkte (yeşil/kırmızı kâr/zarar demek).
+/// Çalanlar açık, yoksa kapalı; elle seçim oturumda korunur. Yer her zaman
+/// bekleyenlerin altı (yasin 2026-11-26: "çalan alarmları en alta al"). Yön oku nötr renkte (yeşil/kırmızı kâr/zarar demek).
 final _simdi = DateTime(2026, 11, 7, 13, 40);
 List<PriceAlert> _fiyat = const [];
+List<GostergeAlarmi> _gosterge = const [];
+List<CizimAlarmi> _cizim = const [];
 
 class _F extends PriceAlertsNotifier {
   @override
@@ -34,12 +36,12 @@ class _Y extends YuzdeAlarmlariNotifier {
 
 class _G extends GostergeAlarmlariNotifier {
   @override
-  Future<List<GostergeAlarmi>> build() async => const [];
+  Future<List<GostergeAlarmi>> build() async => _gosterge;
 }
 
 class _C extends CizimAlarmlariNotifier {
   @override
-  Future<List<CizimAlarmi>> build() async => const [];
+  Future<List<CizimAlarmi>> build() async => _cizim;
 }
 
 PriceAlert _f(String id, String sembol, String ad, double hedef,
@@ -107,6 +109,8 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     _fiyat = const [];
+    _gosterge = const [];
+    _cizim = const [];
   });
 
   group('calanlarOneCiksin', () {
@@ -137,7 +141,7 @@ void main() {
     });
   });
 
-  testWidgets('yakın çalma: Çalanlar en üstte ve açık, animasyonsuz',
+  testWidgets('yakın çalma: Çalanlar en altta ve açık, animasyonsuz',
       (tester) async {
     _fiyat = _liste(const Duration(hours: 1));
     tester.view.physicalSize = const Size(375 * 3, 1400 * 3);
@@ -169,11 +173,85 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getSize(_kart).height, ilkBoy);
 
-    expect(_ust(tester, _baslik),
-        lessThan(_ust(tester, find.byKey(const ValueKey('grup_ALTIN_GRAM')))));
+    // Yeni çalma da bekleyenlerin altında (26 Kas'a kadar en üstteydi).
+    for (final g in ['grup_ALTIN_GRAM', 'grup_THYAO.IS']) {
+      expect(_ust(tester, _baslik),
+          greaterThan(_ust(tester, find.byKey(ValueKey(g)))));
+    }
     expect(
         find.descendant(of: _kart, matching: find.byKey(const ValueKey('c'))),
         findsOneWidget);
+  });
+
+  testWidgets(
+      'her tür çalmış alarm (fiyat, gösterge, çizgi) en altta; tekrarlı '
+      'fiyat alarmı ve bekleyenler yerinde, sıraları korunur', (tester) async {
+    final yakin = _simdi.subtract(const Duration(minutes: 30));
+    _fiyat = [
+      ..._liste(const Duration(hours: 2)),
+      // Tekrarlı alarm çalmış olsa da nöbette: bekleyenlerde kalır.
+      PriceAlert(
+        id: 't',
+        userId: 'u1',
+        symbol: 'ASELS.IS',
+        label: 'Aselsan',
+        targetPrice: 150,
+        direction: 'below',
+        enabled: true,
+        tekrar: true,
+        triggeredAt: yakin,
+        createdAt: DateTime(2026, 9, 1),
+      ),
+    ];
+    _gosterge = [
+      GostergeAlarmi(
+        id: 'g1',
+        userId: 'u1',
+        symbol: 'TUPRS.IS',
+        label: 'Tüpraş',
+        gosterge: GostergeKodu.ema50,
+        yon: SeviyeYon.yukari,
+        triggeredAt: yakin,
+        createdAt: DateTime(2026, 10, 2),
+      ),
+    ];
+    _cizim = [
+      CizimAlarmi(
+        id: 'c1',
+        userId: 'u1',
+        symbol: 'EREGL.IS',
+        label: 'Ereğli',
+        cizimId: 'z1',
+        t1: 1,
+        p1: 40,
+        t2: 2,
+        p2: 41,
+        uzanir: false,
+        yon: SeviyeYon.asagi,
+        triggeredAt: yakin,
+        createdAt: DateTime(2026, 10, 3),
+      ),
+    ];
+    await _pump(tester);
+    expect(find.text('Çalanlar (3)'), findsOneWidget);
+    final baslik = _ust(tester, _baslik);
+    // Bekleyen gruplar listedeki sırasıyla (en yeni alarmı olan önde) ve
+    // hepsi Çalanlar'ın üstünde.
+    final gruplar = [
+      for (final g in ['grup_ALTIN_GRAM', 'grup_THYAO.IS', 'grup_ASELS.IS'])
+        _ust(tester, find.byKey(ValueKey(g))),
+    ];
+    expect(gruplar, orderedEquals([...gruplar]..sort()));
+    expect(gruplar.last, lessThan(baslik));
+    for (final id in ['c', 'gosterge_g1', 'cizim_c1']) {
+      expect(
+          find.descendant(of: _kart, matching: find.byKey(ValueKey(id))),
+          findsOneWidget,
+          reason: id);
+    }
+    expect(
+        find.descendant(of: _kart, matching: find.byKey(const ValueKey('t'))),
+        findsNothing);
   });
 
   testWidgets('eski çalma: Çalanlar en altta ve kapalı', (tester) async {
@@ -276,10 +354,14 @@ void main() {
 
   group('taşma', () {
     yaziOlcegiEkseni(() {
-      testWidgets('320 pt, açık Çalanlar üstte', (tester) async {
+      testWidgets('320 pt, açık Çalanlar altta', (tester) async {
         yaziOlceginiUygula(tester);
         _fiyat = _liste(const Duration(hours: 1));
         await _pump(tester, genislik: 320, yukseklik: 900);
+        expect(tester.takeException(), isNull);
+        // Büyük yazıda grup ekranın altında kalır: kaydırıp ölç.
+        await tester.scrollUntilVisible(_baslik, 200,
+            scrollable: find.byType(Scrollable).first);
         expect(tester.takeException(), isNull);
         expect(tester.getSize(_baslik).height, greaterThanOrEqualTo(44));
       });
