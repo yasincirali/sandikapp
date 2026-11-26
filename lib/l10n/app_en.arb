@@ -17,7 +17,6 @@
   "registerWelcome": "Welcome to your sandık.",
   "registerSubtitle": "Create your account in a few steps.",
   "fullName": "Full Name",
-  "passwordRepeat": "Repeat Password",
   "passwordsMismatch": "Passwords do not match",
   "sifreKuralUzunluk": "At least 8 characters",
   "sifreKuralHarf": "At least one letter",

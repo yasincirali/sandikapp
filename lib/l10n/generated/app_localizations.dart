@@ -200,12 +200,6 @@ abstract class AppLocalizations {
   /// **'Ad soyad'**
   String get fullName;
 
-  /// No description provided for @passwordRepeat.
-  ///
-  /// In tr, this message translates to:
-  /// **'Şifre tekrar'**
-  String get passwordRepeat;
-
   /// No description provided for @passwordsMismatch.
   ///
   /// In tr, this message translates to:

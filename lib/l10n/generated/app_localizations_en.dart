@@ -60,9 +60,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fullName => 'Full Name';
 
   @override
-  String get passwordRepeat => 'Repeat Password';
-
-  @override
   String get passwordsMismatch => 'Passwords do not match';
 
   @override

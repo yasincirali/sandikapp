@@ -17,7 +17,6 @@
   "registerWelcome": "Sandığına hoş geldin.",
   "registerSubtitle": "Birkaç adımda hesabını oluştur.",
   "fullName": "Ad soyad",
-  "passwordRepeat": "Şifre tekrar",
   "passwordsMismatch": "Şifreler eşleşmiyor",
   "sifreKuralUzunluk": "En az 8 karakter",
   "sifreKuralHarf": "En az bir harf",

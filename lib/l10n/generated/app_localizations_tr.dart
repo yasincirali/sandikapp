@@ -60,9 +60,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get fullName => 'Ad soyad';
 
   @override
-  String get passwordRepeat => 'Şifre tekrar';
-
-  @override
   String get passwordsMismatch => 'Şifreler eşleşmiyor';
 
   @override
