@@ -22,7 +22,9 @@ void main() {
     }
     expect(RegExp(r'KilitSatiri\.ac\(context').allMatches(hacim).length, 2);
     // Satır ve kart aynı statik yolu kullanır (premium_gate_shown dahil).
-    expect(akis.contains('onTap: () => ac(context, kaynak: kaynak'), isTrue);
+    // Satır `onAcildi` alınca (ekstre turu 21) çağrı iki satıra sarıldı.
+    expect(RegExp(r'onTap: \(\) => ac\(context,\s*kaynak: kaynak')
+        .hasMatch(akis), isTrue);
   });
 
   test('2: somut kilit metni; n == 0 sayısız, seri boşsa genel', () {
