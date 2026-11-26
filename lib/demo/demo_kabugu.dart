@@ -18,6 +18,7 @@ import '../services/daily_summary.dart' show IntradaySeriesCache;
 import '../services/tazelik_ritmi.dart';
 import '../theme/sandik.dart';
 import '../theme/yazi_boyutu.dart';
+import '../widgets/social_sign_in_buttons.dart';
 import 'demo_modu.dart';
 import 'demo_saglayicilar.dart';
 
@@ -90,6 +91,11 @@ class _DemoKabuguState extends State<DemoKabugu> {
   VoidCallback? _yazmaBagi;
   VoidCallback? _fiyatTuruBagi;
   ProviderSubscription<AsyncValue<AppUser?>>? _kokOturum;
+
+  /// Kök (gerçek) container: kayıt sayfasındaki Apple/Google düğmeleri demo
+  /// container'ının sahte `authProvider`'ını değil bunu kullanır; oturum
+  /// doğunca aşağıdaki dinleyici demoyu kapatır.
+  ProviderContainer? _kok;
   bool _sayfaAcik = false;
   bool _kapaniyor = false;
 
@@ -135,6 +141,7 @@ class _DemoKabuguState extends State<DemoKabugu> {
     } catch (_) {
       return; // Kök kapsam yok (izole test) — izlenecek oturum da yok.
     }
+    _kok = kok;
     _kokOturum = kok.listen<AsyncValue<AppUser?>>(authProvider, (_, next) {
       if (next.valueOrNull != null) _kapat(DemoCikisi.girisYap);
     });
@@ -182,7 +189,7 @@ class _DemoKabuguState extends State<DemoKabugu> {
         context: ctx,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
-        builder: (_) => const _KayitSayfasi(),
+        builder: (_) => _KayitSayfasi(kok: _kok),
       ).then<void>((hesap) {
         _sayfaAcik = false;
         if (hesap == true) _hesapOlustur(neden);
@@ -524,7 +531,10 @@ class _HesapSekmesi extends StatelessWidget {
 
 /// Yazma girişiminde açılan sayfa. `true` = hesap oluştur.
 class _KayitSayfasi extends StatelessWidget {
-  const _KayitSayfasi();
+  const _KayitSayfasi({this.kok});
+
+  /// Gerçek oturumun container'ı; null (izole test) ise sosyal düğme çizilmez.
+  final ProviderContainer? kok;
 
   @override
   Widget build(BuildContext context) {
@@ -568,6 +578,14 @@ class _KayitSayfasi extends StatelessWidget {
             style: context.t.bodyLarge?.copyWith(color: c.text58),
           ),
           const SizedBox(height: SandikSpace.lg),
+          // Demoda ikna olan kişi uzun forma düşmesin (26 Kas 2026, GA4:
+          // demodan hesap isteyen 219, kod ekranına gelen 16): Apple/Google
+          // tek dokunuş, şifre ve e-posta kodu yok. E-posta yolu aşağıda.
+          if (kok != null)
+            UncontrolledProviderScope(
+              container: kok!,
+              child: const SocialSignInButtons(ustte: true),
+            ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: c.amberFill,

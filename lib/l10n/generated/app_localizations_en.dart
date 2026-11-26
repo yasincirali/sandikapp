@@ -60,9 +60,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fullName => 'Full Name';
 
   @override
-  String get passwordRepeat => 'Repeat Password';
-
-  @override
   String get passwordsMismatch => 'Passwords do not match';
 
   @override
@@ -549,9 +546,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get registerEmailInvalid => 'Enter a valid email.';
-
-  @override
-  String get registerPasswordsMismatch => 'Passwords do not match.';
 
   @override
   String get refreshPrices => 'Refresh prices';
@@ -7613,10 +7607,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmYonet => 'Manage';
 
   @override
-  String get prmGeriYukle => 'Restore purchases';
+  String get aboneligiYonet => 'Manage subscription';
 
   @override
-  String get aboneligiYonet => 'Manage subscription';
+  String get prmGeriYukle => 'Restore purchases';
 
   @override
   String get prmIptalIpucu =>
@@ -7888,9 +7882,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sgnPremiumAktifGovde =>
       'All eight indicators, period settings and alerts are on.';
-
-
-
 
   @override
   String get cmpSinirPremium => 'Up to 5 series with Premium';
@@ -8381,14 +8372,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Everything on; signals every 2 hours from 50% confidence.';
 
   @override
-  String get bildirimOnAyarOzelAciklama =>
-      'You\'ve set notifications one by one. Picking an option applies it to all of them.';
-
-  @override
   String get bildirimOnAyarPremiumlaAcilir => 'Unlocks with Premium.';
 
   @override
   String get bildirimOnAyarPremiumlaAc => 'Unlock with Premium';
+
+  @override
+  String get bildirimOnAyarOzelAciklama =>
+      'You\'ve set notifications one by one. Picking an option applies it to all of them.';
 
   @override
   String get bildirimAyrintiliUpper => 'Detailed';

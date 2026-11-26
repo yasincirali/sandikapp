@@ -200,12 +200,6 @@ abstract class AppLocalizations {
   /// **'Ad soyad'**
   String get fullName;
 
-  /// No description provided for @passwordRepeat.
-  ///
-  /// In tr, this message translates to:
-  /// **'Şifre tekrar'**
-  String get passwordRepeat;
-
   /// No description provided for @passwordsMismatch.
   ///
   /// In tr, this message translates to:
@@ -1069,12 +1063,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Geçerli bir e-posta gir.'**
   String get registerEmailInvalid;
-
-  /// No description provided for @registerPasswordsMismatch.
-  ///
-  /// In tr, this message translates to:
-  /// **'Şifreler eşleşmiyor.'**
-  String get registerPasswordsMismatch;
 
   /// No description provided for @refreshPrices.
   ///
@@ -12664,9 +12652,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sekiz göstergenin tamamı, periyot ayarları ve bildirimler açık.'**
   String get sgnPremiumAktifGovde;
-
-
-
 
   /// No description provided for @cmpSinirPremium.
   ///
