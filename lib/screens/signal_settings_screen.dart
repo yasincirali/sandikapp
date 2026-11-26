@@ -159,17 +159,15 @@ class SignalSettingsScreen extends ConsumerWidget {
           const _OrnekBildirimSatiri(),
           const SizedBox(height: SandikSpace.md),
 
-          // ── Premium kartı (paywall kapalıysa hiç gösterilmez) ────────────
+          // ── Premium satırı (paywall kapalıysa hiç gösterilmez) ────────────
           // Ücretsizde kilitler satırlarda (Premium gösterge, sıklık,
-          // periyot); bu kart Premium'daki hâli ("açık") ya da debug
+          // periyot); bu satır Premium'daki hâli ("açık") ya da debug
           // anahtarını taşır.
           // "Premium aktif" GERÇEK hakkı söyler (`effectivePremiumProvider`,
           // Profil rozetiyle aynı): kilitleri yalnız askıda olana
           // (`premium_enabled=false`, hediye güvencesi) Premium yazılmaz.
           if (paywallOn && ref.watch(effectivePremiumProvider)) ...[
-            _PremiumCard(
-              unlocked: true,
-              onUpgrade: () {},
+            _PremiumSatiri(
               // Yalnız debug: geliştirici anahtarı (release'te çizilmez).
               onDevToggle: gelistirici
                   ? () => ref
@@ -177,7 +175,7 @@ class SignalSettingsScreen extends ConsumerWidget {
                       .set(!ref.read(premiumUnlockedProvider))
                   : null,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: SandikSpace.md),
           ],
 
           if (onAyarAcik) ...[
@@ -264,91 +262,55 @@ Future<bool> _premiumAl(BuildContext context,
   return await PaywallScreen.show(context, source: source) == true;
 }
 
-class _PremiumCard extends StatelessWidget {
-  final bool unlocked;
-  final VoidCallback onUpgrade;
+/// Premium'daki hâl tek satır (Ar-Ge 23 Kas 22:03, yasin 26 Kas "Önerini
+/// yap"): eskiden degrade çerçeveli kart ve 28 pt ikon vardı; ekranın asıl
+/// işi gösterge seçimi olduğu için "açık" bilgisi süssüz bir satıra indi.
+/// Eylem yok: iptal/plan değişikliği mağazada (Profil › abonelik › Yönet).
+/// Ücretsiz hâl bu satırı hiç çizmez; kilitler gösterge/sıklık satırlarında.
+class _PremiumSatiri extends StatelessWidget {
   final VoidCallback? onDevToggle;
-  const _PremiumCard({
-    required this.unlocked,
-    required this.onUpgrade,
-    this.onDevToggle,
-  });
+  const _PremiumSatiri({this.onDevToggle});
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: unlocked
-              ? [
-                  context.c.amberFill.withValues(alpha: 0.18),
-                  context.c.amberFill.withValues(alpha: 0.05)
-                ]
-              : [context.c.overlay, context.c.overlay],
-        ),
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(
-          color: unlocked
-              ? context.c.amberFill.withValues(alpha: 0.4)
-              : context.c.overlay,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            unlocked
-                ? Icons.workspace_premium_rounded
-                : Icons.lock_outline_rounded,
-            color: unlocked ? context.c.amberText : context.c.text58,
-            size: 28,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: GestureDetector(
-              // Geliştirici anahtarı: yalnız debug'da uzun basış.
-              onLongPress: onDevToggle,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    unlocked ? l10n.sgnPremiumAktif : l10n.sgnPremiumKilitBaslik,
-                    style: context.t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: context.c.text90,
+    return Semantics(
+      container: true,
+      label: '${l10n.sgnPremiumAktif}. ${l10n.sgnPremiumAktifGovde}',
+      excludeSemantics: true,
+      child: GestureDetector(
+        // Geliştirici anahtarı: yalnız debug'da uzun basış.
+        onLongPress: onDevToggle,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Row(
+            children: [
+              Icon(Icons.workspace_premium_rounded,
+                  color: context.c.amberText, size: 20),
+              const SizedBox(width: SandikSpace.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.sgnPremiumAktif,
+                      style: context.t.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: context.c.text90,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    unlocked ? l10n.sgnPremiumAktifGovde : l10n.sgnPremiumKilitGovde,
-                    style: context.t.bodySmall
-                        ?.copyWith(color: context.c.text58, height: 1.4),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Premium'daysa eylem yok: iptal/plan değişikliği mağazada yapılır
-          // (Profil › abonelik satırı › Yönet). Değilse paywall'a gider.
-          if (!unlocked) ...[
-            const SizedBox(width: 10),
-            TextButton(
-              onPressed: onUpgrade,
-              style: TextButton.styleFrom(
-                backgroundColor: context.c.amberFill,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              child: Text(
-                l10n.sgnPremiumGec,
-                style: context.t.labelMedium?.copyWith(
-                  color: context.c.onAmber,
-                  fontWeight: FontWeight.w600,
+                    Text(
+                      l10n.sgnPremiumAktifGovde,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

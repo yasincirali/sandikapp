@@ -104,4 +104,18 @@ void main() {
       }
     });
   });
+
+  test('Premium açık bilgisi tek satır: degrade kart yok (yasin 26 Kas)', () {
+    // Ar-Ge 23 Kas 22:03 açık sorusu, yasin "Önerini yap": aynı bilgi,
+    // süssüz satır; ≥44 pt ve tek erişilebilirlik etiketi.
+    expect(ayar.contains('class _PremiumCard'), isFalse);
+    expect(ayar.contains('LinearGradient'), isFalse);
+    final i = ayar.indexOf('class _PremiumSatiri');
+    expect(i, greaterThan(0));
+    final govde = ayar.substring(i, ayar.indexOf('class _CategorySection'));
+    expect(govde.contains('minHeight: SandikTouch.min'), isTrue);
+    expect(govde.contains('l10n.sgnPremiumAktifGovde'), isTrue);
+    expect(govde.contains("label: '\${l10n.sgnPremiumAktif}"), isTrue);
+    expect(govde.contains('FontWeight.w700'), isFalse);
+  });
 }

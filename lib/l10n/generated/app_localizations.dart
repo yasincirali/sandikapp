@@ -12641,23 +12641,8 @@ abstract class AppLocalizations {
   /// **'Sekiz göstergenin tamamı, periyot ayarları ve bildirimler açık.'**
   String get sgnPremiumAktifGovde;
 
-  /// No description provided for @sgnPremiumKilitBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Premium göstergeler'**
-  String get sgnPremiumKilitBaslik;
 
-  /// No description provided for @sgnPremiumKilitGovde.
-  ///
-  /// In tr, this message translates to:
-  /// **'EMA Kesişim, Stokastik, Trend Gücü, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.'**
-  String get sgnPremiumKilitGovde;
 
-  /// No description provided for @sgnPremiumGec.
-  ///
-  /// In tr, this message translates to:
-  /// **'Premium\'a geç'**
-  String get sgnPremiumGec;
 
   /// No description provided for @cmpSinirPremium.
   ///
