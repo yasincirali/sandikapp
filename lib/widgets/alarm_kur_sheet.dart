@@ -10,6 +10,7 @@ import '../models/eurobond.dart' show eurobondOneki;
 import '../models/position.dart' show aggregatePositions;
 import '../models/price_alert.dart';
 import '../models/seviye_alarmi.dart';
+import '../models/varlik_kimligi.dart';
 import '../models/yuzde_alarmi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart'
@@ -58,8 +59,15 @@ class AlarmAdayi {
   /// gösterir. `null`: seri yüklenmedi, bir yıl dolmadı ya da ölçek alarmla
   /// aynı değil — çip çıkmaz, sheet bunun için istek ATMAZ (uydurma yok).
   final ({double zirve, double dip})? yil52;
+
+  /// Varlığın türü ve para birimi — sembol tek başına bunu söylemez (ABD
+  /// hissesi de BIST hissesi de düz ticker). Saatli bildirimin varlık
+  /// seçicisi satırı arama satırıyla aynı çizer (rozet, "sembol · tür",
+  /// fiyat; 2026-11-26); portföy/takip adayında dolu, başka yerden
+  /// kurulan adayda `null` (çağıran sembolden türetir).
+  final VarlikKimligi? kimlik;
   const AlarmAdayi(this.sembol, this.ad, this.guncelFiyat,
-      {this.maliyet, this.yil52});
+      {this.maliyet, this.yil52, this.kimlik});
 }
 
 /// Alarm için maliyet: [lots] (kullanıcının KENDİ, bu sembolün lot'ları)

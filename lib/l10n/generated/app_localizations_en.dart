@@ -12283,6 +12283,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saatliSonucYok => 'No matching asset';
 
   @override
+  String saatliSaatSayisi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n times',
+      one: '1 time',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String saatliKuruluEtiket(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Notification set for $n times',
+      one: 'Notification set for 1 time',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get saatliAyarAlt => 'Price at the time you pick';
 
   @override

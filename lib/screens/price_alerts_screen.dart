@@ -10,6 +10,7 @@ import '../models/position.dart';
 import '../models/asset_type.dart' show alarmFiyatSimgesi;
 import '../models/price_alert.dart';
 import '../models/seviye_alarmi.dart';
+import '../models/varlik_kimligi.dart';
 import '../models/yuzde_alarmi.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart'
@@ -122,14 +123,21 @@ List<AlarmAdayi> alarmAdaylari(WidgetRef ref) {
     if (sembol == null) continue;
     (sembolLotlari[sembol] ??= []).add(a);
     if (!a.isBuy) continue;
-    out[sembol] = AlarmAdayi(sembol, a.name, a.currentPrice);
+    out[sembol] = AlarmAdayi(sembol, a.name, a.currentPrice,
+        kimlik: VarlikKimligi(
+            ticker: sembol,
+            name: a.name,
+            type: a.type,
+            subCategory: a.subCategory,
+            currency: a.currency));
   }
   // Portföydeki adayın maliyeti (maliyet çipleri, 2026-10-23); satış
   // lot'ları da girer ki ortalama pozisyonun bugünkü hâlini yazsın.
   for (final e in out.entries.toList()) {
     final a = e.value;
     out[e.key] = AlarmAdayi(a.sembol, a.ad, a.guncelFiyat,
-        maliyet: alarmMaliyeti(sembolLotlari[e.key] ?? const []));
+        maliyet: alarmMaliyeti(sembolLotlari[e.key] ?? const []),
+        kimlik: a.kimlik);
   }
 
   final watch = ref.read(watchlistProvider).valueOrNull ?? const [];
@@ -138,7 +146,13 @@ List<AlarmAdayi> alarmAdaylari(WidgetRef ref) {
     if (sembol == null) continue;
     out.putIfAbsent(
       sembol,
-      () => AlarmAdayi(sembol, w.name, w.currentPrice ?? 0),
+      () => AlarmAdayi(sembol, w.name, w.currentPrice ?? 0,
+          kimlik: VarlikKimligi(
+              ticker: sembol,
+              name: w.name,
+              type: w.type,
+              subCategory: w.subCategory,
+              currency: w.currency)),
     );
   }
 

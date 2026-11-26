@@ -11998,6 +11998,28 @@ class AppLocalizationsTr extends AppLocalizations {
   String get saatliSonucYok => 'Eşleşen varlık yok';
 
   @override
+  String saatliSaatSayisi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n saat',
+      one: '1 saat',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String saatliKuruluEtiket(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n saatte bildirim kurulu',
+      one: '1 saatte bildirim kurulu',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get saatliAyarAlt => 'Seçtiğin saatte fiyat';
 
   @override
