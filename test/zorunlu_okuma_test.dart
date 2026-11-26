@@ -395,7 +395,6 @@ void main() {
 
     Future<void> formuDoldur(WidgetTester tester) async {
       for (final (etiket, metin) in [
-        (l.kullaniciAdiEtiket, 'deneme_kisi'),
         (l.email, 'deneme@ornek.com'),
         (l.password, 'abcd1234'),
       ]) {
@@ -458,8 +457,8 @@ void main() {
       await kur(tester, const RegisterScreen(), boyut: const Size(390, 2400));
       await formuDoldur(tester);
 
-      // Kullanıcı adı alanı aynen yerinde (kullanıcı kuralı).
-      expect(alan(l.kullaniciAdiEtiket), findsOneWidget);
+      // Kullanıcı adı kayıtta sorulmaz (2026-11-26); OTP sonrası kapı sorar.
+      expect(alan(l.kullaniciAdiEtiket), findsNothing);
       expect(find.text(l.yasalAdimKayitBaslik(3)), findsOneWidget);
       final y = [
         for (final ad in [

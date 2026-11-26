@@ -8295,12 +8295,6 @@ abstract class AppLocalizations {
   /// **'Çıkış yap'**
   String get kullaniciAdiCikis;
 
-  /// No description provided for @registerUsernameMissing.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kullanıcı adı gir.'**
-  String get registerUsernameMissing;
-
   /// No description provided for @deletedFilter.
   ///
   /// In tr, this message translates to:

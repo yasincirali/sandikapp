@@ -9,9 +9,9 @@ void main() {
   final kayit = File('lib/screens/register_screen.dart').readAsStringSync();
   final demo = File('lib/demo/demo_kabugu.dart').readAsStringSync();
 
-  test('kayıt ekranında sosyal düğmeler kullanıcı adı alanından önce', () {
+  test('kayıt ekranında sosyal düğmeler ilk form alanından önce', () {
     final sosyal = kayit.indexOf('SocialSignInButtons(ustte: true)');
-    final ad = kayit.indexOf('controller: _nameCtrl');
+    final ad = kayit.indexOf('controller: _emailCtrl');
     expect(sosyal, greaterThan(0));
     expect(sosyal, lessThan(ad));
     expect('SocialSignInButtons('.allMatches(kayit).length, 1);

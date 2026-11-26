@@ -5087,9 +5087,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kullaniciAdiCikis => 'Sign out';
 
   @override
-  String get registerUsernameMissing => 'Enter a username.';
-
-  @override
   String get deletedFilter => 'Deleted';
 
   @override

@@ -85,7 +85,6 @@ void main() {
 
   Future<void> formuDoldur(WidgetTester tester) async {
     for (final (etiket, metin) in [
-      (l.kullaniciAdiEtiket, 'deneme_kisi'),
       (l.email, 'Deneme@Ornek.com'),
       (l.password, 'abcd1234'),
     ]) {

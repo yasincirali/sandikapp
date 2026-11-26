@@ -5017,9 +5017,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get kullaniciAdiCikis => 'Çıkış yap';
 
   @override
-  String get registerUsernameMissing => 'Kullanıcı adı gir.';
-
-  @override
   String get deletedFilter => 'Silinenler';
 
   @override

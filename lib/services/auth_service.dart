@@ -318,9 +318,6 @@ class AuthService {
     if (normalizedEmail.isEmpty || !normalizedEmail.contains('@')) {
       throw const AuthException('Geçerli bir e-posta gir.');
     }
-    if (displayName.trim().isEmpty) {
-      throw const AuthException('Ad soyad boş olamaz.');
-    }
     final passwordError = validatePassword(password);
     if (passwordError != null) {
       throw AuthException(passwordError);
@@ -451,10 +448,14 @@ class AuthService {
 
       // Register sırasında kaydettiğimiz displayName'i çek; profile upsert.
       final pendingName = await _getPendingDisplayName();
-      final displayName = pendingName?.trim().isNotEmpty == true
+      final verilenAd = pendingName?.trim().isNotEmpty == true
           ? pendingName!.trim()
-          : (response.user!.userMetadata?['display_name'] as String?)?.trim() ??
-              normalizedEmail.split('@').first;
+          : (response.user!.userMetadata?['display_name'] as String?)?.trim();
+      // Kayıt formu ad sormaz (2026-11-26): ad yoksa e-posta başı yalnız
+      // profil görünen adı olur, KULLANICI ADI atanmaz (herkese açık
+      // listede e-posta parçası görünmesin); kapı sorar.
+      final adVar = verilenAd != null && verilenAd.isNotEmpty;
+      final displayName = adVar ? verilenAd : normalizedEmail.split('@').first;
 
       final user = AppUser(
         id: response.user!.id,
@@ -474,6 +475,7 @@ class AuthService {
       // ve giriş kapısı zorunlu ekranı önerilen adla açar — kayıt bu
       // yüzden yarıda kalmaz.
       try {
+        if (!adVar) return user;
         final sonuc =
             await SupabaseService.instance.kullaniciAdiAyarla(displayName);
         if (sonuc == KullaniciAdiSonuc.uygun) {
