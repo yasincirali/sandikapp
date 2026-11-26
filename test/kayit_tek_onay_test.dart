@@ -88,7 +88,6 @@ void main() {
       (l.kullaniciAdiEtiket, 'deneme_kisi'),
       (l.email, 'Deneme@Ornek.com'),
       (l.password, 'abcd1234'),
-      (l.passwordRepeat, 'abcd1234'),
     ]) {
       // Şifre yazılınca kural listesi açılır, alttaki alan kayar: her
       // alandan sonra yerleşim otursun.

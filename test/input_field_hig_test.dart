@@ -72,11 +72,11 @@ void main() {
       }
     });
 
-    test('register 4 alanlı formda textInputAction zinciri var', () {
+    test('register 3 alanlı formda textInputAction zinciri var', () {
       final s = oku('lib/screens/register_screen.dart');
       // Klavyede "İleri" olmadan kullanıcı her alandan sonra klavyeyi
       // kapatıp elle dokunmak zorunda kalıyordu.
-      expect('TextInputAction.next'.allMatches(s).length, greaterThanOrEqualTo(3),
+      expect('TextInputAction.next'.allMatches(s).length, greaterThanOrEqualTo(2),
           reason: 'Alanlar arası geçiş zinciri eksik');
       expect(s.contains('TextInputAction.done'), isTrue,
           reason: 'Son alan formu göndermiyor');

@@ -69,7 +69,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passCtrl = TextEditingController();
   // Kod ekranındaki "E-postayı değiştir" geri dönünce imleç buraya gelir.
   final _emailFocus = FocusNode();
-  final _passConfirmCtrl = TextEditingController();
   bool _obscure = true;
 
   // ── Yasal onaylar (okuma sadeleştirme, kullanıcı kararı 2026-10-05) ──────
@@ -159,7 +158,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _adDenetimi.kaydedilebilir &&
       _ePostaHatasi() == null &&
       AuthService.validatePassword(_passCtrl.text) == null &&
-      _passCtrl.text == _passConfirmCtrl.text &&
       _plan.hepsiTamam(
           onaylananlar: _onaylananlar, kutuIsaretli: _kutuIsaretli);
 
@@ -183,9 +181,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
     final passError = AuthService.validatePassword(_passCtrl.text);
     if (passError != null) return (kod: 'sifre', metin: passError);
-    if (_passCtrl.text != _passConfirmCtrl.text) {
-      return (kod: 'sifre_tekrar', metin: context.l10n.registerPasswordsMismatch);
-    }
     // Eksik adım: hangi metnin okunmadığını adıyla söyle (girdi kuralı
     // istemcide — kullanıcı neyin eksik olduğunu basmadan önce bilir);
     // okumalar tamamsa son adım, kutu.
@@ -305,7 +300,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _emailCtrl.addListener(_rebuild);
     _emailFocus.addListener(_ePostaOdakDegisti);
     _passCtrl.addListener(_rebuild);
-    _passConfirmCtrl.addListener(_rebuild);
   }
 
   /// Forma ilk harf yazıldı mı (`kayit_basladi` bir kez).
@@ -328,7 +322,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _emailCtrl.dispose();
     _emailFocus.dispose();
     _passCtrl.dispose();
-    _passConfirmCtrl.dispose();
     _kutuBaglantilari.dispose();
     super.dispose();
   }
@@ -550,6 +543,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Demodan ve bu ekrandan vazgeçenlerin çoğu formda kaybolduğu
+              // için (26 Kas 2026, GA4: kayıt ekranını açan 318, kod ekranına
+              // gelen 16) Apple/Google en üstte: şifre, e-posta kodu ve
+              // kullanıcı adı adımı yok, yasal onay kapısı girişten sonra
+              // AuthGate'te sorulur.
+              const SocialSignInButtons(ustte: true),
+
               // Kullanıcı adı (0079, 2026-09-28) — eskiden "Ad Soyad"dı.
               // Görünen ad artık kullanıcı adıdır (ortak da bunu görür);
               // iki ayrı alan sormak yerine kayıtta doğrudan o istenir.
@@ -637,7 +637,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _passCtrl,
                 obscureText: _obscure,
-                textInputAction: TextInputAction.next,
+                textInputAction: TextInputAction.done,
                 // `newPassword` (password DEĞİL): iOS'un güçlü şifre önerme
                 // ve Keychain'e kaydetme akışını bu tetikler.
                 autofillHints: const [AutofillHints.newPassword],
@@ -684,35 +684,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   sifre: _passCtrl.text,
                   eksikleriVurgula: _gonderimDenendi,
                 ),
-              const SizedBox(height: 14),
-
-              // Şifre tekrar
-              TextFormField(
-                controller: _passConfirmCtrl,
-                obscureText: _obscure,
-                // Son alan → "Bitti" klavyeyi kapatır; gönderim YAPMAZ: altta
-                // yasal adımlar (uyarı, Açık Rıza, kutu) var, kullanıcı onları
-                // görmeden kayıt denenmesin. Eski yorum "doğrudan gönderim"
-                // diyordu, kod hiç göndermiyordu (klavye denetimi 2026-10-08).
-                textInputAction: TextInputAction.done,
-                autofillHints: const [AutofillHints.newPassword],
-                autocorrect: false,
-                enableSuggestions: false,
-                style: context.t.bodyLarge?.copyWith(color: context.c.text90),
-                decoration: context.inputDecoration('',
-                    labelText: context.l10n.passwordRepeat,
-                    errorText: (_passConfirmCtrl.text.isNotEmpty &&
-                            _passConfirmCtrl.text != _passCtrl.text)
-                        ? context.l10n.passwordsMismatch
-                        : null,
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Icon(Icons.lock_outline_rounded,
-                          color: context.c.text36, size: 20),
-                    )),
-                validator: (v) =>
-                    v != _passCtrl.text ? context.l10n.passwordsMismatch : null,
-              ),
               const SizedBox(height: 28),
 
               // ── Yasal adımlar: uyarı → Açık Rıza → kutu ──────────────
@@ -766,7 +737,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const SizedBox(height: 14),
               // Sosyal girişte OTP adımı yok; e-posta sağlayıcıdan doğrulanmış
               // gelir. Yasal onay kapısı AuthGate'te — bu yolda da sorulur.
-              const SocialSignInButtons(),
               CupertinoButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(

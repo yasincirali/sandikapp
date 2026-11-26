@@ -548,9 +548,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get registerEmailInvalid => 'Geçerli bir e-posta gir.';
 
   @override
-  String get registerPasswordsMismatch => 'Şifreler eşleşmiyor.';
-
-  @override
   String get refreshPrices => 'Fiyatları yenile';
 
   @override
@@ -7499,10 +7496,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmYonet => 'Yönet';
 
   @override
-  String get prmGeriYukle => 'Satın alımları geri yükle';
+  String get aboneligiYonet => 'Aboneliği yönet';
 
   @override
-  String get aboneligiYonet => 'Aboneliği yönet';
+  String get prmGeriYukle => 'Satın alımları geri yükle';
 
   @override
   String get prmIptalIpucu =>
@@ -7769,9 +7766,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get sgnPremiumAktifGovde =>
       'Sekiz göstergenin tamamı, periyot ayarları ve bildirimler açık.';
-
-
-
 
   @override
   String get cmpSinirPremium => 'Premium ile 5 seriye kadar';
@@ -8262,14 +8256,14 @@ class AppLocalizationsTr extends AppLocalizations {
       'Hepsi açık; sinyaller 2 saatte bir, %50 güvenden itibaren.';
 
   @override
-  String get bildirimOnAyarOzelAciklama =>
-      'Bildirimleri tek tek ayarlamışsın. Bir seçenek seçersen hepsine uygulanır.';
-
-  @override
   String get bildirimOnAyarPremiumlaAcilir => 'Premium\'la açılır.';
 
   @override
   String get bildirimOnAyarPremiumlaAc => 'Premium\'la aç';
+
+  @override
+  String get bildirimOnAyarOzelAciklama =>
+      'Bildirimleri tek tek ayarlamışsın. Bir seçenek seçersen hepsine uygulanır.';
 
   @override
   String get bildirimAyrintiliUpper => 'Ayrıntılı';

@@ -1070,12 +1070,6 @@ abstract class AppLocalizations {
   /// **'Geçerli bir e-posta gir.'**
   String get registerEmailInvalid;
 
-  /// No description provided for @registerPasswordsMismatch.
-  ///
-  /// In tr, this message translates to:
-  /// **'Şifreler eşleşmiyor.'**
-  String get registerPasswordsMismatch;
-
   /// No description provided for @refreshPrices.
   ///
   /// In tr, this message translates to:
@@ -12664,9 +12658,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sekiz göstergenin tamamı, periyot ayarları ve bildirimler açık.'**
   String get sgnPremiumAktifGovde;
-
-
-
 
   /// No description provided for @cmpSinirPremium.
   ///

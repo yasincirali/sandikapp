@@ -216,7 +216,6 @@
   "otpSentPrefix": "6 haneli kodu\n",
   "otpSentSuffix": "\nadresine gönderdik.",
   "registerEmailInvalid": "Geçerli bir e-posta gir.",
-  "registerPasswordsMismatch": "Şifreler eşleşmiyor.",
   "refreshPrices": "Fiyatları yenile",
   "portfolioActivity": "Portföy hareketleri",
   "seeAllTransactions": "Tüm hareketleri gör",

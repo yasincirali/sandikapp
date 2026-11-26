@@ -398,7 +398,6 @@ void main() {
         (l.kullaniciAdiEtiket, 'deneme_kisi'),
         (l.email, 'deneme@ornek.com'),
         (l.password, 'abcd1234'),
-        (l.passwordRepeat, 'abcd1234'),
       ]) {
         await tester.enterText(alan(etiket), metin);
         await tester.pump();

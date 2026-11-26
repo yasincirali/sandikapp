@@ -198,7 +198,6 @@
   "otpSentPrefix": "We sent the 6-digit code to\n",
   "otpSentSuffix": "",
   "registerEmailInvalid": "Enter a valid email.",
-  "registerPasswordsMismatch": "Passwords do not match.",
   "refreshPrices": "Refresh prices",
   "portfolioActivity": "Portfolio activity",
   "seeAllTransactions": "See all transactions",
