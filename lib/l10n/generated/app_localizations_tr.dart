@@ -7770,15 +7770,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sgnPremiumAktifGovde =>
       'Sekiz göstergenin tamamı, periyot ayarları ve bildirimler açık.';
 
-  @override
-  String get sgnPremiumKilitBaslik => 'Premium göstergeler';
 
-  @override
-  String get sgnPremiumKilitGovde =>
-      'EMA Kesişim, Stokastik, Trend Gücü, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.';
 
-  @override
-  String get sgnPremiumGec => 'Premium\'a geç';
 
   @override
   String get cmpSinirPremium => 'Premium ile 5 seriye kadar';

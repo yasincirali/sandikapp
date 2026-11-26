@@ -7889,15 +7889,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sgnPremiumAktifGovde =>
       'All eight indicators, period settings and alerts are on.';
 
-  @override
-  String get sgnPremiumKilitBaslik => 'Premium indicators';
 
-  @override
-  String get sgnPremiumKilitGovde =>
-      'EMA Crossover, Stochastic, Trend Strength, Williams %R and CCI join the analysis with Premium. RSI, MACD and Bollinger are free.';
 
-  @override
-  String get sgnPremiumGec => 'Go Premium';
 
   @override
   String get cmpSinirPremium => 'Up to 5 series with Premium';
