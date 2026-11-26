@@ -19135,6 +19135,18 @@ abstract class AppLocalizations {
   /// **'Eşleşen varlık yok'**
   String get saatliSonucYok;
 
+  /// No description provided for @saatliSaatSayisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{1 saat} other{{n} saat}}'**
+  String saatliSaatSayisi(int n);
+
+  /// No description provided for @saatliKuruluEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{1 saatte bildirim kurulu} other{{n} saatte bildirim kurulu}}'**
+  String saatliKuruluEtiket(int n);
+
   /// No description provided for @saatliAyarAlt.
   ///
   /// In tr, this message translates to:

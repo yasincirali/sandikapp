@@ -26,6 +26,7 @@ import 'package:portfoy_takip/widgets/portfoy_yorumu_karti.dart';
 import 'package:portfoy_takip/widgets/pozisyon_islemleri.dart';
 import 'package:portfoy_takip/widgets/sandik_baglam_menusu.dart';
 import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
+import 'package:portfoy_takip/widgets/sandik_arama_alani.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_coklu_secim.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
@@ -239,6 +240,14 @@ void main() {
                       onTap: () {},
                       ikon: Icons.show_chart_rounded),
                 ]),
+                const SizedBox(height: SandikSpace.md),
+                // Varlık arama alanı (takibe alma + saatli bildirim seçicisi,
+                // 2026-11-26): tek alan, yazınca 44 pt silme düğmesi.
+                SandikAramaAlani(
+                  controller: TextEditingController(text: 'altın'),
+                  onChanged: (_) {},
+                  placeholder: 'Varlık ara',
+                ),
                 const SizedBox(height: SandikSpace.md),
                 // Tarih hızlı seçim satırı (2026-11-11): Bugün · Dün · son
                 // iş günü · Başka tarih — her çip `SandikFiltreCipi`.

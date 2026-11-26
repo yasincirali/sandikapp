@@ -66,7 +66,7 @@ void main() {
         ('lib/widgets/donem_istatistik.dart', 'fmtPctIsaretli(ist.enBuyukDususPct)'),
         ('lib/widgets/donem_secici.dart', 'fmtPctIsaretli(g, digits: 1)'),
         ('lib/widgets/fiyat_grafigi.dart', 'fmtPctIsaretli(pct)'),
-        ('lib/screens/add_watchlist_screen.dart', 'fmtPctIsaretli(pct)'),
+        ('lib/widgets/arama_satiri.dart', 'fmtPctIsaretli(pct)'),
         ('lib/widgets/percent_comparison_chart.dart',
             'fmtPctIsaretli(v, digits: eksen.ondalik)'),
         ('lib/widgets/yaris_sahnesi.dart', 'fmtPctIsaretli(v, digits: 1)'),
