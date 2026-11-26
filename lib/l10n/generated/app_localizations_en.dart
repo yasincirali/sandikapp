@@ -3471,6 +3471,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'AI couldn\'t find a holdings table in this file either.';
 
   @override
+  String get importAiNoMatchDuzelt =>
+      'You can pick them yourself with Fix columns.';
+
+  @override
+  String get importAiNoMatchGorsel =>
+      'You can also add them from a screenshot of your portfolio screen.';
+
+  @override
   String get importAiLimit =>
       'You\'ve used today\'s AI mapping allowance; try again tomorrow.';
 
@@ -3599,6 +3607,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String iktKotaGovde(int bulunan, int sigan) {
     return 'Your cart has $bulunan items; $sigan fit the free quota. Add the rest now with Premium or later.';
+  }
+
+  @override
+  String iktKotaGovdeDolu(int sinir, int bulunan) {
+    return 'All $sinir assets on the free plan are used. The $bulunan items in your cart can be added with Premium; the cart will wait.';
+  }
+
+  @override
+  String iktSepetteBekliyor(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n items are waiting in the cart',
+      one: '1 item is waiting in the cart',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -8567,6 +8591,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwdEkstrePremium => 'AI matching';
 
   @override
+  String get pwdEkstreGorselBaslik =>
+      'Fill in costs in bulk from a screenshot of your portfolio screen.';
+
+  @override
+  String get pwdEkstreGorselPremium => 'bulk costs from a screenshot';
+
+  @override
   String pwdYillikAlt(String aylik) {
     return 'Billed once a year · $aylik a month';
   }
@@ -9724,6 +9755,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String varlikKotasiKalan(int kalan, int sinir) {
     return 'You have $kalan new assets left on the free plan ($sinir assets).';
   }
+
+  @override
+  String get varlikKotasiPremiumuGor => 'See Premium';
 
   @override
   String varlikKotasiDolu(int sinir) {
@@ -12198,4 +12232,87 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ziYayimlanmadi =>
       'These funds haven\'t published their breakdown yet';
+
+  @override
+  String get saatliBaslik => 'Scheduled prices';
+
+  @override
+  String get saatliTekil => 'Scheduled price';
+
+  @override
+  String get saatliEkle => 'Add scheduled price';
+
+  @override
+  String get saatliAciklama =>
+      'We send the asset\'s current price as a notification at the times you pick.';
+
+  @override
+  String get saatliKilitSatiri => 'Price at your chosen time is in Premium';
+
+  @override
+  String get saatliYenidenGonderilir => 'Sent again with Premium';
+
+  @override
+  String get saatliSaatEkle => 'Add time';
+
+  @override
+  String get saatliSaatlerEtiket => 'Times';
+
+  @override
+  String saatliEnFazlaSaat(int n) {
+    return 'Up to $n times per asset';
+  }
+
+  @override
+  String saatliSessizUyari(String saat) {
+    return '$saat falls in your quiet hours; it is still sent because you chose it.';
+  }
+
+  @override
+  String saatliSinir(int varlik, int saat) {
+    return 'You can pick up to $varlik assets and $saat times per asset.';
+  }
+
+  @override
+  String get saatliVarlikSec => 'Choose an asset';
+
+  @override
+  String get saatliAra => 'Search assets';
+
+  @override
+  String get saatliSonucYok => 'No matching asset';
+
+  @override
+  String get saatliAyarAlt => 'Price at the time you pick';
+
+  @override
+  String saatliAktifSayi(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n assets',
+      one: '1 asset',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String saatliSaatSil(String saat) {
+    return 'Remove $saat';
+  }
+
+  @override
+  String get pwdSaatliEtiket => 'Scheduled price';
+
+  @override
+  String get pwdSaatliBaslik =>
+      'The price of the asset you pick, on your phone at the time you pick.';
+
+  @override
+  String get pwdSaatliUcretsiz => 'Morning and evening brief';
+
+  @override
+  String pwdSaatliPremium(int varlik, int saat) {
+    return '$varlik assets, $saat times a day';
+  }
 }

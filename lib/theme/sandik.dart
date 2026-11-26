@@ -431,6 +431,25 @@ Future<T?> pushGuarded<T>(
   return Navigator.of(context).push<T>(route);
 }
 
+/// Ekranı KENDİ rotasıyla kapatır; [sonuc] çağırana yine gider.
+///
+/// Neden düz `Navigator.pop` değil (UI/UX turu 20, 2026-11-26 #2): pop EN
+/// ÜSTTEKİ rotayı kapatır. Varlık sınırında Premium alan kullanıcı "Premium
+/// açıldı" sayfasından bir hedef (ör. Aylık rapor) seçince hedef açılır;
+/// aynı anda form kaydı arka planda yeniden dener ve bitince pop yeni açılan
+/// hedefi kapatıyordu, kullanıcı boş forma dönüyordu. Rota üstteyse bugünkü
+/// pop (geçiş animasyonuyla); değilse `removeRoute` yalnız bu rotayı
+/// animasyonsuz söker, üstteki ekran yerinde kalır. Rota zaten söküldüyse
+/// (iki kapanış yarışı) bir şey yapmaz.
+void kendiRotasiniKapat(BuildContext context, [Object? sonuc]) {
+  final rota = ModalRoute.of(context);
+  if (rota == null || rota.isCurrent) {
+    Navigator.of(context).pop(sonuc);
+  } else if (rota.isActive) {
+    Navigator.of(context).removeRoute(rota, sonuc);
+  }
+}
+
 /// Köşe yarıçapı ölçeği — üç kademe.
 ///
 /// Denetim öncesi projede 17 farklı radius değeri vardı (2,4,5,6,7,8,9,10,

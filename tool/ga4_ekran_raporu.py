@@ -88,6 +88,7 @@ EKRANLAR = {
     "push_diagnostics": ("Bildirim tanılama", False),
     "recap": ("Dönem özeti", False),
     "register": ("Kayıt", False),
+    "saatli_bildirimler": ("Saatli bildirimler", True),
     "settings": ("Ayarlar", False),
     "signal_settings": ("Sinyal ayarları", False),
     "tam_ekran_grafik": ("Tam ekran grafik", False),

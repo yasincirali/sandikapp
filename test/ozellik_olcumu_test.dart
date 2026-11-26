@@ -59,6 +59,7 @@ void main() {
         'kapanis_ozeti',
         'paylasim_karti',
         'hizli_al_sat',
+        'saatli_bildirim',
       ]);
     });
 

@@ -64,6 +64,9 @@ import '../providers/sembol_alarmlari_provider.dart';
 import '../models/price_alert.dart';
 import '../models/grafik_alarm_cizgisi.dart';
 import '../widgets/alarm_kur_sheet.dart';
+import '../widgets/saatli_bildirim.dart' show saatliBildirimAkisi;
+import '../widgets/sandik_baglam_menusu.dart' show SandikBaglamEylemi, showSandikAcilirMenu;
+import '../providers/saatli_bildirim_provider.dart' show saatliBildirimDurumuProvider;
 import '../widgets/alarm_caldi_bandi.dart';
 import '../widgets/alarm_seridi.dart';
 import '../models/varlik_kimligi.dart';
@@ -1069,22 +1072,52 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           // ekrana girer girmez "bu varlıkta alarmım var" der. Dört alarm
           // türüne bakar (`sembolAlarmlariProvider`, Ar-Ge 29 Eki 20:45 #0):
           // yalnız yüzde alarmı kuranın şeridi çipi gösterirken zil boştu.
+          //
+          // Saatli bildirim (0188, Premium): özellik bu kullanıcıda
+          // görünürse zil doğrudan alarm sayfasını değil iki satırlık
+          // açılır menüyü açar (HIG pull-down menü; "⋯" ile aynı bileşen).
+          // Gizliyken (tablo yok, paywall kapalı ve admin değil) zil birebir
+          // eskisi: tek dokunuş alarm sayfası.
           if (_alarmSembolu != null)
-            IconButton(
-              tooltip: context.l10n.setPriceAlert,
-              icon: ref.watch(sembolAlarmlariProvider(_alarmSembolu!)).aktif >
-                      0
-                  ? Icon(Icons.notifications_active_rounded,
-                      color: context.c.amberText)
-                  : Icon(Icons.add_alert_outlined, color: context.c.text90),
-              onPressed: () => alarmKurAkisi(
-                context,
-                ref,
-                // Maliyet çipleri yalnız KENDİ açık pozisyonunda: ortağın
-                // maliyeti bu kullanıcının alarm sorusu değildir.
-                sabit: _alarmAdayi(kendi: isOwnAsset),
-              ),
-            ),
+            Builder(builder: (zil) {
+              void alarmKur() => alarmKurAkisi(
+                    context,
+                    ref,
+                    // Maliyet çipleri yalnız KENDİ açık pozisyonunda: ortağın
+                    // maliyeti bu kullanıcının alarm sorusu değildir.
+                    sabit: _alarmAdayi(kendi: isOwnAsset),
+                  );
+              final saatli = ref.watch(saatliBildirimDurumuProvider);
+              return IconButton(
+                key: const ValueKey('varlikZil'),
+                tooltip: context.l10n.setPriceAlert,
+                icon: ref.watch(sembolAlarmlariProvider(_alarmSembolu!)).aktif >
+                        0
+                    ? Icon(Icons.notifications_active_rounded,
+                        color: context.c.amberText)
+                    : Icon(Icons.add_alert_outlined, color: context.c.text90),
+                onPressed: saatli == OzellikDurumu.gizli
+                    ? alarmKur
+                    : () => showSandikAcilirMenu(zil, eylemler: [
+                          SandikBaglamEylemi(
+                            anahtar: const ValueKey('zilFiyatAlarmi'),
+                            etiket: context.l10n.setPriceAlert,
+                            ikon: Icons.add_alert_outlined,
+                            onSec: alarmKur,
+                          ),
+                          SandikBaglamEylemi(
+                            anahtar: const ValueKey('zilSaatli'),
+                            etiket: context.l10n.saatliTekil,
+                            ikon: Icons.schedule_rounded,
+                            altMetin: saatli == OzellikDurumu.kilitli
+                                ? context.l10n.saatliKilitSatiri
+                                : null,
+                            onSec: () => saatliBildirimAkisi(context, ref,
+                                sembol: _alarmSembolu, ad: widget.asset.name),
+                          ),
+                        ]),
+              );
+            }),
           // "Varlığı güncelle" (`varlik_guncelle.dart`): kaydırmadaki
           // eylemle aynı akış, aynı kurallar — yalnız KENDİ açık
           // pozisyonunda (işlem çubuğuyla aynı kapı) ve güncellenebilir

@@ -5738,6 +5738,18 @@ abstract class AppLocalizations {
   /// **'Yapay zekâ da bu dosyada varlık tablosu bulamadı.'**
   String get importAiNoMatch;
 
+  /// No description provided for @importAiNoMatchDuzelt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sütunları düzelt ile elle seçebilirsin.'**
+  String get importAiNoMatchDuzelt;
+
+  /// No description provided for @importAiNoMatchGorsel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy ekranının görüntüsünden de ekleyebilirsin.'**
+  String get importAiNoMatchGorsel;
+
   /// No description provided for @importAiLimit.
   ///
   /// In tr, this message translates to:
@@ -5923,6 +5935,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sepette {bulunan} kalem var, ücretsiz kotaya {sigan} tanesi sığıyor. Kalanı Premium\'la hemen ya da sonra ekleyebilirsin.'**
   String iktKotaGovde(int bulunan, int sigan);
+
+  /// No description provided for @iktKotaGovdeDolu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz plandaki {sinir} varlık dolu. Sepetteki {bulunan} kalem Premium\'la eklenir; sepet bekler.'**
+  String iktKotaGovdeDolu(int sinir, int bulunan);
+
+  /// No description provided for @iktSepetteBekliyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} kalem sepette bekliyor'**
+  String iktSepetteBekliyor(int n);
 
   /// No description provided for @iktKotaPremium.
   ///
@@ -13796,6 +13820,18 @@ abstract class AppLocalizations {
   /// **'yapay zekâyla eşleme'**
   String get pwdEkstrePremium;
 
+  /// No description provided for @pwdEkstreGorselBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy ekranının görüntüsünden maliyetleri topluca doldur.'**
+  String get pwdEkstreGorselBaslik;
+
+  /// No description provided for @pwdEkstreGorselPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'ekran görüntüsünden toplu maliyet'**
+  String get pwdEkstreGorselPremium;
+
   /// No description provided for @pwdYillikAlt.
   ///
   /// In tr, this message translates to:
@@ -15571,6 +15607,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ücretsiz planda {kalan} yeni varlık hakkın kaldı ({sinir} varlık).'**
   String varlikKotasiKalan(int kalan, int sinir);
+
+  /// No description provided for @varlikKotasiPremiumuGor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'u gör'**
+  String get varlikKotasiPremiumuGor;
 
   /// No description provided for @varlikKotasiDolu.
   ///
@@ -19008,6 +19050,132 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu fonların dağılımı henüz yayımlanmadı'**
   String get ziYayimlanmadi;
+
+  /// No description provided for @saatliBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatli bildirimler'**
+  String get saatliBaslik;
+
+  /// No description provided for @saatliTekil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatli bildirim'**
+  String get saatliTekil;
+
+  /// No description provided for @saatliEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatli bildirim ekle'**
+  String get saatliEkle;
+
+  /// No description provided for @saatliAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin saatlerde varlığın o anki fiyatını bildirim olarak gönderiyoruz.'**
+  String get saatliAciklama;
+
+  /// No description provided for @saatliKilitSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin saatte fiyat bildirimi Premium\'da'**
+  String get saatliKilitSatiri;
+
+  /// No description provided for @saatliYenidenGonderilir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'la yeniden gönderilir'**
+  String get saatliYenidenGonderilir;
+
+  /// No description provided for @saatliSaatEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saat ekle'**
+  String get saatliSaatEkle;
+
+  /// No description provided for @saatliSaatlerEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatler'**
+  String get saatliSaatlerEtiket;
+
+  /// No description provided for @saatliEnFazlaSaat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık başına en fazla {n} saat'**
+  String saatliEnFazlaSaat(int n);
+
+  /// No description provided for @saatliSessizUyari.
+  ///
+  /// In tr, this message translates to:
+  /// **'{saat} sessiz saatlerine denk geliyor; seçtiğin için yine de gönderilir.'**
+  String saatliSessizUyari(String saat);
+
+  /// No description provided for @saatliSinir.
+  ///
+  /// In tr, this message translates to:
+  /// **'En fazla {varlik} varlık, varlık başına {saat} saat seçebilirsin.'**
+  String saatliSinir(int varlik, int saat);
+
+  /// No description provided for @saatliVarlikSec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık seç'**
+  String get saatliVarlikSec;
+
+  /// No description provided for @saatliAra.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık ara'**
+  String get saatliAra;
+
+  /// No description provided for @saatliSonucYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşleşen varlık yok'**
+  String get saatliSonucYok;
+
+  /// No description provided for @saatliAyarAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin saatte fiyat'**
+  String get saatliAyarAlt;
+
+  /// No description provided for @saatliAktifSayi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{1 varlık} other{{n} varlık}}'**
+  String saatliAktifSayi(int n);
+
+  /// No description provided for @saatliSaatSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'{saat} saatini kaldır'**
+  String saatliSaatSil(String saat);
+
+  /// No description provided for @pwdSaatliEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatli bildirim'**
+  String get pwdSaatliEtiket;
+
+  /// No description provided for @pwdSaatliBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin varlığın fiyatı, seçtiğin saatte telefonuna gelsin.'**
+  String get pwdSaatliBaslik;
+
+  /// No description provided for @pwdSaatliUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sabah ve akşam özeti'**
+  String get pwdSaatliUcretsiz;
+
+  /// No description provided for @pwdSaatliPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'{varlik} varlık, günde {saat} saat'**
+  String pwdSaatliPremium(int varlik, int saat);
 }
 
 class _AppLocalizationsDelegate

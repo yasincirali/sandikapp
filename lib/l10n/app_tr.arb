@@ -2154,6 +2154,8 @@
   "importAiRizaGerekli": "Yapay zekâyla eşleme için onayın gerekiyor; düğmeye yeniden bas.",
   "importAiSuggested": "Sütunları yapay zekâ önerdi; eşlemeyi kontrol et, gerekirse düzelt.",
   "importAiNoMatch": "Yapay zekâ da bu dosyada varlık tablosu bulamadı.",
+  "importAiNoMatchDuzelt": "Sütunları düzelt ile elle seçebilirsin.",
+  "importAiNoMatchGorsel": "Portföy ekranının görüntüsünden de ekleyebilirsin.",
   "importAiLimit": "Bugünlük yapay zekâ eşleme hakkın doldu; yarın yeniden dene.",
   "importAiFailed": "Yapay zekâ eşlemesi şu an yapılamadı. Biraz sonra yeniden dene.",
   "importTradesApplied": "{count} varlığın alım satımları gerçek tarih ve fiyatıyla hesap hareketlerinden alındı.",
@@ -2308,6 +2310,15 @@
       "sigan": {"type": "int"}
     }
   },
+  "iktKotaGovdeDolu": "Ücretsiz plandaki {sinir} varlık dolu. Sepetteki {bulunan} kalem Premium'la eklenir; sepet bekler.",
+  "@iktKotaGovdeDolu": {
+    "placeholders": {
+      "sinir": {"type": "int"},
+      "bulunan": {"type": "int"}
+    }
+  },
+  "iktSepetteBekliyor": "{n} kalem sepette bekliyor",
+  "@iktSepetteBekliyor": {"placeholders": {"n": {"type": "int"}}},
   "iktKotaPremium": "Premium'a geç, hepsini ekle",
   "iktKotaSiganlar": "{sigan} kalemi kaydet, kalanı sepette bırak",
   "@iktKotaSiganlar": {
@@ -5736,6 +5747,8 @@
   "pwdEkstreEtiket": "Ekstre",
   "pwdEkstreBaslik": "Ekstreni yükle, satırları yapay zekâ eşlesin.",
   "pwdEkstrePremium": "yapay zekâyla eşleme",
+  "pwdEkstreGorselBaslik": "Portföy ekranının görüntüsünden maliyetleri topluca doldur.",
+  "pwdEkstreGorselPremium": "ekran görüntüsünden toplu maliyet",
   "pwdYillikAlt": "Yılda bir kez ödenir · ayda {aylik}",
   "@pwdYillikAlt": {
     "placeholders": {
@@ -6136,6 +6149,7 @@
   "watchlistLimitPremiumIpucu": "Premium'u açar",
   "varlikKotasiKalan": "Ücretsiz planda {kalan} yeni varlık hakkın kaldı ({sinir} varlık).",
   "@varlikKotasiKalan": {"placeholders": {"kalan": {"type": "int"}, "sinir": {"type": "int"}}},
+  "varlikKotasiPremiumuGor": "Premium'u gör",
   "varlikKotasiDolu": "Ücretsiz plandaki {sinir} varlık doldu. Var olan varlığına alım ekleyebilirsin; yeni varlık Premium'da.",
   "@varlikKotasiDolu": {"placeholders": {"sinir": {"type": "int"}}},
   "sgnSlotNotu": "Ücretsiz sürümde RSI, MACD ve Bollinger sinyalleri her tür için günde 1 kez bildirilir. Premium'da sekiz göstergenin tamamı, seçtiğin sıklıkta gelir.",
@@ -6981,5 +6995,32 @@
   "portfolioLimitFree": "Ücretsiz planda tek portföy var. Varlıklarını Ana portföyde tutmaya devam edebilirsin.",
   "zirveKatilimPremiumNotu": "Zirve'ye katılım Premium ile. Metni okuyup onayladığında Premium sayfası açılır.",
   "ziOkunamadi": "Fonların içi şu an okunamadı",
-  "ziYayimlanmadi": "Bu fonların dağılımı henüz yayımlanmadı"
+  "ziYayimlanmadi": "Bu fonların dağılımı henüz yayımlanmadı",
+  "saatliBaslik": "Saatli bildirimler",
+  "saatliTekil": "Saatli bildirim",
+  "saatliEkle": "Saatli bildirim ekle",
+  "saatliAciklama": "Seçtiğin saatlerde varlığın o anki fiyatını bildirim olarak gönderiyoruz.",
+  "saatliKilitSatiri": "Seçtiğin saatte fiyat bildirimi Premium'da",
+  "saatliYenidenGonderilir": "Premium'la yeniden gönderilir",
+  "saatliSaatEkle": "Saat ekle",
+  "saatliSaatlerEtiket": "Saatler",
+  "saatliEnFazlaSaat": "Varlık başına en fazla {n} saat",
+  "@saatliEnFazlaSaat": {"placeholders": {"n": {"type": "int"}}},
+  "saatliSessizUyari": "{saat} sessiz saatlerine denk geliyor; seçtiğin için yine de gönderilir.",
+  "@saatliSessizUyari": {"placeholders": {"saat": {"type": "String"}}},
+  "saatliSinir": "En fazla {varlik} varlık, varlık başına {saat} saat seçebilirsin.",
+  "@saatliSinir": {"placeholders": {"varlik": {"type": "int"}, "saat": {"type": "int"}}},
+  "saatliVarlikSec": "Varlık seç",
+  "saatliAra": "Varlık ara",
+  "saatliSonucYok": "Eşleşen varlık yok",
+  "saatliAyarAlt": "Seçtiğin saatte fiyat",
+  "saatliAktifSayi": "{n, plural, =1{1 varlık} other{{n} varlık}}",
+  "@saatliAktifSayi": {"placeholders": {"n": {"type": "int"}}},
+  "saatliSaatSil": "{saat} saatini kaldır",
+  "@saatliSaatSil": {"placeholders": {"saat": {"type": "String"}}},
+  "pwdSaatliEtiket": "Saatli bildirim",
+  "pwdSaatliBaslik": "Seçtiğin varlığın fiyatı, seçtiğin saatte telefonuna gelsin.",
+  "pwdSaatliUcretsiz": "Sabah ve akşam özeti",
+  "pwdSaatliPremium": "{varlik} varlık, günde {saat} saat",
+  "@pwdSaatliPremium": {"placeholders": {"varlik": {"type": "int"}, "saat": {"type": "int"}}}
 }

@@ -9,6 +9,7 @@ import '../models/asset.dart' show Asset;
 import '../models/asset_type.dart';
 import '../models/portfoy_grubu.dart';
 import '../models/position.dart' show aggregatePositions, aktifLotlar;
+import '../models/saatli_bildirim.dart' show SaatliBildirim;
 import '../providers/auth_provider.dart' show partnersProvider;
 import '../providers/portfolio_provider.dart' show portfolioProvider;
 import '../providers/premium_provider.dart' show satinAlmaServisiProvider;
@@ -48,7 +49,7 @@ part 'paywall/paywall_deste.dart';
 /// edilmez, düğme "Abone ol" der ve dokununca "kullanılamıyor" söylenir.
 ///
 /// Kullanım:
-///   PaywallScreen.show(context, source: 'asset_limit_dialog');
+///   PaywallScreen.show(context, source: 'asset_limit_${e.limit}');
 class PaywallScreen extends ConsumerStatefulWidget {
   final String source;
 

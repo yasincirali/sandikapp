@@ -250,7 +250,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           pozisyonAnahtari:
               ref.read(portfolioProvider.notifier).sonEklenenPozisyon);
     }
-    Navigator.pop(context, sonuc);
+    // Kendi rotası: satın alma sonrası seçilen hedef üstte açıksa onu
+    // kapatmasın (`kendiRotasiniKapat`, UI/UX turu 20 #2).
+    kendiRotasiniKapat(context, sonuc);
   }
 
   // Sözleşmeli türler (mevduat, BES) kendi formlarıyla girilir; bkz.
@@ -456,7 +458,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       context,
       adaptiveRoute(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
     );
-    if (eklendi == true && mounted) Navigator.of(context).pop(true);
+    if (eklendi == true && mounted) kendiRotasiniKapat(context, true);
   }
 
   /// Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
@@ -562,19 +564,41 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               metin: l.varlikKotasiDolu(kota.sinir),
               kaynak: 'asset_limit_form',
             )
-          : Row(
-              children: [
-                Icon(Icons.info_outline_rounded,
-                    size: SandikSpace.md, color: context.c.text58),
-                const SizedBox(width: SandikSpace.sm),
-                Expanded(
-                  child: Text(
-                    l.varlikKotasiKalan(kalan, kota.sinir),
-                    style: context.t.bodySmall
-                        ?.copyWith(color: context.c.text58),
+          // Son üç hak satırı dokunulur (UI/UX turu 20, 2026-11-26 #6):
+          // kullanıcının sınırı en çok düşündüğü an ama yolu yoktu; dolu hâli
+          // `KilitSatiri` ile paywall'a gidiyordu. Aynı kaynak
+          // (`asset_limit_form`), sağda chevron, ≥44 pt. Baskı yok: satır yine
+          // yalnız son üç hakta çıkar. Satın alınca sürdürülecek iş yok
+          // (form doldurulmadı), dönüş beklenmez.
+          : MergeSemantics(
+              child: Semantics(
+                button: true,
+                label: l.varlikKotasiPremiumuGor,
+                child: SandikTappable(
+                  onTap: () => PaywallScreen.show(context,
+                      source: 'asset_limit_form'),
+                  child: ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(minHeight: SandikTouch.min),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded,
+                            size: SandikSpace.md, color: context.c.text58),
+                        const SizedBox(width: SandikSpace.sm),
+                        Expanded(
+                          child: Text(
+                            l.varlikKotasiKalan(kalan, kota.sinir),
+                            style: context.t.bodySmall
+                                ?.copyWith(color: context.c.text58),
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded,
+                            size: SandikSpace.lgs, color: context.c.text58),
+                      ],
+                    ),
                   ),
                 ),
-              ],
+              ),
             ),
     );
   }
@@ -676,7 +700,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   adaptiveRoute(settings: const RouteSettings(name: 'bulk_add_asset'), builder: (_) => const BulkAddAssetScreen()),
                 );
                 if (added == true && context.mounted) {
-                  Navigator.of(context).pop(true);
+                  kendiRotasiniKapat(context, true);
                 }
               },
               ),
@@ -1027,7 +1051,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         builder: (_) => const BulkAddAssetScreen(),
       ),
     );
-    if (kaydedildi == true && mounted) Navigator.of(context).pop(true);
+    if (kaydedildi == true && mounted) kendiRotasiniKapat(context, true);
   }
 
   // ── Notlar collapsible ─────────────────────────────────────────────────────

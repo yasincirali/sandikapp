@@ -2087,6 +2087,8 @@
   "importAiRizaGerekli": "Matching with AI needs your consent; tap the button again.",
   "importAiSuggested": "AI suggested the columns; check the mapping and fix it if needed.",
   "importAiNoMatch": "AI couldn't find a holdings table in this file either.",
+  "importAiNoMatchDuzelt": "You can pick them yourself with Fix columns.",
+  "importAiNoMatchGorsel": "You can also add them from a screenshot of your portfolio screen.",
   "importAiLimit": "You've used today's AI mapping allowance; try again tomorrow.",
   "importAiFailed": "AI mapping isn't available right now. Try again a bit later.",
   "importTradesApplied": "Buys and sells for {count} holdings taken from account transactions with their actual dates and prices.",
@@ -2180,6 +2182,15 @@
       "sigan": {"type": "int"}
     }
   },
+  "iktKotaGovdeDolu": "All {sinir} assets on the free plan are used. The {bulunan} items in your cart can be added with Premium; the cart will wait.",
+  "@iktKotaGovdeDolu": {
+    "placeholders": {
+      "sinir": {"type": "int"},
+      "bulunan": {"type": "int"}
+    }
+  },
+  "iktSepetteBekliyor": "{n, plural, =1{1 item is waiting in the cart} other{{n} items are waiting in the cart}}",
+  "@iktSepetteBekliyor": {"placeholders": {"n": {"type": "int"}}},
   "iktKotaPremium": "Go Premium, add all",
   "iktKotaSiganlar": "Save {sigan} items, keep the rest in the cart",
   "@iktKotaSiganlar": {
@@ -5087,6 +5098,8 @@
   "pwdEkstreEtiket": "Statement",
   "pwdEkstreBaslik": "Upload your statement and let AI match the lines.",
   "pwdEkstrePremium": "AI matching",
+  "pwdEkstreGorselBaslik": "Fill in costs in bulk from a screenshot of your portfolio screen.",
+  "pwdEkstreGorselPremium": "bulk costs from a screenshot",
   "pwdYillikAlt": "Billed once a year · {aylik} a month",
   "pwdYillikAltSade": "Billed once a year",
   "pwdYillikDenemeAlt": "{gun} days free, then {fiyat} once a year",
@@ -5440,6 +5453,7 @@
   "partnerLimitFree": "On the free plan you can add up to {n} partners. End a current partnership to add a new one.",
   "@partnerLimitFree": {"placeholders": {"n": {"type": "int"}}},
   "watchlistLimitPremiumIpucu": "Opens Premium",
+  "varlikKotasiPremiumuGor": "See Premium",
   "varlikKotasiDolu": "You've used all {sinir} assets on the free plan. You can still add to assets you hold; new assets need Premium.",
   "sgnSlotNotu": "On the free plan RSI, MACD and Bollinger signals are sent once a day per type. Premium covers all eight indicators at the frequency you choose.",
   "sgnSlotKilitli": "{secenek}, Premium",
@@ -6128,5 +6142,26 @@
   "portfolioLimitFree": "The free plan has one portfolio. You can keep your assets in the Main portfolio.",
   "zirveKatilimPremiumNotu": "Joining Zirve takes Premium. Once you read and accept the text, the Premium page opens.",
   "ziOkunamadi": "The funds' holdings can't be read right now",
-  "ziYayimlanmadi": "These funds haven't published their breakdown yet"
+  "ziYayimlanmadi": "These funds haven't published their breakdown yet",
+  "saatliBaslik": "Scheduled prices",
+  "saatliTekil": "Scheduled price",
+  "saatliEkle": "Add scheduled price",
+  "saatliAciklama": "We send the asset's current price as a notification at the times you pick.",
+  "saatliKilitSatiri": "Price at your chosen time is in Premium",
+  "saatliYenidenGonderilir": "Sent again with Premium",
+  "saatliSaatEkle": "Add time",
+  "saatliSaatlerEtiket": "Times",
+  "saatliEnFazlaSaat": "Up to {n} times per asset",
+  "saatliSessizUyari": "{saat} falls in your quiet hours; it is still sent because you chose it.",
+  "saatliSinir": "You can pick up to {varlik} assets and {saat} times per asset.",
+  "saatliVarlikSec": "Choose an asset",
+  "saatliAra": "Search assets",
+  "saatliSonucYok": "No matching asset",
+  "saatliAyarAlt": "Price at the time you pick",
+  "saatliAktifSayi": "{n, plural, =1{1 asset} other{{n} assets}}",
+  "saatliSaatSil": "Remove {saat}",
+  "pwdSaatliEtiket": "Scheduled price",
+  "pwdSaatliBaslik": "The price of the asset you pick, on your phone at the time you pick.",
+  "pwdSaatliUcretsiz": "Morning and evening brief",
+  "pwdSaatliPremium": "{varlik} assets, {saat} times a day"
 }

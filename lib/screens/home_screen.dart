@@ -364,6 +364,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         } else {
           NotificationService.instance.openPriceAlertAsset(sembol);
         }
+      case AppNotification.saatliBildirim:
+        // Push'la AYNI varış: portföydeyse varlık ekranı, değilse varlık
+        // sayfası (saatli bildirim herhangi bir varlığa kurulabilir).
+        final sembol = b.data['symbol']?.toString() ?? '';
+        if (sembol.isEmpty) break;
+        NotificationService.instance
+            .openSaatliVarlik(sembol, b.data['label']?.toString());
       case AppNotification.inflationDay:
         // TÜFE günü → Özet: reel getiri kartı orada.
         pushGuarded(

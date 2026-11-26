@@ -56,7 +56,11 @@ enum PaywallKarti {
   akis,
   hacim,
   not,
-  ekstre
+  ekstre,
+  // Saatli fiyat bildirimi (0188). Yalnız o kilitten açılan destede
+  // (`desteSirasi`): özellik sunucuda tablo yokken gizlidir, deste bunu
+  // bilmez; dokunulan kilit "özellik canlı" demektir.
+  saatli
 }
 
 /// Saf: paywall'u açan kaynağın kartı. Bilinmeyen kaynak (profil bandı,
@@ -157,6 +161,7 @@ PaywallKarti? kaynaktanKart(String source) {
     'analiz_notu' => PaywallKarti.not,
     // Ekran görüntüsünden maliyet de ekstre içe aktarmanın parçası.
     'ekstre_ai' || 'ekran_goruntusu' => PaywallKarti.ekstre,
+    'saatli_bildirim' => PaywallKarti.saatli,
     _ => null,
   };
 }
@@ -230,6 +235,7 @@ List<PaywallKarti> desteSirasi(
             PaywallKarti.not =>
               radar,
             PaywallKarti.ekstre => ekstreAi,
+            PaywallKarti.saatli => false,
             PaywallKarti.portfoy => portfoy,
             PaywallKarti.zirve => zirve,
             _ => true,
@@ -519,14 +525,34 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           l.prmNotUcretsiz,
           l.prmNotPremium,
         ),
+      // Ekran görüntüsünden maliyetle gelen kişi aynı kartta kendi
+      // dokunduğu işi okur (Ar-Ge 26 Kas 1203 #3): görüntü cihazda okunur,
+      // yapay zekâ değil; "yapay zekâ eşlesin" başlığı tıklananı
+      // anlatmıyordu. Yeni kart türü yok, yalnız iki satır kaynağa göre.
       PaywallKarti.ekstre => (
           _KartRengi.yesil,
           l.pwdEkstreEtiket,
-          l.pwdEkstreBaslik,
+          widget.source == 'ekran_goruntusu'
+              ? l.pwdEkstreGorselBaslik
+              : l.pwdEkstreBaslik,
           null,
           _EkstreGorseli(renk: _KartRengi.yesil),
           null,
-          l.pwdEkstrePremium,
+          widget.source == 'ekran_goruntusu'
+              ? l.pwdEkstreGorselPremium
+              : l.pwdEkstrePremium,
+        ),
+      // Ücretsiz satırı ücretsizde kalan zamanlı fiyat yüzeyi (sabah/akşam
+      // özeti); Premium satırı sunucu sınırının kendisi (0188).
+      PaywallKarti.saatli => (
+          _KartRengi.koyu,
+          l.pwdSaatliEtiket,
+          l.pwdSaatliBaslik,
+          null,
+          _SaatGorseli(renk: _KartRengi.koyu),
+          l.pwdSaatliUcretsiz,
+          l.pwdSaatliPremium(
+              SaatliBildirim.enFazlaVarlik, SaatliBildirim.enFazlaSaat),
         ),
     };
     return DesteKarti(
