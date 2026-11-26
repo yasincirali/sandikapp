@@ -36,6 +36,12 @@ HUNI = {"orGroup": {"expressions": [
     {"filter": {"fieldName": "eventName",
                 "stringFilter": {"matchType": "BEGINS_WITH", "value": on}}}
     for on in ("kayit_", "sifre_sifirlama_", "sign_up", "demo_", "login")]}}
+# Premium hunisi (2026-11-26): RevenueCat'te 0 deneme/0 abone çıktı; kapı gösterimi
+# → satın alma başlatma → tamamlama olay adıyla okunur (boyut tanımı gerekmez).
+# Başlatma 0 ise teklif/ekran sorunu, doluysa ve tamamlama 0 ise akış sorunu.
+PREMIUM_HUNI = {"orGroup": {"expressions": [
+    {"filter": {"fieldName": "eventName",
+                "stringFilter": {"matchType": "BEGINS_WITH", "value": "premium_"}}}]}}
 # Türkçe ad ve Premium işareti (yasin 2026-11-21, "burada açık
 # bırakmamalıyız, hangi featureların kullanıldığını net şekilde görmeliyiz").
 # Özellikler `Ozellik` enum'undan OKUNUR (tek kaynak, rapor kayamaz). Ekran
@@ -137,6 +143,8 @@ KIRILIMLAR = (
      "ozellik_kullanildi", "olay", "ozellik"),
     ("Widget dokunuşu (widget_tapped)", "customEvent:surface",
      "widget_tapped", "olay", YUZEYLER),
+    ("Premium hunisi (premium_gate_shown → premium_upgrade_started → "
+     "premium_upgrade_completed)", "eventName", PREMIUM_HUNI, "olay", None),
     ("Kayıt hunisi (girişten önce: girişli payı burada anlamsız)", "eventName",
      HUNI, "olay", None),
 )
