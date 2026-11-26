@@ -201,7 +201,6 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       expect(find.text(l.emailInvalid), findsWidgets);
-      expect(find.text(l.registerUsernameMissing), findsWidgets);
       // Şifre boş olsa da kurallar görünür (neyin gerektiği söylenir).
       expect(find.text(l.sifreKuralUzunluk), findsOneWidget);
       // Yasal adımlar (2026-10-05): eksik okuma adımları adıyla, adım

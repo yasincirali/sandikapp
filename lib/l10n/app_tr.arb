@@ -3296,7 +3296,6 @@
   "kullaniciAdiDevam": "Devam et",
   "kullaniciAdiSecilmedi": "Henüz seçilmedi",
   "kullaniciAdiCikis": "Çıkış yap",
-  "registerUsernameMissing": "Kullanıcı adı gir.",
   "deletedFilter": "Silinenler",
   "deletedEmptyTitle": "Silinmiş kayıt yok",
   "deletedEmptyBody": "Bir varlığı sildiğinde alım, satım ve silinme tarihleri burada durur; portföy toplamına girmez.",

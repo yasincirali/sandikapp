@@ -3114,7 +3114,6 @@
   "kullaniciAdiDevam": "Continue",
   "kullaniciAdiSecilmedi": "Not chosen yet",
   "kullaniciAdiCikis": "Sign out",
-  "registerUsernameMissing": "Enter a username.",
   "deletedFilter": "Deleted",
   "deletedEmptyTitle": "No deleted records",
   "deletedEmptyBody": "When you delete an asset, its buys, sells and deletion date stay here; they don't count toward your portfolio.",

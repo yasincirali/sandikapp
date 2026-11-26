@@ -16,13 +16,10 @@ import 'package:flutter/material.dart'
         Scaffold,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/kullanici_adi.dart';
 import '../providers/auth_provider.dart';
 import '../services/sunucu_secimi.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
-import '../services/kullanici_adi_denetimi.dart';
-import '../services/supabase_service.dart';
 import '../services/yasal_adim_plani.dart';
 import '../services/yasal_metin_katalogu.dart';
 import '../services/yasal_onay_service.dart';
@@ -32,7 +29,6 @@ import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'otp_verification_screen.dart';
 import '../utils/eposta_onerisi.dart';
-import '../widgets/custom_loading_indicator.dart';
 import '../widgets/eposta_oneri_satiri.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/social_sign_in_buttons.dart';
@@ -59,12 +55,10 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
 
-  /// Kullanıcı adı benzersizliği FORMDA denetlenir (kullanıcı kararı
-  /// 2026-09-28): adını burada veren kullanıcıya giriş kapısı bir daha
-  /// sorulmaz. Oturum henüz yok; anonim RPC (0080) kullanılır.
-  late final KullaniciAdiDenetimi _adDenetimi;
+  /// Kullanıcı adı kayıtta SORULMAZ (yasin 2026-11-26, GA4 huni: formda
+  /// kayıp): OTP sonrası zorunlu `KullaniciAdiScreen` kapısı sorar (Apple/
+  /// Google yolundaki aynı ekran).
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   // Kod ekranındaki "E-postayı değiştir" geri dönünce imleç buraya gelir.
@@ -155,7 +149,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
 
   bool get _canSubmit =>
-      _adDenetimi.kaydedilebilir &&
       _ePostaHatasi() == null &&
       AuthService.validatePassword(_passCtrl.text) == null &&
       _plan.hepsiTamam(
@@ -165,14 +158,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// null → form is valid.
   /// `kod`: ölçüdeki ad (`kayit_eksik_<kod>`), `metin`: kullanıcıya.
   ({String kod, String metin})? _firstMissingRequirement() {
-    if (_nameCtrl.text.trim().isEmpty) {
-      return (kod: 'ad', metin: context.l10n.registerUsernameMissing);
-    }
-    if (KullaniciAdi.bicimDenetle(_nameCtrl.text) != null) {
-      return (kod: 'ad', metin: context.l10n.kullaniciAdiHataBicim);
-    }
-    final adRet = _adRetMetni();
-    if (adRet != null) return (kod: 'ad_ret', metin: adRet);
     if (!_isValidEmail(_emailCtrl.text)) {
       return (kod: 'eposta', metin: context.l10n.registerEmailInvalid);
     }
@@ -192,23 +177,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
     if (!_kutuIsaretli) return (kod: 'kutu', metin: context.l10n.tekOnayGerekli);
     return null;
-  }
-
-  /// Sunucu bu adı reddettiyse kullanıcı dilinde nedeni; yoksa null.
-  /// Biçim ayrı ele alınır (anında, ağ yok).
-  String? _adRetMetni() {
-    final d = _adDenetimi.durum;
-    if (d == null ||
-        d == KullaniciAdiSonuc.uygun ||
-        d == KullaniciAdiSonuc.bicim) {
-      return null;
-    }
-    return switch (d) {
-      KullaniciAdiSonuc.uygunsuz => context.l10n.kullaniciAdiHataUygunsuz,
-      KullaniciAdiSonuc.ayrilmis => context.l10n.kullaniciAdiHataAyrilmis,
-      KullaniciAdiSonuc.alinmis => context.l10n.kullaniciAdiHataAlinmis,
-      _ => context.l10n.kullaniciAdiHataBilinmiyor,
-    };
   }
 
   // Kural serviste (sunucunun reddedeceği biçim); ekran yalnızca sorar.
@@ -292,11 +260,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.initState();
     // Kayıt hunisinin ilk adımı (F11). Yalnızca olay; form davranışı aynı.
     AnalyticsService.instance.logSignupStep('form_opened');
-    _adDenetimi = KullaniciAdiDenetimi(
-      sor: SupabaseService.instance.kullaniciAdiKayittaUygunMu,
-    )..addListener(_rebuild);
-    _nameCtrl.addListener(() => _adDenetimi.metinDegisti(_nameCtrl.text));
-    _nameCtrl.addListener(_rebuild);
     _emailCtrl.addListener(_rebuild);
     _emailFocus.addListener(_ePostaOdakDegisti);
     _passCtrl.addListener(_rebuild);
@@ -307,7 +270,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   void _rebuild() {
     if (!_basladiBildirildi &&
-        (_nameCtrl.text.isNotEmpty || _emailCtrl.text.isNotEmpty)) {
+        _emailCtrl.text.isNotEmpty) {
       _basladiBildirildi = true;
       unawaited(AnalyticsService.instance.logKayitAdimi('basladi'));
     }
@@ -317,8 +280,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
-    _adDenetimi.dispose();
-    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _emailFocus.dispose();
     _passCtrl.dispose();
@@ -392,13 +353,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (testIstegi != null) {
         await testIstegi(
           email: emailForOtp,
-          displayName: _nameCtrl.text,
+          displayName: '',
           password: _passCtrl.text,
         );
       } else {
         await AuthService.instance.register(
           email: emailForOtp,
-          displayName: _nameCtrl.text,
+          displayName: '',
           password: _passCtrl.text,
         );
       }
@@ -549,58 +510,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               // kullanıcı adı adımı yok, yasal onay kapısı girişten sonra
               // AuthGate'te sorulur.
               const SocialSignInButtons(ustte: true),
-
-              // Kullanıcı adı (0079, 2026-09-28) — eskiden "Ad Soyad"dı.
-              // Görünen ad artık kullanıcı adıdır (ortak da bunu görür);
-              // iki ayrı alan sormak yerine kayıtta doğrudan o istenir.
-              // Biçim anında; uygunluk/benzersizlik yazarken anonim RPC ile
-              // (0080, 2026-09-28) — eskiden OTP sonrasına kalıyor, alınmış
-              // ad giriş kapısında ikinci kez soruluyordu. OTP sonrası
-              // kayıt yine sunucuya sorar (yarış: iki kişi aynı anda aynı
-              // ad); o nadir durumda kapı yedek olarak kalır.
-              TextFormField(
-                controller: _nameCtrl,
-                textCapitalization: TextCapitalization.none,
-                autocorrect: false,
-                maxLength: KullaniciAdi.enUzun,
-                // Klavyede "Return" yerine "İleri" çıkar; 4 alanlı formda
-                // her alandan sonra klavyeyi kapatıp elle dokunma zorunluluğu
-                // ciddi sürtünmeydi.
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.newUsername],
-                style: context.t.bodyLarge?.copyWith(color: context.c.text90),
-                decoration: context.inputDecoration('',
-                    labelText: context.l10n.kullaniciAdiEtiket,
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Icon(Icons.alternate_email_rounded,
-                          color: context.c.text36, size: 20),
-                    ),
-                    suffixIcon: _adDenetimi.soruluyor
-                        ? const Padding(
-                            padding: EdgeInsets.all(SandikSpace.md2),
-                            child: CustomLoadingIndicator(size: 16),
-                          )
-                        : null).copyWith(
-                  // Sunucu onayladıysa kural yerine yeşil onay; reddettiyse
-                  // hata satırı — kullanıcı "Kaydol"a basmadan görür.
-                  helperText: _adDenetimi.durum == KullaniciAdiSonuc.uygun
-                      ? context.l10n.kullaniciAdiUygun
-                      : context.l10n.kullaniciAdiKurallar,
-                  helperStyle: _adDenetimi.durum == KullaniciAdiSonuc.uygun
-                      ? context.t.bodySmall?.copyWith(color: context.c.gain)
-                      : null,
-                  helperMaxLines: 2,
-                  errorText: _adRetMetni(),
-                  counterText: '',
-                ),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? context.l10n.registerUsernameMissing
-                    : (KullaniciAdi.bicimDenetle(v) != null
-                        ? context.l10n.kullaniciAdiHataBicim
-                        : _adRetMetni()),
-              ),
-              const SizedBox(height: 14),
 
               // E-posta
               TextFormField(

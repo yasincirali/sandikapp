@@ -37,9 +37,6 @@ void main() {
       final s = oku('lib/screens/register_screen.dart');
       // `password` DEĞİL `newPassword`: güçlü şifre önerisini bu tetikler.
       expect(s.contains('AutofillHints.newPassword'), isTrue);
-      // Ad alanı 2026-09-28'den beri KULLANICI ADI (0079): `name` değil
-      // `newUsername` — sistem kişi kartındaki "Ad Soyad"ı önermesin.
-      expect(s.contains('AutofillHints.newUsername'), isTrue);
       expect(s.contains('AutofillHints.email'), isTrue);
     });
 
@@ -72,11 +69,11 @@ void main() {
       }
     });
 
-    test('register 3 alanlı formda textInputAction zinciri var', () {
+    test('register 2 alanlı formda textInputAction zinciri var', () {
       final s = oku('lib/screens/register_screen.dart');
       // Klavyede "İleri" olmadan kullanıcı her alandan sonra klavyeyi
       // kapatıp elle dokunmak zorunda kalıyordu.
-      expect('TextInputAction.next'.allMatches(s).length, greaterThanOrEqualTo(2),
+      expect('TextInputAction.next'.allMatches(s).length, greaterThanOrEqualTo(1),
           reason: 'Alanlar arası geçiş zinciri eksik');
       expect(s.contains('TextInputAction.done'), isTrue,
           reason: 'Son alan formu göndermiyor');
