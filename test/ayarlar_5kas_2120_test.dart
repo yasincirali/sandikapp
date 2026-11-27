@@ -26,12 +26,15 @@ void main() {
 
   group('Gizlilik perdesi', () {
     Future<void> kur(WidgetTester tester,
-        {required bool kilit, required bool ios}) async {
+        {required bool kilit,
+        required bool ios,
+        bool kilitEkrani = false}) async {
       await tester.pumpWidget(ProviderScope(
         child: MaterialApp(
           theme: tema(),
           home: GizlilikPerdesi(
             iosMu: ios,
+            kilitEkrani: ValueNotifier(kilitEkrani),
             child: const Scaffold(body: Text('₺ 1.250.000')),
           ),
         ),
@@ -54,6 +57,16 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       expect(perde, findsNothing);
+    });
+
+    testWidgets(
+        'kilit ekranı açıkken örtmez: Face ID istemi açılış animasyonunu '
+        'küçük logoyla bölmesin', (tester) async {
+      await kur(tester, kilit: true, ios: true, kilitEkrani: true);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      expect(perde, findsNothing);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     });
 
     testWidgets('kilit kapalıyken hiç örtmez', (tester) async {

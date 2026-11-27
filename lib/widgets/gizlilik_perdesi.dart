@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/preferences_provider.dart';
+import '../services/notification_service.dart';
 import '../theme/sandik.dart';
 
 /// Uygulama değiştiricide portföy tutarlarını örten perde (Ar-Ge 5 Kas 21:20
@@ -22,6 +23,14 @@ import '../theme/sandik.dart';
 /// - Animasyon yok: perde ilk karede tam görünmeli, hareketi azalt da aynı.
 /// - Bildirim merkezi, Face ID istemi gibi kısa `inactive` anlarında da
 ///   görünür; banka uygulamalarındaki davranış budur, öne dönünce hemen kalkar.
+/// - Kilit ekranı açıkken perde YOK (yasin 2026-11-27: "açılışta splash az
+///   durup sonra küçük logo gözüküyor"). Soğuk açılışta Face ID istemi
+///   `inactive` getiriyor; perde 72'lik statik logoyu kilit ekranının 112'lik
+///   animasyonlu açılış işaretinin üstüne çiziyordu, animasyon donmuş ve logo
+///   küçülmüş görünüyordu. Kilit ekranı tutar göstermez, örtecek bir şey yok.
+///   Değer build'de okunur, dinlenmez: kilit bayrağı alt ağacın build'i
+///   içinde yazılıyor, burada setState o anda hata verirdi; perde zaten
+///   yalnız yaşam döngüsü değişince yeniden çizilir.
 class GizlilikPerdesi extends ConsumerStatefulWidget {
   final Widget child;
 
@@ -29,7 +38,13 @@ class GizlilikPerdesi extends ConsumerStatefulWidget {
   @visibleForTesting
   final bool? iosMu;
 
-  const GizlilikPerdesi({super.key, required this.child, this.iosMu});
+  /// Test için kilit ekranı durumu; null ise [NotificationService]'in
+  /// kilit kapısı.
+  @visibleForTesting
+  final ValueListenable<bool>? kilitEkrani;
+
+  const GizlilikPerdesi(
+      {super.key, required this.child, this.iosMu, this.kilitEkrani});
 
   @override
   ConsumerState<GizlilikPerdesi> createState() => _GizlilikPerdesiState();
@@ -62,7 +77,13 @@ class _GizlilikPerdesiState extends ConsumerState<GizlilikPerdesi>
 
   @override
   Widget build(BuildContext context) {
-    final perde = _ios && _arkada && ref.watch(biometricLockProvider);
+    final kilitEkrani = (widget.kilitEkrani ??
+            NotificationService.instance.kilitKapisi.kilitli)
+        .value;
+    final perde = _ios &&
+        _arkada &&
+        !kilitEkrani &&
+        ref.watch(biometricLockProvider);
     return Stack(
       textDirection: TextDirection.ltr,
       fit: StackFit.expand,
