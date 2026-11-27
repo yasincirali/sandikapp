@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show OAuthProvider;
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthException, OAuthProvider;
 
 import '../config/supabase_config.dart';
 
@@ -124,11 +124,13 @@ class SocialAuthService {
       if (e.code == GoogleSignInExceptionCode.canceled) {
         throw const SocialSignInCancelled();
       }
-      rethrow;
+      // 27 Kas 2026: ham istisna friendlyError'da "Bir şeyler ters gitti"ye
+      // düşüyordu; kurulum hatasının nedeni (kod) görünsün.
+      throw AuthException('Google ile giriş yapılamadı (${e.code.name}).');
     }
     final token = account.authentication.idToken;
     if (token == null || token.isEmpty) {
-      throw StateError('Google kimlik token\'ı boş döndü.');
+      throw const AuthException('Google ile giriş yapılamadı (boş kimlik).');
     }
     return SocialCredential(
       provider: SocialProvider.google,
