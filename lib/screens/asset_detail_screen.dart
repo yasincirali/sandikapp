@@ -1472,18 +1472,27 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         ? null
                         : _ohlcBarlari(ohlcAr, isIntraday, startDate,
                             endDate, currentUnitTRY);
-                    final cubuklar = ohlcAr != null && ohlcBarlar != null
-                        ? (aralik: ohlcAr, barlar: ohlcBarlar)
-                        : null;
+                    // Gerçek mum pencereyi örtmüyorsa (altın: COMEX tatilde
+                    // birkaç saatlik) çizgiden türetilen mum çizilir,
+                    // `gunIciMumEksikMi`.
+                    final mumEksik = ohlcAr != null &&
+                        ohlcBarlar != null &&
+                        isIntraday &&
+                        gunIciMumEksikMi(
+                            _canli.asset,
+                            ohlcAr,
+                            endDate.difference(startDate).inMinutes.toDouble(),
+                            ohlcBarlar,
+                            startDate.millisecondsSinceEpoch);
+                    final cubuklar =
+                        ohlcAr != null && ohlcBarlar != null && !mumEksik
+                            ? (aralik: ohlcAr, barlar: ohlcBarlar)
+                            : null;
                     // Çubuklar YOLDAYKEN ortalama çizilmez, gelince bir kez
                     // belirir (yoldayken çizgiden çizip sonra çubuğa atlamak
                     // "grafik yeniden çiziliyor" diye okunuyordu).
                     final cubukYolda =
                         cubuklar == null && ohlcAr != null && _ohlcYolda;
-                    final ohlcMumlar = (!mumOn || cubuklar == null)
-                        ? const <Mum>[]
-                        : _ohlcMumlari(
-                            cubuklar.barlar, cubuklar.aralik, startDate);
 
                     // MA20 overlay. Katmanları gören hesapta çubuklardan
                     // (yukarıda); görmeyen hesapta BİREBİR eskisi: aktif
@@ -1524,6 +1533,22 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 currentUnitTRY) ??
                             hamAktif
                         : hamAktif;
+                    // Eksik gerçek mumda da çipteki sıklık korunur: çizgiden
+                    // türetilen mum SEÇİLİ aralığın kovasında (çip "4 sa"
+                    // derken grafik başka kovada çizilmesin).
+                    final ohlcMumlar = !mumOn
+                        ? const <Mum>[]
+                        : cubuklar != null
+                            ? _ohlcMumlari(
+                                cubuklar.barlar, cubuklar.aralik, startDate)
+                            : mumEksik
+                                ? mumlariGrafikUzayinda(mumHam,
+                                    baslangicMs: startDate
+                                        .millisecondsSinceEpoch
+                                        .toDouble(),
+                                    birimMs: 24 * 60 * 60 * 1000.0,
+                                    kovaMs: ohlcAr.dakika * 60 * 1000.0)
+                                : const <Mum>[];
                     final emaCizgileri = !(ema50On || ema200On) || cubukYolda
                         ? const <({List<FlSpot> spots, Color renk})>[]
                         : cubuklar != null
@@ -1775,7 +1800,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             gecerliAraliklar:
                                 mumAr?.gecerli ?? const <MumAraligi>[],
                             pencereDakika: mumAr?.span,
-                            kapanistan:
+                            kapanistan: mumEksik ||
                                 !FiyatKaynagi.mumKaynagi(_canli.asset)
                                     .gercekOhlc,
                           ),
