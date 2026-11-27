@@ -420,4 +420,32 @@ void main() {
       expect(MumVerisi.kriptoDonemi(const Duration(days: 4000)), 'max');
     });
   });
+
+  group('gün içi mum eksik mi (altın × 4 sa, 27 Kas 2026)', () {
+    final altin = varlik(type: AssetType.altin, ticker: 'gram-altin');
+    const basMs = 0;
+    List<OhlcBar> barlar(int n, {int adim = 240}) =>
+        [for (var i = 0; i < n; i++) bar(i * adim * dk, 1, 1, 1, 1)];
+
+    test('20:25\'te tek 4 sa bar eksik sayılır (çizgiden türetilir)', () {
+      expect(
+          gunIciMumEksikMi(altin, MumAraligi.saat4, 1225, barlar(1), basMs),
+          isTrue);
+    });
+    test('tam gün bar eksik değil', () {
+      expect(
+          gunIciMumEksikMi(altin, MumAraligi.saat4, 1225, barlar(5), basMs),
+          isFalse);
+    });
+    test('sabah erken az bar eksik değil, bar hiç yoksa eski yol', () {
+      expect(gunIciMumEksikMi(altin, MumAraligi.saat4, 180, barlar(1), basMs),
+          isFalse);
+      expect(gunIciMumEksikMi(altin, MumAraligi.saat4, 1225, const [], basMs),
+          isFalse);
+    });
+    test('gün içi olmayan aralıkta hiç devreye girmez', () {
+      expect(gunIciMumEksikMi(altin, MumAraligi.gun1, 1225, barlar(1), basMs),
+          isFalse);
+    });
+  });
 }

@@ -363,6 +363,24 @@ MumAraligi tradingViewVarsayilani(double spanDakika) {
 MumAraligi? etkinAralik(Asset a, double spanDakika, MumAraligi? secim) =>
     gecerliIcindenAralik(gecerliAraliklar(a, spanDakika), spanDakika, secim);
 
+/// Gerçek gün içi mumlar pencereyi yarıdan azı kadar kapsıyor mu?
+///
+/// Neden (yasin 27 Kas 2026, altın Günlük × 4 sa): XAUTRY=X Yahoo'da 404,
+/// altın mumu COMEX vadelisinden (GC=F) gelir; ABD tatili ve hafta sonunda
+/// bugünün birkaç saati dışında bar yoktu ve grafik TEK kalın mumla
+/// kalıyordu (çizgi serisi ise tam). Bar HİÇ yoksa eski yol zaten çizgiden
+/// türetiyor; burada "birkaç bar var ama pencereyi örtmüyor" durumu da aynı
+/// yola düşer. [gecenDakika] bas→şimdi; beklenen mum, geçen süreye göre
+/// (sabah saatinde az mum olması eksik sayılmaz). Yalnız gün içi aralık.
+bool gunIciMumEksikMi(Asset a, MumAraligi aralik, double gecenDakika,
+    List<OhlcBar> barlar, int basMs) {
+  if (!aralik.gunIci) return false;
+  final n = barlar.where((b) => b.t >= basMs).length;
+  if (n == 0) return false;
+  final beklenen = beklenenMumSayisi(a, aralik, gecenDakika);
+  return beklenen >= asgariMum && n < beklenen * 0.5;
+}
+
 /// Kapanış noktalarından TÜRETİLEN mumda sunulabilecek sıklıklar (Performans
 /// grafiği: portföy değerinin sağlayıcıdan OHLC'si yok).
 ///

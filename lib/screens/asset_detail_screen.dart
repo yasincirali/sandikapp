@@ -1472,9 +1472,22 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         ? null
                         : _ohlcBarlari(ohlcAr, isIntraday, startDate,
                             endDate, currentUnitTRY);
-                    final cubuklar = ohlcAr != null && ohlcBarlar != null
-                        ? (aralik: ohlcAr, barlar: ohlcBarlar)
-                        : null;
+                    // Gerçek mum pencereyi örtmüyorsa (altın: COMEX tatilde
+                    // birkaç saatlik) çizgiden türetilen mum çizilir,
+                    // `gunIciMumEksikMi`.
+                    final mumEksik = ohlcAr != null &&
+                        ohlcBarlar != null &&
+                        isIntraday &&
+                        gunIciMumEksikMi(
+                            _canli.asset,
+                            ohlcAr,
+                            endDate.difference(startDate).inMinutes.toDouble(),
+                            ohlcBarlar,
+                            startDate.millisecondsSinceEpoch);
+                    final cubuklar =
+                        ohlcAr != null && ohlcBarlar != null && !mumEksik
+                            ? (aralik: ohlcAr, barlar: ohlcBarlar)
+                            : null;
                     // Çubuklar YOLDAYKEN ortalama çizilmez, gelince bir kez
                     // belirir (yoldayken çizgiden çizip sonra çubuğa atlamak
                     // "grafik yeniden çiziliyor" diye okunuyordu).
@@ -1775,7 +1788,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             gecerliAraliklar:
                                 mumAr?.gecerli ?? const <MumAraligi>[],
                             pencereDakika: mumAr?.span,
-                            kapanistan:
+                            kapanistan: mumEksik ||
                                 !FiyatKaynagi.mumKaynagi(_canli.asset)
                                     .gercekOhlc,
                           ),
