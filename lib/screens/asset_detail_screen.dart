@@ -1493,10 +1493,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // "grafik yeniden çiziliyor" diye okunuyordu).
                     final cubukYolda =
                         cubuklar == null && ohlcAr != null && _ohlcYolda;
-                    final ohlcMumlar = (!mumOn || cubuklar == null)
-                        ? const <Mum>[]
-                        : _ohlcMumlari(
-                            cubuklar.barlar, cubuklar.aralik, startDate);
 
                     // MA20 overlay. Katmanları gören hesapta çubuklardan
                     // (yukarıda); görmeyen hesapta BİREBİR eskisi: aktif
@@ -1537,6 +1533,22 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 currentUnitTRY) ??
                             hamAktif
                         : hamAktif;
+                    // Eksik gerçek mumda da çipteki sıklık korunur: çizgiden
+                    // türetilen mum SEÇİLİ aralığın kovasında (çip "4 sa"
+                    // derken grafik başka kovada çizilmesin).
+                    final ohlcMumlar = !mumOn
+                        ? const <Mum>[]
+                        : cubuklar != null
+                            ? _ohlcMumlari(
+                                cubuklar.barlar, cubuklar.aralik, startDate)
+                            : mumEksik
+                                ? mumlariGrafikUzayinda(mumHam,
+                                    baslangicMs: startDate
+                                        .millisecondsSinceEpoch
+                                        .toDouble(),
+                                    birimMs: 24 * 60 * 60 * 1000.0,
+                                    kovaMs: ohlcAr.dakika * 60 * 1000.0)
+                                : const <Mum>[];
                     final emaCizgileri = !(ema50On || ema200On) || cubukYolda
                         ? const <({List<FlSpot> spots, Color renk})>[]
                         : cubuklar != null
