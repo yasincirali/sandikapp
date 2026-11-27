@@ -6,9 +6,10 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show AuthException, OAuthProvider;
+import 'package:supabase_flutter/supabase_flutter.dart' show OAuthProvider;
 
 import '../config/supabase_config.dart';
+import '../utils/friendly_error.dart' show KullaniciMesajli;
 
 /// Desteklenen sosyal sağlayıcılar.
 enum SocialProvider { apple, google }
@@ -39,6 +40,15 @@ class SocialCredential {
         SocialProvider.apple => OAuthProvider.apple,
         SocialProvider.google => OAuthProvider.google,
       };
+}
+
+/// Sağlayıcı adımı düştü; metin kullanıcıya olduğu gibi gösterilir.
+/// Supabase'in `AuthException`'ı `friendlyError`'da genel metne düşer
+/// (27 Kas 2026: #430'daki ilk sürüm bu yüzden kodu göstermedi).
+class SocialSignInFailed implements KullaniciMesajli {
+  const SocialSignInFailed(this.message);
+  @override
+  final String message;
 }
 
 /// Kullanıcı sağlayıcı ekranında vazgeçti — hata değil, sessiz dönüş.
@@ -126,11 +136,11 @@ class SocialAuthService {
       }
       // 27 Kas 2026: ham istisna friendlyError'da "Bir şeyler ters gitti"ye
       // düşüyordu; kurulum hatasının nedeni (kod) görünsün.
-      throw AuthException('Google ile giriş yapılamadı (${e.code.name}).');
+      throw SocialSignInFailed('Google ile giriş yapılamadı (${e.code.name}).');
     }
     final token = account.authentication.idToken;
     if (token == null || token.isEmpty) {
-      throw const AuthException('Google ile giriş yapılamadı (boş kimlik).');
+      throw const SocialSignInFailed('Google ile giriş yapılamadı (boş kimlik).');
     }
     return SocialCredential(
       provider: SocialProvider.google,
