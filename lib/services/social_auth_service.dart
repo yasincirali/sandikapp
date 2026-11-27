@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show OAuthProvider;
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthException, OAuthProvider;
 
 import '../config/supabase_config.dart';
 import '../utils/friendly_error.dart' show KullaniciMesajli;
