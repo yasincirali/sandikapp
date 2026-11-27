@@ -10,7 +10,7 @@ Android/iOS ana ekran widget'ları.
 Yerel veritabanı **yoktur** (sqflite/Provider paketi eski prototipten kalmaydı, kaldırıldı).
 Kalıcılık: Supabase (sunucu) + `shared_preferences` (tercihler, widget sözleşmesi).
 
-Durum: TestFlight'ta; Play yayını `PLAY_STORE_YAYIN_REHBERI.md`. Güncel değerlendirme ve
+Durum: App Store ve Google Play'de yayında (Play adımları `PLAY_STORE_YAYIN_REHBERI.md`). Güncel değerlendirme ve
 yol haritası: `docs/DEGERLENDIRME_VE_YOL_HARITASI_2026_09.md`; ilerleme
 `docs/YOL_HARITASI_ILERLEME.md`.
 
@@ -111,7 +111,7 @@ lib/theme/       sandik.dart — context.c (renk), context.t (tipografi), Sandik
                  adaptiveRoute, SandikCard, SandikSectionHeader
 lib/utils/       tr_format (fmtTRY/fmtPct/parseTrNumber), friendly_error, grafik yardımcıları
 lib/widgets/     zoomable_chart (+ZoomDataController), percent_comparison_chart, sparkline, şeritler
-test/            155+ dosya; parite/değişmez testleri (chart_interaction_parity, design_token_leak,
+test/            parite/değişmez testleri (chart_interaction_parity, design_token_leak,
                  spacing_scale, touch_target_size, reduce_motion_coverage…) kasıtlı ratchet'lerdir.
                  Kaynak tarayan test ekran dosyasını `helpers/kaynak.dart` (`ekranKaynagiSync`)
                  ile okur — part'lar dahil; ham `File(...).readAsStringSync()` kullanma.
@@ -158,7 +158,7 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
   seçilir (RC özel sinyali `hesap` = kullanıcı UUID'si, Console koşulu
   "Test kitlesi"). İnceleme demo hesabı o listeye girmez, mağaza değerlerini
   alır. Kilit `magaza_inceleme_esitligi_test`.
-- **Canlı veriye dokunulmaz.** Tokyo/Frankfurt projelerinde SQL Editor'dan veri
+- **Canlı veriye dokunulmaz.** Frankfurt projesinde SQL Editor'dan veri
   değiştirme, toplu silme, canlı secret rotasyonu yok (bkz. "Asla kendiliğinden
   yapma"). Deneme yerel Supabase yığınında (`supabase start` + `seed.sql`) ya da
   testte yapılır.
@@ -231,10 +231,8 @@ yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dö
 
 **Tek sunucu: Frankfurt (yasin 2026-11-06, "Tokyo'yu kapatalım").** Canlı proje
 Frankfurt (`ynwymnpdiwudrlxfrmuo`); migration ve fonksiyon yalnız oraya gider
-(`supabase-deploy.yml` hedef `frankfurt`). Tokyo (`ybdbzouzhzwthjgwlbmk`) 18 Ekim
-geçişinden sonra donduruldu, 2026-11-13'te **silindi**; yeni işte Tokyo'yu hesaba katma. 2026-09-28'deki "iki sunucu birebir" kuralı (hedef `ikisi`, günlük
-`sema-esitlik.yml`, `tool/sema_esitlik.py` kapısı; ikisi de silindi) bununla bitti; eski dokümanlarda
-"iki sunucu" geçen dağıtım adımları artık "Frankfurt" demektir. Panelden/SQL
+(`supabase-deploy.yml` hedef `frankfurt`). Tokyo projesi silindi; arşiv dokümanlarda
+"iki sunucu" geçen dağıtım adımları Frankfurt demektir. Panelden/SQL
 Editor'dan şema değiştirme kuralı sürer — gerekiyorsa migration'a yaz.
 Frankfurt Free planda otomatik yedek yok: yerel yedek `tool/yedek/frankfurt_yedek.py`
 (salt okuma; geri yükleme yalnız boş projeye). Uygulamadaki iki sunucu seçimi
@@ -245,7 +243,7 @@ Frankfurt Free planda otomatik yedek yok: yerel yedek `tool/yedek/frankfurt_yede
 belgeleri her zaman aynı metindir: kaynak `legal/tr/*.md` (çevirisi `legal/en/*.md`);
 uygulamaya ya da `docs/` HTML'ine elle metin yazılmaz. Değişince: md + "Sürüm" artır →
 `python docs/_build_legal.py` (HTML + `lib/config/yasal_belge_kaynaklari.g.dart`) →
-INSERT üreteci → yeni migration (iki sunucu). `yasal_web_esleme_test` kırılırsa adımları söyler.
+INSERT üreteci → yeni migration (Frankfurt). `yasal_web_esleme_test` kırılırsa adımları söyler.
 Metin uygulamanın gerçek davranışını yazar; avukata sorulmaz. Yeni kişisel veri, **kişisel
 veri alan** üçüncü taraf, yeni amaç ya da saklama ekleyen her değişiklik aynı değişiklikte
 ilgili md'yi günceller; "Sürüm" **ve** "Onay sürümü" artar, migration yazılır, yeniden onay
@@ -358,8 +356,9 @@ başka bilgisayar) **geçerli değildir** ve buradaki yollar bulunamazsa bu bir 
   ```
 
 ### MCP sunucuları (`.mcp.json`, proje kapsamlı)
-Bu makinede üç yerel sunucu + bir uzak sunucu (heygen) vardır; yereller başka ortamda
-bağlanamaz ve bu beklenen durumdur — kod keşfi `Grep`/`Glob`/`Read` ile yapılır.
+Bu makinede üç yerel sunucu + bir uzak sunucu (heygen) vardır; bu yollar yalnız bu makinede
+çalışır. Bulut oturumu aynı sunucuları kendi yollarıyla kurar (aşağıda "Bulut oturumu");
+sunucu bağlanmadıysa kod keşfi `Grep`/`Glob`/`Read` ile sürer.
 
 - **codebase-memory-mcp** (v0.9.0, `C:\Users\vasin\AppData\Local\Programs\codebase-memory-mcp\…exe`,
   graph adı `C-projects-PortfoyTakip`). Kod keşfinde önce graph (`search_graph`, `query_graph`,
@@ -408,6 +407,3 @@ Token araçları (2026-11-16, betik adım 5c): **rtk** (Bash çıktısını sık
 Çakışmada bu dosya kazanır: kaynak yorumu karar kaydıdır (ponytail "tek satır yorum" yerine), kullanıcıya giden
 Türkçe metin ve `ANLATIM_KURALLARI.md` caveman diliyle yazılmaz; kod, commit, PR ve TestFlight notu normal yazılır.
 
----
-**Son güncelleme:** 2026-10-10 (Apple HIG kontrolü kuralı; 2026-10-08: yasal metin: kişisel veri almayan kaynak sayılmaz, "Onay sürümü"; 2026-10-04: yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
-kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).
