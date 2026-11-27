@@ -119,6 +119,19 @@
 				<string>sandik</string>
 			</array>
 		</dict>
+		<!-- Google ile giriş dönüşü (2026-11-27): iOS istemcisinin TERS kimliği.
+		     Gizli değil (her iOS ikilisinin Info.plist'inde açık durur);
+		     TestFlight CI'da repodan üretildiği için elle eklenemez. -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.sandik.app.google</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.169548347337-gmvb590qouaou477b5i9nh839ua15mjr</string>
+			</array>
+		</dict>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

@@ -10,6 +10,17 @@ alır).
 > (`ynwymnpdiwudrlxfrmuo`) yapılır; Tokyo projesine (`ybdbzouzhzwthjgwlbmk`)
 > Google sağlayıcısı kurma — taşımada boşa gider.
 
+> **Durum 2026-11-27 (yasin: "google ile kaydolu da ekleyelim"):** uygulama iki
+> mağazada canlı; Frankfurt (`ynwymnpdiwudrlxfrmuo`) kullanılıyor, Tokyo yok.
+> Google Cloud: izin ekranı kuruldu (External), Web + iOS + üç Android istemcisi
+> (Play imzalama klasik, Play imzalama kuantum sonrası, yükleme anahtarı)
+> açıldı; Supabase Google sağlayıcısı Web + iOS kimliğiyle, Skip nonce AÇIK.
+> iOS ters kimliği `Info.plist`te (repoda, gizli değil). Kalan: iki GitHub
+> secret'ı (`GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID`) → ardından main'e
+> birleşme → yeni build'de düğme çıkar; bölüm 7'deki cihaz kontrolleri.
+> Izin ekranı bağlantıları şimdilik github.io; murphysoft.app/sandik sayfaları
+> hazır olunca "In production"dan önce oraya çevrilir.
+
 Bu belge bir sonraki oturumun sıfırdan keşif yapmaması için yazıldı. Her adım
 **[SEN]** (kullanıcının hesabını/tarayıcısını ister) veya **[CLAUDE]** (repo +
 CLI) diye işaretli. Sırayla git; bir adım bitmeden sonrakine geçme.
