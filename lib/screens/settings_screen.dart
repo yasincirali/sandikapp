@@ -49,6 +49,7 @@ import '../services/remote_config_service.dart';
 import '../widgets/sandik_segment.dart';
 import '../widgets/sandik_cam.dart';
 import '../services/supabase_service.dart';
+import '../services/yenileme_sikligi.dart';
 import '../services/home_widget_service.dart';
 import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
@@ -1555,31 +1556,125 @@ class _AnaEkranWidgetBolumu extends ConsumerWidget {
               style: context.t.bodySmall?.copyWith(color: context.c.text58),
             ),
           ),
+          const _WidgetYenilemeSecimi(),
         ],
       );
     }
     if (defaultTargetPlatform != TargetPlatform.android) {
       return const SizedBox.shrink();
     }
+    // Yerleştirme satırı yalnız launcher destekliyorsa; yenileme seçimi her
+    // Android'de (widget launcher'ın kendi listesinden de eklenebilir).
     final destek = ref.watch(widgetSabitlemeDestegiProvider).valueOrNull;
-    if (destek != true) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SubSectionTitle(l.anaEkranWidgetBaslik),
-        _SettingsTile(
-          icon: Icons.widgets_outlined,
-          title: l.anaEkranaWidgetEkle,
-          subtitle: l.widgetInstallBody,
-          onTap: null,
-          onTapAsync: () async {
-            final gitti =
-                await ref.read(widgetSabitleyiciProvider).sabitlemeIste();
-            if (gitti || !context.mounted) return;
-            await WidgetInstallSheet.goster(context);
-          },
-        ),
+        if (destek == true)
+          _SettingsTile(
+            icon: Icons.widgets_outlined,
+            title: l.anaEkranaWidgetEkle,
+            subtitle: l.widgetInstallBody,
+            onTap: null,
+            onTapAsync: () async {
+              final gitti =
+                  await ref.read(widgetSabitleyiciProvider).sabitlemeIste();
+              if (gitti || !context.mounted) return;
+              await WidgetInstallSheet.goster(context);
+            },
+          ),
+        const _WidgetYenilemeSecimi(),
       ],
+    );
+  }
+}
+
+/// Tek varlık widget'ının uygulama kapalıyken tazeleme sıklığı (yasin 27 Kas
+/// 2026). Seçim hemen paylaşımlı depoya yazılır ve widget yenilenir ki yeni
+/// zaman çizelgesi beklemeden kurulsun. Dipnot sistemin garanti etmediğini
+/// ve pili söyler (bkz. `yenileme_sikligi.dart`).
+///
+/// Ücretsiz: bir pil/sistem ayarı; mevcut davranışın üstüne yetenek
+/// eklemiyor, kilitlemek "widget'ım geç güncelleniyor" şikayeti doğururdu.
+class _WidgetYenilemeSecimi extends ConsumerWidget {
+  const _WidgetYenilemeSecimi();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final secili = yenilemeEtkin(
+        ref.watch(widgetYenilemeProvider), widgetYenilemeSecenekleri);
+    return _YenilemeSecici(
+      baslik: context.l10n.yenilemeBaslik,
+      secenekler: widgetYenilemeSecenekleri,
+      secili: secili,
+      dipnot: context.l10n.widgetYenilemeDipnot,
+      onSec: (dk) async {
+        await ref.read(widgetYenilemeProvider.notifier).set(dk);
+        await HomeWidgetService.instance.widgetYenilemesiniYaz(dk);
+      },
+    );
+  }
+}
+
+/// Yenileme sıklığı seçici: etiket + segment + dipnot. Widget ve Canlı
+/// Etkinlik aynı parçayı kullanır ki iki seçim aynı dille konuşsun.
+class _YenilemeSecici extends StatelessWidget {
+  const _YenilemeSecici({
+    required this.baslik,
+    required this.secenekler,
+    required this.secili,
+    required this.dipnot,
+    required this.onSec,
+  });
+
+  final String baslik;
+  final List<int> secenekler;
+  final int secili;
+  final String dipnot;
+  final ValueChanged<int> onSec;
+
+  static String etiket(BuildContext context, int dk) => switch (dk) {
+        1 => context.l10n.yenilemeHerDakika,
+        60 => context.l10n.yenilemeBirSaat,
+        _ => context.l10n.yenilemeDakika(dk),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                SandikSpace.xs, SandikSpace.xs, SandikSpace.xs, SandikSpace.sm),
+            child: Text(
+              baslik,
+              style: context.t.titleMedium?.copyWith(color: context.c.text90),
+            ),
+          ),
+          SandikSegment(
+            adet: secenekler.length,
+            secili: secenekler.indexOf(secili),
+            onSec: (i) => onSec(secenekler[i]),
+            semantik: (i) => context.l10n
+                .yenilemeSemantik(etiket(context, secenekler[i])),
+            oge: (ctx, i, _) => FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(etiket(ctx, secenekler[i])),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                SandikSpace.xs, SandikSpace.sm, SandikSpace.xs, 0),
+            child: Text(
+              dipnot,
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2287,6 +2382,34 @@ class _LiveActivitySection extends ConsumerWidget {
             LiveActivityService.instance.includeWeekend = v;
           },
         ),
+
+        // Uygulama kapalıyken push sıklığı (27 Kas 2026). "Ne zaman"
+        // ayarlarının sonunda: gösterimin ritmi, gizlilik değil.
+        Builder(builder: (context) {
+          final secenekler = canliEtkinlikYenilemeSecenekleri(
+              dakikalik: LiveActivityService.instance.dakikalikGuncelleme);
+          return _YenilemeSecici(
+            baslik: context.l10n.canliEtkinlikYenilemeBaslik,
+            secenekler: secenekler,
+            secili: yenilemeEtkin(
+                ref.watch(liveActivityYenilemeProvider), secenekler),
+            dipnot: context.l10n.canliEtkinlikYenilemeDipnot,
+            onSec: (dk) async {
+              await ref.read(liveActivityYenilemeProvider.notifier).set(dk);
+              // Hemen senkronla: tutar anahtarıyla aynı gerekçe — tercih
+              // bir sonraki fiyat tick'ini beklemeden satıra yazılsın.
+              final svc = LiveActivityService.instance;
+              svc.yenilemeDk = dk;
+              final snapshot = ref.read(portfolioProvider).valueOrNull;
+              if (snapshot != null) {
+                CrashReporter.arkaPlan(
+                    svc.sync(snapshot,
+                        hideBalance: ref.read(balanceHiddenProvider)),
+                    reason: 'settings_screen.yenileme.sync');
+              }
+            },
+          );
+        }),
 
         // ---- Gizlilik alt başlığı ----
         //

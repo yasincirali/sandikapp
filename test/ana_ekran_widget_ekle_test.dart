@@ -93,12 +93,16 @@ void main() {
     });
   });
 
-  testWidgets('Android, destek yok: satır ve alt başlık hiç yok',
+  // Destek yoksa çalışmayan düğme gösterilmez. Alt başlık artık kalır:
+  // altında yenileme sıklığı seçimi durur (27 Kas 2026), widget launcher'ın
+  // kendi listesinden de eklenebiliyor.
+  testWidgets('Android, destek yok: satır yok, yenileme seçimi var',
       (tester) async {
     await platformla(TargetPlatform.android, () async {
       await kur(tester, _SahteSabitleyici(destek: false));
       expect(find.text('Ana ekrana widget ekle'), findsNothing);
-      expect(find.text("Ana ekran widget'ı"), findsNothing);
+      expect(find.text("Ana ekran widget'ı"), findsOneWidget);
+      expect(find.text('Yenileme sıklığı'), findsOneWidget);
     });
   });
 

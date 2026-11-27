@@ -34,6 +34,7 @@ import {
 } from '../_shared/canli_etkinlik.ts';
 import { fetchLivePrices } from '../_shared/live_prices.ts';
 import { pushImzasi, pushOnceligi } from '../_shared/canli_etkinlik_oncelik.ts';
+import { yenilemeAtlanir } from '../_shared/canli_etkinlik_yenileme.ts';
 import { bistSeansAcikMi } from '../_shared/piyasa_takvimi.ts';
 
 // ── APNs kimlik bilgileri ───────────────────────────────────────────────
@@ -314,6 +315,11 @@ Deno.serve(async (request) => {
       skippedStale++;
       continue;
     }
+
+    // Kullanıcının seçtiği seyrek ritim (27 Kas 2026): seçtiği dakikanın
+    // katı değilse bu tur geçilir. Alan yoksa (eski istemci, en sık seçim)
+    // hiçbir şey değişmez.
+    if (yenilemeAtlanir(row, simdi)) continue;
 
     const showAmounts = s.show_amounts === true;
 

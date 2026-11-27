@@ -342,4 +342,25 @@ void main() {
       });
     });
   });
+
+  // Kullanıcı seçimli yenileme sıklığı (yasin 27 Kas 2026): seçim tercihe
+  // ve servise gider, pil dipnotu görünür.
+  group('uygulama kapalıyken yenileme', () {
+    testWidgets('varsayılan en sık seçenek, 15 dk seçilince servise gider',
+        (tester) async {
+      await runAsIOS(() async {
+        final c = await openSection(tester);
+        await scrollTo(tester, find.text('Uygulama kapalıyken yenileme'));
+        // Bayrak kapalı (test varsayılanı): "Her dakika" sunulmaz.
+        expect(find.text('Her dakika'), findsNothing);
+        expect(find.text('5 dk'), findsOneWidget);
+        expect(find.textContaining('pili daha çok tüketebilir'), findsOneWidget);
+
+        await tester.tap(find.text('15 dk'));
+        await tester.pumpAndSettle();
+        expect(c.read(liveActivityYenilemeProvider), 15);
+        expect(LiveActivityService.instance.yenilemeDk, 15);
+      });
+    });
+  });
 }
