@@ -19191,6 +19191,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{varlik} varlık, günde {saat} saat'**
   String pwdSaatliPremium(int varlik, int saat);
+
+  /// No description provided for @yenilemeBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yenileme sıklığı'**
+  String get yenilemeBaslik;
+
+  /// No description provided for @canliEtkinlikYenilemeBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama kapalıyken yenileme'**
+  String get canliEtkinlikYenilemeBaslik;
+
+  /// No description provided for @yenilemeHerDakika.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her dakika'**
+  String get yenilemeHerDakika;
+
+  /// No description provided for @yenilemeDakika.
+  ///
+  /// In tr, this message translates to:
+  /// **'{dk} dk'**
+  String yenilemeDakika(int dk);
+
+  /// No description provided for @yenilemeBirSaat.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 saat'**
+  String get yenilemeBirSaat;
+
+  /// No description provided for @yenilemeSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yenileme sıklığı: {secenek}'**
+  String yenilemeSemantik(String secenek);
+
+  /// No description provided for @widgetYenilemeDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama kapalıyken altın, döviz ve kripto widget\'ı fiyatını bu sıklıkla tazeler. Portföy widget\'ı uygulamayı açtığında güncellenir. Sık yenileme pili daha çok tüketebilir. Telefon, pil durumuna göre yenilemeyi geciktirebilir.'**
+  String get widgetYenilemeDipnot;
+
+  /// No description provided for @canliEtkinlikYenilemeDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama açıkken rakamlar anında güncellenir. Sık yenileme pili daha çok tüketebilir. iOS, pil ve bağlantı durumuna göre güncellemeyi geciktirebilir.'**
+  String get canliEtkinlikYenilemeDipnot;
 }
 
 class _AppLocalizationsDelegate

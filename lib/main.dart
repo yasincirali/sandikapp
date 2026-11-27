@@ -86,6 +86,7 @@ import 'services/sistem_eylemleri.dart';
 import 'services/history_service.dart';
 import 'services/portfoy_seri_depo.dart';
 import 'services/seri_disk_depo.dart';
+import 'services/yenileme_sikligi.dart';
 import 'services/live_activity_service.dart';
 import 'services/notification_service.dart';
 import 'services/leaderboard_service.dart';
@@ -2413,6 +2414,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // kapalıyken satıra tarif yazılmaz, sunucu eski davranışı sürdürür.
     la.dakikalikGuncelleme =
         RemoteConfigService.instance.canliEtkinlikDakikalik;
+    // Kullanıcının seçtiği push sıklığı (27 Kas 2026); bayrak kapanınca
+    // "Her dakika" sunulmadığı için etkin değer bayrağa göre çözülür.
+    la.yenilemeDk = yenilemeEtkin(
+        ref.read(liveActivityYenilemeProvider),
+        canliEtkinlikYenilemeSecenekleri(dakikalik: la.dakikalikGuncelleme));
+    // Tek varlık widget'ının tazeleme aralığı. Oturum kapanışı depoyu
+    // boşaltır; her senkronda yazmak (aynı değer elenir) onu geri getirir.
+    CrashReporter.arkaPlan(
+        HomeWidgetService.instance
+            .widgetYenilemesiniYaz(ref.read(widgetYenilemeProvider)),
+        reason: 'main.widgetYenilemesiniYaz');
     CrashReporter.arkaPlan(LiveActivityService.instance.sync(
       snapshot,
       hideBalance: hideBalance,

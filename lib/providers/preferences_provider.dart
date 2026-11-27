@@ -12,6 +12,7 @@ import '../models/signal_frequency.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
+import '../services/yenileme_sikligi.dart' show widgetYenilemeVarsayilan;
 import 'auth_provider.dart';
 import 'premium_provider.dart';
 import '../config/pref_keys.dart';
@@ -787,6 +788,18 @@ final liveActivityEndProvider = NotifierProvider<_IntPrefNotifier, int>(
 /// sabit olduğunu söylüyor. Kısıtlamak yerine bilgilendirmek doğru olan.
 final liveActivityWeekendProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kLiveActivityWeekendKey, true, perUser: true));
+
+/// Canlı Etkinlik'in uygulama kapalıyken yenilenme sıklığı (dakika).
+/// 0 = hiç seçilmedi: en sık seçenek, yani bugüne kadarki davranış; sunucuya
+/// alan yazılmaz (bkz. `yenileme_sikligi.dart`). Diğer Canlı Etkinlik
+/// tercihleri gibi kişiye özel.
+final liveActivityYenilemeProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.liveActivityYenilemeDk, 0, perUser: true));
+
+/// Tek varlık widget'ının uygulama kapalıyken fiyat tazeleme sıklığı
+/// (dakika). Cihaza ait: widget ana ekranda durur, hesaba değil.
+final widgetYenilemeProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.widgetYenilemeDk, widgetYenilemeVarsayilan));
 
 // ─── Premium ─────────────────────────────────────────────────────────────────
 // `premiumUnlockedProvider` cihazdaki GELİŞTİRİCİ anahtarıdır (SharedPreferences).
@@ -1833,6 +1846,7 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   liveActivityStartProvider,
   liveActivityEndProvider,
   liveActivityWeekendProvider,
+  liveActivityYenilemeProvider,
   leaderboardOptInProvider,
   bildirimSonGorulenProvider,
   bugunkuPortfoyleProvider,

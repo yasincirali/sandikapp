@@ -115,6 +115,12 @@ class HomeWidgetService implements WidgetSabitleyici {
   /// kapanınca boşaltır: seçili sembollerin adı sonraki oturuma kalmasın.
   static const kVarlikCanli = 'sandik_varlik_canli';
 
+  /// Tek varlık widget'ının kendini tazeleme aralığı, dakika — METİN
+  /// (`"15"`): iki platformun home_widget deposu sayıyı farklı türde
+  /// saklıyor, metin ikisinde de aynı okunur. Yoksa ya da tanınmazsa native
+  /// taraf bugünkü 30 dk'da kalır (kullanıcı seçimi 27 Kas 2026).
+  static const kWidgetYenilemeDk = 'sandik_widget_yenileme_dk';
+
   // Paylaşımlı depo anahtarları — native taraf bu adlarla okur.
   static const _kTotal = 'sandik_total';
   static const _kChange = 'sandik_change';
@@ -1061,6 +1067,23 @@ class HomeWidgetService implements WidgetSabitleyici {
         w.iOSKind == iOSVarlikWidgetName ||
         w.iOSKind == iOSVitrinWidgetName ||
         w.androidClassName?.split('.').last == androidVarlikWidgetName);
+  }
+
+  /// Kullanıcının seçtiği tazeleme aralığını yazar ve tek varlık widget'ını
+  /// yeniler ki yeni zaman çizelgesi (iOS) / alarm (Android) hemen kurulsun.
+  /// Aynı değer ikinci kez yazılmaz.
+  Future<void> widgetYenilemesiniYaz(int dakika) async {
+    final metin = '$dakika';
+    if (_sonYazilan[kWidgetYenilemeDk] == metin) return;
+    try {
+      await _ensureInit();
+      await HomeWidget.saveWidgetData<String>(kWidgetYenilemeDk, metin);
+      _sonYazilan[kWidgetYenilemeDk] = metin;
+      await _varlikWidgetiniYenile();
+    } catch (e, st) {
+      _sonYazilan.remove(kWidgetYenilemeDk);
+      CrashReporter.report(e, st, reason: 'home_widget.widgetYenilemesiniYaz');
+    }
   }
 
   /// Tek varlık widget'ını yeniler (tema değişimi, oturum kapanışı).

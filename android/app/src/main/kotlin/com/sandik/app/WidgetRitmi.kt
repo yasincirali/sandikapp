@@ -58,7 +58,12 @@ object WidgetRitmi {
     }
 
     /** Sonraki yenileme anı (epoch ms). */
-    fun sonraki(sembol: String, simdi: Long, canliZaman: Long?): Long {
+    fun sonraki(
+        sembol: String,
+        simdi: Long,
+        canliZaman: Long?,
+        aralikMs: Long = SandikVarlikWidgetProvider.TAZELEME_ARALIGI_MS
+    ): Long {
         if (fonMu(sembol)) {
             return if (cekilmeli(sembol, simdi, canliZaman)) simdi + FON_DENEME_MS
             else sonrakiIsGunuSabahi(simdi)
@@ -66,7 +71,7 @@ object WidgetRitmi {
         val c = takvim(simdi)
         if (c.get(Calendar.HOUR_OF_DAY) < GECE_SONU) return simdi + GECE_MS
         if (!isGunu(c) && !kriptoMu(sembol)) return simdi + HAFTA_SONU_MS
-        return simdi + SandikVarlikWidgetProvider.TAZELEME_ARALIGI_MS
+        return simdi + aralikMs
     }
 
     /** Bugün iş günü ve 07:00 öncesiyse bugün 07:00; değilse sonraki iş günü 07:00 (TR). */

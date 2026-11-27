@@ -12341,4 +12341,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String pwdSaatliPremium(int varlik, int saat) {
     return '$varlik assets, $saat times a day';
   }
+
+  @override
+  String get yenilemeBaslik => 'Refresh rate';
+
+  @override
+  String get canliEtkinlikYenilemeBaslik => 'Refresh while the app is closed';
+
+  @override
+  String get yenilemeHerDakika => 'Every minute';
+
+  @override
+  String yenilemeDakika(int dk) {
+    return '$dk min';
+  }
+
+  @override
+  String get yenilemeBirSaat => '1 hour';
+
+  @override
+  String yenilemeSemantik(String secenek) {
+    return 'Refresh rate: $secenek';
+  }
+
+  @override
+  String get widgetYenilemeDipnot =>
+      'While the app is closed, the gold, currency and crypto widget refreshes its price at this rate. The portfolio widget updates when you open the app. Frequent refreshes can use more battery. Your phone may delay refreshes depending on battery.';
+
+  @override
+  String get canliEtkinlikYenilemeDipnot =>
+      'While the app is open, figures update instantly. Frequent refreshes can use more battery. iOS may delay updates depending on battery and connection.';
 }

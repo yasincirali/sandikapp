@@ -6170,5 +6170,13 @@
   "pwdSaatliEtiket": "Scheduled price",
   "pwdSaatliBaslik": "The price of the asset you pick, on your phone at the time you pick.",
   "pwdSaatliUcretsiz": "Morning and evening brief",
-  "pwdSaatliPremium": "{varlik} assets, {saat} times a day"
+  "pwdSaatliPremium": "{varlik} assets, {saat} times a day",
+  "yenilemeBaslik": "Refresh rate",
+  "canliEtkinlikYenilemeBaslik": "Refresh while the app is closed",
+  "yenilemeHerDakika": "Every minute",
+  "yenilemeDakika": "{dk} min",
+  "yenilemeBirSaat": "1 hour",
+  "yenilemeSemantik": "Refresh rate: {secenek}",
+  "widgetYenilemeDipnot": "While the app is closed, the gold, currency and crypto widget refreshes its price at this rate. The portfolio widget updates when you open the app. Frequent refreshes can use more battery. Your phone may delay refreshes depending on battery.",
+  "canliEtkinlikYenilemeDipnot": "While the app is open, figures update instantly. Frequent refreshes can use more battery. iOS may delay updates depending on battery and connection."
 }

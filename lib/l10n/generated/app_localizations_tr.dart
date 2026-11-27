@@ -12056,4 +12056,34 @@ class AppLocalizationsTr extends AppLocalizations {
   String pwdSaatliPremium(int varlik, int saat) {
     return '$varlik varlık, günde $saat saat';
   }
+
+  @override
+  String get yenilemeBaslik => 'Yenileme sıklığı';
+
+  @override
+  String get canliEtkinlikYenilemeBaslik => 'Uygulama kapalıyken yenileme';
+
+  @override
+  String get yenilemeHerDakika => 'Her dakika';
+
+  @override
+  String yenilemeDakika(int dk) {
+    return '$dk dk';
+  }
+
+  @override
+  String get yenilemeBirSaat => '1 saat';
+
+  @override
+  String yenilemeSemantik(String secenek) {
+    return 'Yenileme sıklığı: $secenek';
+  }
+
+  @override
+  String get widgetYenilemeDipnot =>
+      'Uygulama kapalıyken altın, döviz ve kripto widget\'ı fiyatını bu sıklıkla tazeler. Portföy widget\'ı uygulamayı açtığında güncellenir. Sık yenileme pili daha çok tüketebilir. Telefon, pil durumuna göre yenilemeyi geciktirebilir.';
+
+  @override
+  String get canliEtkinlikYenilemeDipnot =>
+      'Uygulama açıkken rakamlar anında güncellenir. Sık yenileme pili daha çok tüketebilir. iOS, pil ve bağlantı durumuna göre güncellemeyi geciktirebilir.';
 }

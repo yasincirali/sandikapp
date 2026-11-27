@@ -59,6 +59,7 @@ enum VarlikWidgetKeys {
     /// `HomeWidgetService.kVarlikCanli`: widget'ın sunucudan çektiği son
     /// fiyatlar. Yalnız burada YAZILIR; oturum kapanınca Dart boşaltır.
     static let canli = "sandik_varlik_canli"
+    static let yenilemeDk = "sandik_widget_yenileme_dk"
 }
 
 /// Dokunuş: Portföy sekmesi (Varlıklarım | Takip Listesi).
@@ -212,6 +213,17 @@ enum SandikWidgetFiyatServisi {
     /// Zaman çizelgesi bu aralıkla yenilenir (WidgetKit bütçesi; sunucu
     /// yanıtı da 60 sn önbellekli).
     static let tazelemeAraligi: TimeInterval = 30 * 60
+    /// Kullanıcının seçtiği aralık (Ayarlar, 27 Kas 2026; Dart
+    /// `kWidgetYenilemeDk`, metin "15"). Yalnız sunulan seçenekler kabul
+    /// edilir; yoksa ya da tanınmazsa [tazelemeAraligi]. WidgetKit yine de
+    /// bütçeye göre geciktirebilir — ayar bunu dipnotta söyler.
+    static var seciliAralik: TimeInterval {
+        guard let metin = UserDefaults(suiteName: VarlikWidgetKeys.suite)?
+                .string(forKey: VarlikWidgetKeys.yenilemeDk),
+              let dk = Int(metin), [15, 30, 60].contains(dk)
+        else { return tazelemeAraligi }
+        return TimeInterval(dk * 60)
+    }
     /// Bilinen fiyat bundan tazeyse ağa çıkılmaz (uygulama az önce yazdı ya
     /// da önceki tur yeni çekti).
     static let tazeEsigi: TimeInterval = 10 * 60
@@ -386,7 +398,7 @@ enum SandikWidgetRitmi {
         let saat = takvim.component(.hour, from: simdi)
         if saat < geceSonu { return simdi.addingTimeInterval(gece) }
         if !isGunu(simdi) && !kriptoMu(sembol) { return simdi.addingTimeInterval(haftaSonu) }
-        return simdi.addingTimeInterval(SandikWidgetFiyatServisi.tazelemeAraligi)
+        return simdi.addingTimeInterval(SandikWidgetFiyatServisi.seciliAralik)
     }
 
     /// Bugün iş günüyse ve saat 07:00'den önceyse bugün 07:00; değilse

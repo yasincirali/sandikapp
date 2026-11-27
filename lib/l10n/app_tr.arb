@@ -7029,5 +7029,15 @@
   "pwdSaatliBaslik": "Seçtiğin varlığın fiyatı, seçtiğin saatte telefonuna gelsin.",
   "pwdSaatliUcretsiz": "Sabah ve akşam özeti",
   "pwdSaatliPremium": "{varlik} varlık, günde {saat} saat",
-  "@pwdSaatliPremium": {"placeholders": {"varlik": {"type": "int"}, "saat": {"type": "int"}}}
+  "@pwdSaatliPremium": {"placeholders": {"varlik": {"type": "int"}, "saat": {"type": "int"}}},
+  "yenilemeBaslik": "Yenileme sıklığı",
+  "canliEtkinlikYenilemeBaslik": "Uygulama kapalıyken yenileme",
+  "yenilemeHerDakika": "Her dakika",
+  "yenilemeDakika": "{dk} dk",
+  "@yenilemeDakika": {"placeholders": {"dk": {"type": "int"}}},
+  "yenilemeBirSaat": "1 saat",
+  "yenilemeSemantik": "Yenileme sıklığı: {secenek}",
+  "@yenilemeSemantik": {"placeholders": {"secenek": {"type": "String"}}},
+  "widgetYenilemeDipnot": "Uygulama kapalıyken altın, döviz ve kripto widget'ı fiyatını bu sıklıkla tazeler. Portföy widget'ı uygulamayı açtığında güncellenir. Sık yenileme pili daha çok tüketebilir. Telefon, pil durumuna göre yenilemeyi geciktirebilir.",
+  "canliEtkinlikYenilemeDipnot": "Uygulama açıkken rakamlar anında güncellenir. Sık yenileme pili daha çok tüketebilir. iOS, pil ve bağlantı durumuna göre güncellemeyi geciktirebilir."
 }

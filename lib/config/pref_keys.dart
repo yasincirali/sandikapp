@@ -52,6 +52,10 @@ class PrefKeys {
   static const liveActivityStartMin = 'pref_live_activity_start_min';
   static const liveActivityEndMin = 'pref_live_activity_end_min';
   static const liveActivityWeekend = 'pref_live_activity_weekend';
+  // Uygulama kapalıyken yenileme sıklığı, dakika (27 Kas 2026; bkz.
+  // `yenileme_sikligi.dart`). Widget cihaza ait, Canlı Etkinlik hesaba.
+  static const widgetYenilemeDk = 'pref_widget_yenileme_dk';
+  static const liveActivityYenilemeDk = 'pref_live_activity_yenileme_dk';
   static const premiumUnlocked = 'pref_premium_unlocked';
   static const indicatorsByType = 'pref_indicators_by_type_v1';
   // Gösterge parametreleri (periyot vb.), tür başına JSON (2026-10-10; Premium).

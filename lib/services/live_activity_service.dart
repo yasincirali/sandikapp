@@ -198,6 +198,12 @@ class LiveActivityService {
   /// ile aynı desen.
   bool dakikalikGuncelleme = false;
 
+  /// Uygulama kapalıyken sunucunun push sıklığı (dakika), kullanıcı seçimi
+  /// (27 Kas 2026, `yenileme_sikligi.dart`). 1 ya da 0 = en sık: özete alan
+  /// YAZILMAZ ve satır bugünkü ritimde kalır. 5/15/30'da sunucu yalnız o
+  /// dakikanın katlarında push'lar. `main.dart` her senkronda tercihten atar.
+  int yenilemeDk = 0;
+
   /// Ada'da "Tutarı gizle" düğmesi (Premium, 2026-11-15). Oturumun SABİT
   /// özniteliği olarak yalnız 'start'ta gider (bkz. `gozAlici`); Premium
   /// sonradan açılırsa düğme bir sonraki oturumda gelir. `main.dart` her
@@ -420,7 +426,7 @@ class LiveActivityService {
         '|${payload['axisMaxText']}|${payload['isLightTheme']}'
         '|${payload['yalnizBorsa']}|${_tarif != null}'
         '|${payload['surukleyenAd']}|${payload['surukleyenTutarText']}'
-        '|${payload['surukleyenPctText']}';
+        '|${payload['surukleyenPctText']}|$yenilemeDk';
     if (key == _lastSummaryKey) return;
 
     await _db
@@ -471,6 +477,9 @@ class LiveActivityService {
             // Alan ekleyerek geldi: eski sunucu fonksiyonu tanımadığı
             // anahtarı okumaz, şema sürümü bu yüzden yükseltilmedi.
             if (_tarif != null) 'dakikalik': _tarif,
+            // Seyrek push seçimi. Alan ekleyerek geldi: eski sunucu okumaz
+            // (her dakika sürer), en sık seçimde hiç yazılmaz.
+            if (yenilemeDk > 1) 'yenilemeDk': yenilemeDk,
           },
           'show_amounts': showAmountsOnLockScreen,
           'updated_at': DateTime.now().toIso8601String(),

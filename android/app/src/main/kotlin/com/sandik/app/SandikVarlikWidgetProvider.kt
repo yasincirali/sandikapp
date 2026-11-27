@@ -111,6 +111,23 @@ class SandikVarlikWidgetProvider : AppWidgetProvider() {
         /** Sunucu kapsamındaki varlıkta yenileme aralığı (iOS `tazelemeAraligi`). */
         const val TAZELEME_ARALIGI_MS = 30L * 60 * 1000
 
+        /** Kullanıcının seçtiği aralık, dakika metni (Dart `kWidgetYenilemeDk`). */
+        const val KEY_YENILEME_DK = "sandik_widget_yenileme_dk"
+
+        /**
+         * Seçili aralık (Ayarlar, 27 Kas 2026). Yalnız sunulan seçenekler
+         * kabul edilir; yoksa ya da tanınmazsa [TAZELEME_ARALIGI_MS]. Alarm
+         * kesin değildir, sistem geciktirebilir — ayar dipnotta söyler.
+         */
+        fun seciliAralikMs(context: Context): Long {
+            val dk = try {
+                HomeWidgetPlugin.getData(context).getString(KEY_YENILEME_DK, null)?.toIntOrNull()
+            } catch (_: Exception) {
+                null
+            }
+            return if (dk in listOf(15, 30, 60)) dk!! * 60_000L else TAZELEME_ARALIGI_MS
+        }
+
         /** Bilinen fiyat bundan tazeyse ağa çıkılmaz (iOS `tazeEsigi`). */
         const val TAZE_ESIGI_MS = 10L * 60 * 1000
 
@@ -521,7 +538,9 @@ class SandikVarlikWidgetProvider : AppWidgetProvider() {
             // [WidgetRitmi]) yeniden çizilir; `onUpdate` o turda tazeler.
             val canli = canliDepo(context)
             val tazeleme = kapsamdakiSemboller(paket, secimDeposu(context), tumu)
-                .minOfOrNull { WidgetRitmi.sonraki(it, simdi, canli[it]?.zaman) }
+                .minOfOrNull {
+                    WidgetRitmi.sonraki(it, simdi, canli[it]?.zaman, seciliAralikMs(context))
+                }
             val esik = listOfNotNull(gunEsigi, tazeleme).minOrNull()
             if (tumu.isEmpty() || paket.ogeler.isEmpty() || esik == null) {
                 alarm.cancel(bekleyen)
