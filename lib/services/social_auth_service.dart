@@ -125,9 +125,10 @@ class SocialAuthService {
     final GoogleSignInAccount account;
     try {
       if (!_googleReady) {
+        final ios = temizKimlik(googleIosClientId);
         await gsi.initialize(
-          serverClientId: googleWebClientId,
-          clientId: googleIosClientId.isEmpty ? null : googleIosClientId,
+          serverClientId: temizKimlik(googleWebClientId),
+          clientId: ios.isEmpty ? null : ios,
         );
         _googleReady = true;
       }
@@ -179,6 +180,11 @@ class SocialAuthService {
   }
 
   // ── Saf yardımcılar (test edilir) ─────────────────────────────────────
+
+  /// GitHub secret'ına yapıştırılan kimlikteki boşluk/satır sonu/tırnak
+  /// Google'da "invalid_audience" verir (28 Kas 2026, yasin'in ekranı).
+  static String temizKimlik(String s) =>
+      s.trim().replaceAll(RegExp(r'''^["']+|["']+$'''), '').trim();
 
   static const _nonceChars =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._';

@@ -6,6 +6,14 @@ import 'package:portfoy_takip/services/social_auth_service.dart';
 
 /// Apple / Google ile giriş — platform SDK'sı olmadan doğrulanabilen kısım.
 void main() {
+  test('temizKimlik boşluk, satır sonu ve tırnağı atar', () {
+    const id = '1-abc.apps.googleusercontent.com';
+    expect(SocialAuthService.temizKimlik(' $id\n'), id);
+    expect(SocialAuthService.temizKimlik('"$id"'), id);
+    expect(SocialAuthService.temizKimlik("'$id' "), id);
+    expect(SocialAuthService.temizKimlik(''), '');
+  });
+
   group('availableProviders', () {
     test('iOS: Apple her zaman, Google yalnızca yapılandırıldıysa', () {
       expect(
