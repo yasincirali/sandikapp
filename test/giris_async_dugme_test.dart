@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
@@ -49,6 +50,17 @@ void main() {
     SandikAsyncButton dugme(WidgetTester tester, String etiket) =>
         tester.widget<SandikAsyncButton>(find.ancestor(
             of: find.text(etiket), matching: find.byType(SandikAsyncButton)));
+
+    testWidgets('Google düğmesinde resmi çok renkli G logosu', (tester) async {
+      await ac(tester);
+      final logo = find.descendant(
+          of: find.ancestor(
+              of: find.text('Google ile devam et'),
+              matching: find.byType(SandikAsyncButton)),
+          matching: find.byType(SvgPicture));
+      expect(logo, findsOneWidget);
+      expect(find.byIcon(Icons.g_mobiledata_rounded), findsNothing);
+    });
 
     testWidgets('çift dokunuş tek istek; gösterge ve öteki düğme pasif',
         (tester) async {
