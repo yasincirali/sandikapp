@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show OAuthProvider;
 
 import '../config/supabase_config.dart';
 import '../utils/friendly_error.dart' show KullaniciMesajli;
+import 'crash_reporter.dart';
 
 /// Desteklenen sosyal sağlayıcılar.
 enum SocialProvider { apple, google }
@@ -136,8 +137,12 @@ class SocialAuthService {
       }
       // 27 Kas 2026: ham istisna friendlyError'da "Bir şeyler ters gitti"ye
       // düşüyordu; kurulum hatasının nedeni (kod) görünsün.
+      // Açıklama (description) Crashlytics'e gider; ekranda yalnız kod.
+      CrashReporter.report(e, StackTrace.current,
+          reason: 'SocialAuthService.google ${e.code.name}: ${e.description}');
       throw SocialSignInFailed('Google ile giriş yapılamadı (${e.code.name}).');
-    } catch (e) {
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SocialAuthService.google');
       // initialize ve platform kanalı GoogleSignInException dışında da
       // atabilir (PlatformException vb.); yalnız sınıf adı gösterilir.
       throw SocialSignInFailed('Google ile giriş yapılamadı (${e.runtimeType}).');
