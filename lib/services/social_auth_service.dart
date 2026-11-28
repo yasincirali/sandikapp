@@ -120,15 +120,15 @@ class SocialAuthService {
 
   Future<SocialCredential> _google() async {
     final gsi = GoogleSignIn.instance;
-    if (!_googleReady) {
-      await gsi.initialize(
-        serverClientId: googleWebClientId,
-        clientId: googleIosClientId.isEmpty ? null : googleIosClientId,
-      );
-      _googleReady = true;
-    }
     final GoogleSignInAccount account;
     try {
+      if (!_googleReady) {
+        await gsi.initialize(
+          serverClientId: googleWebClientId,
+          clientId: googleIosClientId.isEmpty ? null : googleIosClientId,
+        );
+        _googleReady = true;
+      }
       account = await gsi.authenticate();
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) {
@@ -137,6 +137,10 @@ class SocialAuthService {
       // 27 Kas 2026: ham istisna friendlyError'da "Bir şeyler ters gitti"ye
       // düşüyordu; kurulum hatasının nedeni (kod) görünsün.
       throw SocialSignInFailed('Google ile giriş yapılamadı (${e.code.name}).');
+    } catch (e) {
+      // initialize ve platform kanalı GoogleSignInException dışında da
+      // atabilir (PlatformException vb.); yalnız sınıf adı gösterilir.
+      throw SocialSignInFailed('Google ile giriş yapılamadı (${e.runtimeType}).');
     }
     final token = account.authentication.idToken;
     if (token == null || token.isEmpty) {
