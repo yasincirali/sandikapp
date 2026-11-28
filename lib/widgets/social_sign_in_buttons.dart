@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show Icons, OutlinedButton, RoundedRectangleBorder;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../providers/auth_provider.dart';
 import '../services/social_auth_service.dart';
@@ -128,9 +129,13 @@ class _SocialButton extends StatelessWidget {
       SocialProvider.apple => 'Apple ile devam et',
       SocialProvider.google => 'Google ile devam et',
     };
-    final icon = switch (provider) {
-      SocialProvider.apple => Icons.apple,
-      SocialProvider.google => Icons.g_mobiledata_rounded,
+    // Google marka kuralı (28 Kas 2026, yasin "logosunu da düzeltelim"):
+    // düğmede dört renkli resmi "G" durur; tek renk Material glifi
+    // (g_mobiledata) logo değildi. Renkler SVG'de, tasarım tokenına girmez.
+    final Widget icon = switch (provider) {
+      SocialProvider.apple => Icon(Icons.apple, size: 22, color: context.c.text90),
+      SocialProvider.google => SvgPicture.asset('assets/images/google_g.svg',
+          width: 20, height: 20, excludeFromSemantics: true),
     };
     // Tek yükleniyor davranışı (2026-10-08): [SandikAsyncButton] çerçeve
     // türü; eski kutu (surface2 zemin, hairline kenar, 48 boy) `style` ile
@@ -155,7 +160,7 @@ class _SocialButton extends StatelessWidget {
             side: BorderSide(color: context.c.hairline),
             shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
           ),
-          icon: Icon(icon, size: 22, color: context.c.text90),
+          icon: icon,
           child: Text(
             label,
             style: context.t.bodyLarge?.copyWith(
