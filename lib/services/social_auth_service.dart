@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show OAuthProvider;
@@ -145,7 +146,14 @@ class SocialAuthService {
       CrashReporter.report(e, st, reason: 'SocialAuthService.google');
       // initialize ve platform kanalı GoogleSignInException dışında da
       // atabilir (PlatformException vb.); yalnız sınıf adı gösterilir.
-      throw SocialSignInFailed('Google ile giriş yapılamadı (${e.runtimeType}).');
+      // PlatformException: iOS eklentisi GIDSignIn dışı NSError'ı "alan: kod"
+      // + açıklama olarak döner (ör. OAuth token değişimi reddi); kurulum
+      // hatası buradan okunur. Kişisel veri taşımaz, 120 karakterle sınırlı.
+      final ayrinti = e is PlatformException
+          ? '${e.code}${e.message == null ? '' : ' · ${e.message}'}'
+          : '${e.runtimeType}';
+      final kisa = ayrinti.length > 120 ? ayrinti.substring(0, 120) : ayrinti;
+      throw SocialSignInFailed('Google ile giriş yapılamadı ($kisa).');
     }
     final token = account.authentication.idToken;
     if (token == null || token.isEmpty) {
